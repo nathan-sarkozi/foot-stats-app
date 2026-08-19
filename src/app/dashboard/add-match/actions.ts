@@ -17,10 +17,11 @@ export async function addMatch(formData: FormData) {
   const teamScore = parseInt(formData.get('team_score') as string) || 0
   const opponentScore = parseInt(formData.get('opponent_score') as string) || 0
 
-  // 2. Insert Match
+// 2. Insert Match
   const { data: matchData, error: matchError } = await supabase
     .from('matches')
     .insert({
+      player_id: user.id, // AJOUT CRUCIAL POUR LE MULTI-COMPTES 👇
       match_date: matchDate,
       opponent,
       competition_type: competitionType,
