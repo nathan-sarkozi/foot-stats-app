@@ -1,16 +1,19 @@
 import { createClient } from '@/utils/supabase/server'
 import { notFound } from 'next/navigation'
 
-// Strict typing for Next.js dynamic routes
+// 1. Mise à jour du typage strict pour Next.js 15+
 interface ProfilePageProps {
-  params: {
+  params: Promise<{
     userId: string
-  }
+  }>
 }
 
-export default async function PublicProfilePage({ params }: ProfilePageProps) {
+export default async function PublicProfilePage(props: ProfilePageProps) {
   const supabase = await createClient()
-  const targetUserId = params.userId
+  
+  // 2. On "await" la promesse des paramètres AVANT de l'utiliser
+  const resolvedParams = await props.params
+  const targetUserId = resolvedParams.userId
 
   // 1. Fetch statistics using the URL UUID
   const { data: stats, error } = await supabase
