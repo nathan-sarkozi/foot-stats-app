@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import DeleteButton from './DeleteButton'
 
-// Strict typing for the expected DB structure
 interface MatchData {
   id: string
   match_date: string
@@ -17,6 +16,8 @@ interface MatchData {
 interface StatData {
   id: string
   has_played: boolean
+  is_motm: boolean
+  position_played: string | null
   minutes_played: number
   goals: number
   assists: number
@@ -24,24 +25,22 @@ interface StatData {
   matches: MatchData
 }
 
-// Next.js 15: params is a Promise
-export default async function EditMatchPage({
-  params,
-}: {
+export default async function EditMatchPage(props: {
   params: Promise<{ id: string }>
 }) {
-  const resolvedParams = await params
+  const resolvedParams = await props.params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) return redirect('/login')
 
-  // Fetch the specific match and its related stats
   const { data, error } = await supabase
     .from('statistics')
     .select(`
       id,
       has_played,
+      is_motm,
+      position_played,
       minutes_played,
       goals,
       assists,
@@ -78,7 +77,6 @@ export default async function EditMatchPage({
       </div>
 
       <form action={updateMatch} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-8">
-        {/* Hidden fields to pass IDs securely to the server action */}
         <input type="hidden" name="match_id" value={match.id} />
         <input type="hidden" name="stat_id" value={stat.id} />
 
@@ -116,11 +114,34 @@ export default async function EditMatchPage({
 
         <div>
           <h3 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Tes statistiques</h3>
-          <div className="mb-6 flex items-center">
-            <input id="has_played" name="has_played" type="checkbox" defaultChecked={stat.has_played} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-            <label htmlFor="has_played" className="ml-2 block text-sm text-gray-900">J&apos;ai joué ce match</label>
+          
+          <div className="mb-6 flex flex-wrap gap-6">
+            <div className="flex items-center">
+              <input id="has_played" name="has_played" type="checkbox" defaultChecked={stat.has_played} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+              <label htmlFor="has_played" className="ml-2 block text-sm text-gray-900">J&apos;ai joué ce match</label>
+            </div>
+            <div className="flex items-center">
+              <input id="is_motm" name="is_motm" type="checkbox" defaultChecked={stat.is_motm} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+              <label htmlFor="is_motm" className="ml-2 block text-sm text-gray-900 font-medium">Homme du match 🏆</label>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-y-6 gap-x-4 sm:grid-cols-4">
+
+          <div className="grid grid-cols-2 gap-y-6 gap-x-4 sm:grid-cols-3 md:grid-cols-6">
+            <div className="col-span-2 sm:col-span-3 md:col-span-2">
+              <label htmlFor="position_played" className="block text-sm font-medium text-gray-700">Poste</label>
+              <select id="position_played" name="position_played" defaultValue={stat.position_played || ""} className={inputBaseClasses}>
+                <option value="">Sélectionner...</option>
+                <option value="BU">BU (Buteur)</option>
+                <option value="AG">AG (Ailier Gauche)</option>
+                <option value="AD">AD (Ailier Droit)</option>
+                <option value="MOC">MOC (Milieu Offensif)</option>
+                <option value="MC">MC (Milieu Central)</option>
+                <option value="MDC">MDC (Milieu Défensif)</option>
+                <option value="DG">DG (Défenseur Gauche)</option>
+                <option value="DD">DD (Défenseur Droit)</option>
+                <option value="DC">DC (Défenseur Central)</option>
+              </select>
+            </div>
             <div>
               <label htmlFor="minutes_played" className="block text-sm font-medium text-gray-700">Minutes</label>
               <input type="number" min="0" max="120" name="minutes_played" id="minutes_played" defaultValue={stat.minutes_played} className={inputBaseClasses} />
@@ -134,12 +155,8 @@ export default async function EditMatchPage({
               <input type="number" min="0" name="assists" id="assists" defaultValue={stat.assists} className={inputBaseClasses} />
             </div>
             <div>
-              <label htmlFor="yellow_cards" className="block text-sm font-medium text-gray-700">Cartons jaunes</label>
-              <input type="number" min="0" max="2" name="yellow_cards" id="yellow_cards" defaultValue="{stat.yellow_cards}" className={inputBaseClasses} />
-            </div>
-            <div>
-              <label htmlFor="red_cards" className="block text-sm font-medium text-gray-700">Cartons rouges</label>
-              <input type="number" min="0" max="1" name="red_cards" id="red_cards" defaultValue="{stat.red_cards}" className={inputBaseClasses} />
+              <label htmlFor="yellow_cards" className="block text-sm font-medium text-gray-700">Jaunes</label>
+              <input type="number" min="0" max="2" name="yellow_cards" id="yellow_cards" defaultValue={stat.yellow_cards} className={inputBaseClasses} />
             </div>
           </div>
         </div>
@@ -154,10 +171,7 @@ export default async function EditMatchPage({
       <div className="bg-red-50 p-6 rounded-lg border border-red-200">
         <h3 className="text-lg font-medium text-red-900">Zone de danger</h3>
         <p className="text-sm text-red-600 mb-4">Cette action est irréversible.</p>
-        
-        {/* On appelle le Client Component ici */}
         <DeleteButton matchId={match.id} />
-        
       </div>
     </div>
   )
