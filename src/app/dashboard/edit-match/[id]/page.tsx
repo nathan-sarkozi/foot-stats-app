@@ -81,7 +81,7 @@ export default async function EditMatchPage(props: EditMatchProps) {
             <div className="md:col-span-2">
               <label htmlFor="competition_type" className={labelClasses}>Compétition *</label>
               <select id="competition_type" name="competition_type" required defaultValue={match.competition_type} className={inputBaseClasses}>
-                <option value="LEAGUE">Championnat (Réserve C)</option>
+                <option value="LEAGUE">Championnat</option>
                 <option value="CUP">Coupe</option>
                 <option value="FRIENDLY">Amical</option>
               </select>
