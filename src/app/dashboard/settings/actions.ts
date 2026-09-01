@@ -2,6 +2,19 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
+import { z } from 'zod'
+
+// 1. SCHEMA DEFINITION: Strict validation rules
+const ProfileSchema = z.object({
+  display_name: z.string().trim().min(2, 'Name too short').max(50, 'Name too long'),
+  club: z.string().trim().max(100).nullable(),
+  category: z.string().trim().max(50).nullable(),
+  preferred_position: z.enum(['BU', 'AG', 'AD', 'MOC', 'MC', 'MDC', 'DG', 'DD', 'DC', 'GB']).nullable(),
+  foot_preference: z.enum(['Droitier', 'Gaucher', 'Ambidextre']).nullable(),
+  jersey_number: z.coerce.number().min(1).max(99).nullable(),
+  height: z.coerce.number().min(100).max(250).nullable(),
+  weight: z.coerce.number().min(30).max(150).nullable(),
+})
 
 export async function updateProfile(formData: FormData) {
   const supabase = await createClient()
@@ -9,36 +22,43 @@ export async function updateProfile(formData: FormData) {
 
   if (!user) throw new Error('Unauthorized')
 
-  // 1. Extract required data
-  const displayName = formData.get('display_name') as string
-  if (!displayName || displayName.trim().length === 0) {
-    throw new Error('Display name is required')
+  // Helper to convert empty strings (from the form) to null for PostgreSQL
+  const parseNullableString = (key: string) => {
+    const val = formData.get(key) as string
+    return val && val.trim() !== '' ? val.trim() : null
   }
 
-  // 2. Extract optional football & physical data
-  const club = formData.get('club') as string
-  const category = formData.get('category') as string
-  const preferredPosition = formData.get('preferred_position') as string
-  const footPreference = formData.get('foot_preference') as string
-  
-  // Parse numeric values safely
-  const jerseyNumber = formData.get('jersey_number') ? parseInt(formData.get('jersey_number') as string) : null
-  const height = formData.get('height') ? parseInt(formData.get('height') as string) : null
-  const weight = formData.get('weight') ? parseInt(formData.get('weight') as string) : null
+  const parseNullableNumber = (key: string) => {
+    const val = formData.get(key) as string
+    return val && val.trim() !== '' ? val : null
+  }
 
-  // 3. Execute Update
+  // 2. DATA EXTRACTION
+  const rawData = {
+    display_name: formData.get('display_name'),
+    club: parseNullableString('club'),
+    category: parseNullableString('category'),
+    preferred_position: parseNullableString('preferred_position'),
+    foot_preference: parseNullableString('foot_preference'),
+    jersey_number: parseNullableNumber('jersey_number'),
+    height: parseNullableNumber('height'),
+    weight: parseNullableNumber('weight'),
+  }
+
+  // 3. SAFE PARSING: Intercept and validate
+  const validatedFields = ProfileSchema.safeParse(rawData)
+
+  if (!validatedFields.success) {
+    console.error('Profile Validation Error:', validatedFields.error.flatten().fieldErrors)
+    throw new Error('Invalid profile data provided')
+  }
+
+  const cleanData = validatedFields.data
+
+  // 4. DATABASE UPDATE (Strict RLS ensures user only updates their row)
   const { error } = await supabase
     .from('profiles')
-    .update({
-      display_name: displayName.trim(),
-      club: club ? club.trim() : null,
-      category: category ? category.trim() : null,
-      preferred_position: preferredPosition || null,
-      foot_preference: footPreference || null,
-      jersey_number: jerseyNumber,
-      height: height,
-      weight: weight,
-    })
+    .update(cleanData)
     .eq('id', user.id)
 
   if (error) {

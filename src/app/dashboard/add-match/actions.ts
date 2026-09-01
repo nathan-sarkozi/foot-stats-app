@@ -3,9 +3,24 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { z } from 'zod'
 
-// Strict typing for allowed positions
-type Position = 'BU' | 'AG' | 'AD' | 'MOC' | 'MC' | 'MDC' | 'DG' | 'DD' | 'DC' | 'GB' | ''
+// 1. SCHEMA DEFINITION: The Single Source of Truth for validation
+const MatchSchema = z.object({
+  match_date: z.string().min(1, 'Date required'),
+  opponent: z.string().min(2, 'Opponent name too short').max(100, 'Opponent name too long'),
+  competition_type: z.enum(['LEAGUE', 'CUP', 'FRIENDLY']),
+  team_score: z.coerce.number().min(0).max(99),
+  opponent_score: z.coerce.number().min(0).max(99),
+  has_played: z.boolean(),
+  is_motm: z.boolean(),
+  position_played: z.enum(['BU', 'AG', 'AD', 'MOC', 'MC', 'MDC', 'DG', 'DD', 'DC', 'GB', '']).nullable().optional(),
+  minutes_played: z.coerce.number().min(0).max(120), // Max 120 mins (Extra time included)
+  goals: z.coerce.number().min(0).max(50),
+  assists: z.coerce.number().min(0).max(50),
+  yellow_cards: z.coerce.number().min(0).max(2),
+  red_cards: z.coerce.number().min(0).max(1),
+})
 
 export async function addMatch(formData: FormData) {
   const supabase = await createClient()
@@ -13,29 +28,54 @@ export async function addMatch(formData: FormData) {
 
   if (!user) throw new Error('Unauthorized')
 
-  // 1. Extract match data
-  const matchDate = formData.get('match_date') as string
-  const opponent = formData.get('opponent') as string
-  const competitionType = formData.get('competition_type') as string
-  const teamScore = parseInt(formData.get('team_score') as string) || 0
-  const opponentScore = parseInt(formData.get('opponent_score') as string) || 0
+  // 2. DATA EXTRACTION & FORMATTING
+  const hasPlayedRaw = formData.get('has_played')
+  const isMotmRaw = formData.get('is_motm')
+  const hasPlayed = hasPlayedRaw === 'true' || hasPlayedRaw === 'on'
 
-  // 2. Algorithmic Match Result Calculation
+  const rawData = {
+    match_date: formData.get('match_date'),
+    opponent: formData.get('opponent'),
+    competition_type: formData.get('competition_type'),
+    team_score: formData.get('team_score'),
+    opponent_score: formData.get('opponent_score'),
+    has_played: hasPlayed,
+    is_motm: hasPlayed ? (isMotmRaw === 'true' || isMotmRaw === 'on') : false,
+    position_played: hasPlayed ? formData.get('position_played') : null,
+    minutes_played: hasPlayed ? formData.get('minutes_played') : 0,
+    goals: hasPlayed ? formData.get('goals') : 0,
+    assists: hasPlayed ? formData.get('assists') : 0,
+    yellow_cards: hasPlayed ? formData.get('yellow_cards') : 0,
+    red_cards: hasPlayed ? formData.get('red_cards') : 0,
+  }
+
+  // 3. SAFE PARSING: Zod intercepts and validates the raw data
+  const validatedFields = MatchSchema.safeParse(rawData)
+
+  // If validation fails, block execution and log the specific errors
+  if (!validatedFields.success) {
+    console.error('Validation Error:', validatedFields.error.flatten().fieldErrors)
+    throw new Error('Invalid form data provided')
+  }
+
+  const cleanData = validatedFields.data
+
+  // 4. BUSINESS LOGIC
   let matchResult = 'N'
-  if (teamScore > opponentScore) matchResult = 'V'
-  if (teamScore < opponentScore) matchResult = 'D'
+  if (cleanData.team_score > cleanData.opponent_score) matchResult = 'V'
+  if (cleanData.team_score < cleanData.opponent_score) matchResult = 'D'
 
-  // 3. Insert Match
+  // 5. DATABASE INSERTION (Matches)
   const { data: matchData, error: matchError } = await supabase
     .from('matches')
     .insert({
       player_id: user.id,
-      match_date: matchDate,
-      opponent,
-      competition_type: competitionType,
-      team_score: teamScore,
-      opponent_score: opponentScore,
-      match_result: matchResult, // Auto-calculated
+      match_date: cleanData.match_date,
+      opponent: cleanData.opponent,
+      competition_type: cleanData.competition_type,
+      team_score: cleanData.team_score,
+      opponent_score: cleanData.opponent_score,
+      match_result: matchResult,
     })
     .select('id')
     .single()
@@ -45,32 +85,20 @@ export async function addMatch(formData: FormData) {
     throw new Error('Failed to create match')
   }
 
-  // 4. Extract statistics data
-  const hasPlayed = formData.get('has_played') === 'true' || formData.get('has_played') === 'on' 
-  const isMotm = formData.get('is_motm') === 'true' || formData.get('is_motm') === 'on'
-  const positionPlayed = formData.get('position_played') as Position
-
-
-  const rawYellow = parseInt(formData.get('yellow_cards') as string) || 0
-  const rawRed = parseInt(formData.get('red_cards') as string) || 0
-
-  const yellowCards = Math.min(rawYellow, 2)
-  const redCards = yellowCards === 2 ? 1 : Math.min(rawRed, 1)
-  
+  // 6. DATABASE INSERTION (Statistics)
   const statsPayload = {
     player_id: user.id,
     match_id: matchData.id,
-    has_played: hasPlayed,
-    is_motm: hasPlayed ? isMotm : false, // Cannot be MOTM if didn't play
-    position_played: hasPlayed ? positionPlayed : null,
-    minutes_played: hasPlayed ? (parseInt(formData.get('minutes_played') as string) || 0) : 0,
-    goals: hasPlayed ? (parseInt(formData.get('goals') as string) || 0) : 0,
-    assists: hasPlayed ? (parseInt(formData.get('assists') as string) || 0) : 0,
-    yellow_cards: hasPlayed ? yellowCards : 0,
-    red_cards: hasPlayed ? redCards : 0,
+    has_played: cleanData.has_played,
+    is_motm: cleanData.is_motm,
+    position_played: cleanData.position_played,
+    minutes_played: cleanData.minutes_played,
+    goals: cleanData.goals,
+    assists: cleanData.assists,
+    yellow_cards: cleanData.yellow_cards,
+    red_cards: cleanData.red_cards,
   }
 
-  // 5. Insert Statistics
   const { error: statsError } = await supabase
     .from('statistics')
     .insert(statsPayload)
@@ -80,6 +108,6 @@ export async function addMatch(formData: FormData) {
     throw new Error('Failed to save statistics')
   }
 
-  revalidatePath('/dashboard')
+  revalidatePath('/', 'layout')
   redirect('/dashboard')
 }
