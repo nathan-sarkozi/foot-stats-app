@@ -24,10 +24,11 @@ interface StatRow {
   assists: number
   yellow_cards: number
   red_cards: number
+  is_motm: boolean // NOUVEAU
+  position_played: string | null // NOUVEAU
   matches: MatchInfo 
 }
 
-// CORRECTION ICI : Le composant StatCard est défini EN DEHORS de DashboardPage
 const StatCard = ({ title, value, subtitle }: { title: string, value: string | number, subtitle?: string }) => (
   <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center">
     <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{title}</h3>
@@ -36,7 +37,6 @@ const StatCard = ({ title, value, subtitle }: { title: string, value: string | n
   </div>
 )
 
-// Next 15 : searchParams est une Promise
 export default async function DashboardPage(props: {
   searchParams: Promise<{ comps?: string }>
 }) {
@@ -54,10 +54,11 @@ export default async function DashboardPage(props: {
 
   if (profileError) return <div className="text-red-500">Erreur profil.</div>
 
+  // 1. REQUÊTE MISE À JOUR : On récupère is_motm et position_played
   const { data: statsData, error: statsError } = await supabase
     .from('statistics')
     .select(`
-      has_played, minutes_played, goals, assists, yellow_cards, red_cards,
+      has_played, minutes_played, goals, assists, yellow_cards, red_cards, is_motm, position_played,
       matches (id, match_date, opponent, team_score, opponent_score, competition_type)
     `)
     .eq('player_id', user.id)
@@ -83,13 +84,29 @@ export default async function DashboardPage(props: {
   const totalMinutes = filteredStats.reduce((sum, s) => sum + s.minutes_played, 0)
   const totalYellows = filteredStats.reduce((sum, s) => sum + s.yellow_cards, 0)
   const totalReds = filteredStats.reduce((sum, s) => sum + s.red_cards, 0)
+  const totalMotm = filteredStats.filter(s => s.is_motm).length // CALCUL MOTM
   
-  // Derived Stats
+  // Algorithme : Déterminer le poste le plus joué
+  const positionCounts = filteredStats.reduce((acc, stat) => {
+    if (stat.position_played) {
+      acc[stat.position_played] = (acc[stat.position_played] || 0) + 1
+    }
+    return acc
+  }, {} as Record<string, number>)
+
+  let favPosition = 'N/A'
+  let maxPosCount = 0
+  for (const [pos, count] of Object.entries(positionCounts)) {
+    if (count > maxPosCount) {
+      maxPosCount = count
+      favPosition = pos
+    }
+  }
+
+  // Statistiques P90 (Per 90 minutes) - Le standard pro
   const totalGA = totalGoals + totalAssists
-  const ratioGoalsPerMatch = matchesPlayed > 0 ? (totalGoals / matchesPlayed).toFixed(2) : '0.00'
-  const ratioAssistsPerMatch = matchesPlayed > 0 ? (totalAssists / matchesPlayed).toFixed(2) : '0.00'
-  const minsPerGoal = totalGoals > 0 ? Math.round(totalMinutes / totalGoals) : '-'
-  const minsPerAssist = totalAssists > 0 ? Math.round(totalMinutes / totalAssists) : '-'
+  const p90Goals = totalMinutes > 0 ? ((totalGoals / totalMinutes) * 90).toFixed(2) : '0.00'
+  const p90Assists = totalMinutes > 0 ? ((totalAssists / totalMinutes) * 90).toFixed(2) : '0.00'
 
   // 4. CHART DATA (Ascending order)
   const chartData = [...sortedStats].reverse().reduce((acc, stat) => {
@@ -131,17 +148,18 @@ export default async function DashboardPage(props: {
         </div>
       </div>
 
-      {/* Les Filtres */}
       <CompetitionFilter />
 
       {/* Grille de statistiques avancées */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} minutes`} />
+        <StatCard title="Poste Favori" value={favPosition} subtitle={`${maxPosCount} matchs joués`} />
+        <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" />
+        <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} minutes cumulées`} />
         <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} />
-        <StatCard title="Ratio But/Match" value={ratioGoalsPerMatch} subtitle={`1 but / ${minsPerGoal} min`} />
-        <StatCard title="Ratio Passe/Match" value={ratioAssistsPerMatch} subtitle={`1 passe / ${minsPerAssist} min`} />
-        <StatCard title="Total Buts" value={totalGoals} />
-        <StatCard title="Total Passes" value={totalAssists} />
+        
+        {/* Ligne des P90 et volume */}
+        <StatCard title="Total Buts" value={totalGoals} subtitle={`${p90Goals} Buts / 90 min`} />
+        <StatCard title="Total Passes" value={totalAssists} subtitle={`${p90Assists} Passes / 90 min`} />
         <StatCard title="Cartons Jaunes" value={totalYellows} subtitle="🟨" />
         <StatCard title="Cartons Rouges" value={totalReds} subtitle="🟥" />
       </div>
@@ -175,25 +193,33 @@ export default async function DashboardPage(props: {
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">contre {match.opponent}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-gray-900">contre {match.opponent}</p>
+                      {stat.is_motm && <span title="Homme du Match">🏆</span>}
+                    </div>
                     <p className="text-xs text-gray-500">{getCompetitionLabel(match.competition_type)}</p>
                   </div>
                 </div>
                 
                 <div className="text-right flex items-center space-x-4">
                   {stat.has_played ? (
-                    <div className="text-sm text-gray-700">
-                      {stat.goals > 0 && <span className="font-bold text-green-600 mr-2">⚽ {stat.goals}</span>}
-                      {stat.assists > 0 && <span className="font-bold text-blue-600 mr-2">👟 {stat.assists}</span>}
-                      {stat.yellow_cards > 0 && <span className="mr-2" title="Cartons jaunes">🟨 {stat.yellow_cards}</span>}
-                      {stat.red_cards > 0 && <span className="mr-2" title="Carton rouge">🟥 {stat.red_cards}</span>}
-                      <span className="text-gray-500">{stat.minutes_played}&apos;</span>
+                    <div className="text-sm text-gray-700 flex items-center gap-3">
+                      {stat.position_played && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-bold border border-gray-200">
+                          {stat.position_played}
+                        </span>
+                      )}
+                      {stat.goals > 0 && <span className="font-bold text-green-600">⚽ {stat.goals}</span>}
+                      {stat.assists > 0 && <span className="font-bold text-blue-600">👟 {stat.assists}</span>}
+                      {stat.yellow_cards > 0 && <span title="Cartons jaunes">🟨 {stat.yellow_cards}</span>}
+                      {stat.red_cards > 0 && <span title="Carton rouge">🟥 {stat.red_cards}</span>}
+                      <span className="text-gray-500 border-l border-gray-300 pl-3">{stat.minutes_played}&apos;</span>
                     </div>
                   ) : (
                     <span className="text-sm text-gray-400 italic mr-2">N&apos;a pas joué</span>
                   )}
                   
-                  <Link href={`/dashboard/edit-match/${match.id}`} className="text-gray-400 hover:text-indigo-600 transition-colors">
+                  <Link href={`/dashboard/edit-match/${match.id}`} className="text-gray-400 hover:text-indigo-600 transition-colors ml-4">
                     ✏️ Modifier
                   </Link>
                 </div>
