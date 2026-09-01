@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation' // <-- NOUVEL IMPORT
 import Navbar from './components/Navbar'
 
 interface DashboardLayoutProps {
@@ -9,10 +10,14 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
+  // SÉCURITÉ GLOBALE DU DOSSIER DASHBOARD
+  if (!user) {
+    redirect('/login')
+  }
+
   let userInitials = "FS"
   
   if (user) {
-    // On va chercher le nom du joueur connecté
     const { data } = await supabase
       .from('profiles')
       .select('display_name')

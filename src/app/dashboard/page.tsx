@@ -3,6 +3,7 @@ import Link from 'next/link'
 import StatsChart from './components/StatsChart'
 import CompetitionFilter from './components/CompetitionFilter'
 import StatCard from './components/StatCard'
+import { redirect } from 'next/navigation'
 
 // 1. MISE À JOUR DE L'INTERFACE : On passe sur display_name
 interface PlayerProfile {
@@ -37,7 +38,9 @@ export default async function DashboardPage(props: {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) return null
+  if (!user) {
+    redirect('/login')
+  }
 
   // 2. MISE À JOUR DE LA REQUÊTE : On tape dans 'profiles' au lieu de 'players'
   const { data: playerProfile, error: profileError } = await supabase
