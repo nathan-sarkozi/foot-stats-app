@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 
-// Restrictive typing to match database expectations
 type Position = 'BU' | 'AG' | 'AD' | 'MOC' | 'MC' | 'MDC' | 'DG' | 'DD' | 'DC' | 'GB' | ''
 
 export async function updateMatch(formData: FormData) {
@@ -14,7 +13,7 @@ export async function updateMatch(formData: FormData) {
   if (!user) throw new Error('Unauthorized')
 
   const matchId = formData.get('match_id') as string
-  const statId = formData.get('stat_id') as string
+  const statId = formData.get('stat_id') as string // Requis par ton code
 
   if (!matchId || !statId) throw new Error('Missing Identifiers')
 
@@ -32,7 +31,7 @@ export async function updateMatch(formData: FormData) {
     competition_type: formData.get('competition_type') as string,
     team_score: teamScore,
     opponent_score: opponentScore,
-    match_result: matchResult, // Auto-calculated
+    match_result: matchResult, 
   }
 
   // 2. Update Match
@@ -46,14 +45,15 @@ export async function updateMatch(formData: FormData) {
     throw new Error('Failed to update match')
   }
 
-  // 3. Extract Stats
-  const hasPlayed = formData.get('has_played') === 'on' 
-  const isMotm = formData.get('is_motm') === 'on'
+  // 3. Extract Stats (Prise en compte des valeurs 'true' du nouveau frontend ou 'on' par défaut)
+  const hasPlayed = formData.get('has_played') === 'true' || formData.get('has_played') === 'on'
+  const isMotm = formData.get('is_motm') === 'true' || formData.get('is_motm') === 'on'
   const positionPlayed = formData.get('position_played') as Position
 
   const rawYellow = parseInt(formData.get('yellow_cards') as string) || 0
   const rawRed = parseInt(formData.get('red_cards') as string) || 0
 
+  // Logique métier préservée
   const yellowCards = Math.min(rawYellow, 2)
   const redCards = yellowCards === 2 ? 1 : Math.min(rawRed, 1)
   
@@ -68,7 +68,7 @@ export async function updateMatch(formData: FormData) {
     red_cards: hasPlayed ? redCards : 0,
   }
 
-  // 4. Update Stats (with RLS confirmation)
+  // 4. Update Stats
   const { error: statsError } = await supabase
     .from('statistics')
     .update(statsPayload)
@@ -80,10 +80,11 @@ export async function updateMatch(formData: FormData) {
     throw new Error('Failed to update statistics')
   }
 
-  revalidatePath('/dashboard')
+  revalidatePath('/', 'layout')
   redirect('/dashboard')
 }
 
+// RESTAURATION DE LA FONCTION DELETE
 export async function deleteMatch(formData: FormData) {
   const supabase = await createClient()
   const matchId = formData.get('match_id') as string
@@ -100,6 +101,6 @@ export async function deleteMatch(formData: FormData) {
     throw new Error('Failed to delete match')
   }
 
-  revalidatePath('/dashboard')
+  revalidatePath('/', 'layout')
   redirect('/dashboard')
 }

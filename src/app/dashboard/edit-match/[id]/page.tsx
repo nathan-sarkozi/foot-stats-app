@@ -59,6 +59,7 @@ export default async function EditMatchPage(props: EditMatchProps) {
 
       <form action={updateMatch} className="space-y-6">
         <input type="hidden" name="match_id" value={matchId} />
+        <input type="hidden" name="stat_id" value={stat.id} />
 
         {/* BLOC 1 : LE MATCH */}
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">

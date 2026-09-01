@@ -46,9 +46,10 @@ export async function addMatch(formData: FormData) {
   }
 
   // 4. Extract statistics data
-  const hasPlayed = formData.get('has_played') === 'on' 
-  const isMotm = formData.get('is_motm') === 'on'
+  const hasPlayed = formData.get('has_played') === 'true' || formData.get('has_played') === 'on' 
+  const isMotm = formData.get('is_motm') === 'true' || formData.get('is_motm') === 'on'
   const positionPlayed = formData.get('position_played') as Position
+
 
   const rawYellow = parseInt(formData.get('yellow_cards') as string) || 0
   const rawRed = parseInt(formData.get('red_cards') as string) || 0
