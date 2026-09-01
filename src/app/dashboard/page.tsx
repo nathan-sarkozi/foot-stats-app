@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import StatsChart from './components/StatsChart'
 import CompetitionFilter from './components/CompetitionFilter'
+import StatCard from './components/StatCard' // NOUVEL IMPORT
 
 interface PlayerProfile {
   username: string
@@ -24,18 +25,10 @@ interface StatRow {
   assists: number
   yellow_cards: number
   red_cards: number
-  is_motm: boolean // NOUVEAU
-  position_played: string | null // NOUVEAU
+  is_motm: boolean
+  position_played: string | null
   matches: MatchInfo 
 }
-
-const StatCard = ({ title, value, subtitle }: { title: string, value: string | number, subtitle?: string }) => (
-  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center">
-    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{title}</h3>
-    <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-    {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
-  </div>
-)
 
 export default async function DashboardPage(props: {
   searchParams: Promise<{ comps?: string }>
@@ -54,7 +47,6 @@ export default async function DashboardPage(props: {
 
   if (profileError) return <div className="text-red-500">Erreur profil.</div>
 
-  // 1. REQUÊTE MISE À JOUR : On récupère is_motm et position_played
   const { data: statsData, error: statsError } = await supabase
     .from('statistics')
     .select(`
@@ -68,25 +60,24 @@ export default async function DashboardPage(props: {
   const profile = playerProfile as PlayerProfile
   const allStats = statsData as unknown as StatRow[]
 
-  // 1. FILTERING
+  // FILTERING
   const activeComps = searchParams.comps ? searchParams.comps.split(',') : ['LEAGUE', 'CUP', 'FRIENDLY']
   const filteredStats = allStats.filter(stat => activeComps.includes(stat.matches.competition_type))
 
-  // 2. SORTING (Descending for history)
+  // SORTING
   const sortedStats = [...filteredStats].sort((a, b) => {
     return new Date(b.matches.match_date).getTime() - new Date(a.matches.match_date).getTime()
   })
 
-  // 3. ADVANCED MATHS & AGGREGATIONS
+  // MATHS & AGGREGATIONS
   const matchesPlayed = filteredStats.filter(s => s.has_played).length
   const totalGoals = filteredStats.reduce((sum, s) => sum + s.goals, 0)
   const totalAssists = filteredStats.reduce((sum, s) => sum + s.assists, 0)
   const totalMinutes = filteredStats.reduce((sum, s) => sum + s.minutes_played, 0)
   const totalYellows = filteredStats.reduce((sum, s) => sum + s.yellow_cards, 0)
   const totalReds = filteredStats.reduce((sum, s) => sum + s.red_cards, 0)
-  const totalMotm = filteredStats.filter(s => s.is_motm).length // CALCUL MOTM
+  const totalMotm = filteredStats.filter(s => s.is_motm).length
   
-  // Algorithme : Déterminer le poste le plus joué
   const positionCounts = filteredStats.reduce((acc, stat) => {
     if (stat.position_played) {
       acc[stat.position_played] = (acc[stat.position_played] || 0) + 1
@@ -103,12 +94,11 @@ export default async function DashboardPage(props: {
     }
   }
 
-  // Statistiques P90 (Per 90 minutes) - Le standard pro
   const totalGA = totalGoals + totalAssists
   const p90Goals = totalMinutes > 0 ? ((totalGoals / totalMinutes) * 90).toFixed(2) : '0.00'
   const p90Assists = totalMinutes > 0 ? ((totalAssists / totalMinutes) * 90).toFixed(2) : '0.00'
 
-  // 4. CHART DATA (Ascending order)
+  // CHART DATA
   const chartData = [...sortedStats].reverse().reduce((acc, stat) => {
     const prevG = acc.length > 0 ? acc[acc.length - 1].goals : 0
     const prevA = acc.length > 0 ? acc[acc.length - 1].assists : 0
@@ -134,15 +124,15 @@ export default async function DashboardPage(props: {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-12">
       {/* Header */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between pt-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Bon retour, {profile.username} !</h2>
-          <p className="text-gray-500 mt-1">Voici ton récapitulatif détaillé.</p>
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Vue d&apos;ensemble</h2>
+          <p className="text-slate-500 mt-2 text-sm">Analyse des performances de {profile.username}.</p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <Link href="/dashboard/add-match" className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+          <Link href="/dashboard/add-match" className="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-105 active:scale-95">
             + Ajouter un match
           </Link>
         </div>
@@ -150,83 +140,90 @@ export default async function DashboardPage(props: {
 
       <CompetitionFilter />
 
-      {/* Grille de statistiques avancées */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Poste Favori" value={favPosition} subtitle={`${maxPosCount} matchs joués`} />
-        <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" />
-        <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} minutes cumulées`} />
-        <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} />
+      {/* Grille de statistiques avec Framer Motion (Apparition en cascade) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <StatCard title="Poste Favori" value={favPosition} subtitle={`${maxPosCount} matchs joués`} delay={0.1} highlight />
+        <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.2} highlight />
+        <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.3} />
+        <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.4} />
         
-        {/* Ligne des P90 et volume */}
-        <StatCard title="Total Buts" value={totalGoals} subtitle={`${p90Goals} Buts / 90 min`} />
-        <StatCard title="Total Passes" value={totalAssists} subtitle={`${p90Assists} Passes / 90 min`} />
-        <StatCard title="Cartons Jaunes" value={totalYellows} subtitle="🟨" />
-        <StatCard title="Cartons Rouges" value={totalReds} subtitle="🟥" />
+        <StatCard title="Total Buts" value={totalGoals} subtitle={`${p90Goals} Buts / 90 min`} delay={0.5} />
+        <StatCard title="Total Passes" value={totalAssists} subtitle={`${p90Assists} Passes / 90 min`} delay={0.6} />
+        <StatCard title="Cartons Jaunes" value={totalYellows} subtitle="🟨 Avertissements" delay={0.7} />
+        <StatCard title="Cartons Rouges" value={totalReds} subtitle="🟥 Expulsions" delay={0.8} />
       </div>
 
       {/* Analytics Section */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-6">Évolution des performances</h3>
+      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+        <h3 className="text-lg font-bold text-slate-800 mb-6 tracking-tight">Évolution de la saison</h3>
         <StatsChart data={chartData} />
       </div>
 
-      {/* Match History */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="text-lg font-medium text-gray-900">Historique ({filteredStats.length})</h3>
-        </div>
-        <ul className="divide-y divide-gray-200">
-          {sortedStats.map((stat) => {
-            const match = stat.matches
-            const dateStr = new Date(match.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-            const isWin = match.team_score > match.opponent_score
-            const isLoss = match.team_score < match.opponent_score
-            const resultColor = isWin ? 'bg-green-100 text-green-800' : isLoss ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+      {/* Match History - Design Modernisé */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">Historique des matchs ({filteredStats.length})</h3>
+        
+        {sortedStats.length === 0 ? (
+           <div className="bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center text-slate-500">
+             Aucun match enregistré avec ces filtres.
+           </div>
+        ) : (
+          <div className="space-y-3">
+            {sortedStats.map((stat) => {
+              const match = stat.matches
+              const dateStr = new Date(match.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+              const isWin = match.team_score > match.opponent_score
+              const isLoss = match.team_score < match.opponent_score
+              const resultColor = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
 
-            return (
-              <li key={match.id} className="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                <div className="flex items-center space-x-4">
-                  <div className="shrink-0 w-12 text-center">
-                    <span className="text-sm text-gray-500 block">{dateStr}</span>
-                    <span className={`mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${resultColor}`}>
-                      {match.team_score} - {match.opponent_score}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-gray-900">contre {match.opponent}</p>
-                      {stat.is_motm && <span title="Homme du Match">🏆</span>}
-                    </div>
-                    <p className="text-xs text-gray-500">{getCompetitionLabel(match.competition_type)}</p>
-                  </div>
-                </div>
-                
-                <div className="text-right flex items-center space-x-4">
-                  {stat.has_played ? (
-                    <div className="text-sm text-gray-700 flex items-center gap-3">
-                      {stat.position_played && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-bold border border-gray-200">
-                          {stat.position_played}
-                        </span>
-                      )}
-                      {stat.goals > 0 && <span className="font-bold text-green-600">⚽ {stat.goals}</span>}
-                      {stat.assists > 0 && <span className="font-bold text-blue-600">👟 {stat.assists}</span>}
-                      {stat.yellow_cards > 0 && <span title="Cartons jaunes">🟨 {stat.yellow_cards}</span>}
-                      {stat.red_cards > 0 && <span title="Carton rouge">🟥 {stat.red_cards}</span>}
-                      <span className="text-gray-500 border-l border-gray-300 pl-3">{stat.minutes_played}&apos;</span>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-400 italic mr-2">N&apos;a pas joué</span>
-                  )}
+              return (
+                <div key={match.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
                   
-                  <Link href={`/dashboard/edit-match/${match.id}`} className="text-gray-400 hover:text-indigo-600 transition-colors ml-4">
-                    ✏️ Modifier
-                  </Link>
+                  <div className="flex items-center space-x-5">
+                    <div className="shrink-0 text-center min-w-[3rem]">
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">{dateStr}</span>
+                      <span className={`mt-1.5 inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-bold border ${resultColor}`}>
+                        {match.team_score} - {match.opponent_score}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">vs {match.opponent}</p>
+                        {stat.is_motm && <span title="Homme du Match" className="text-lg">🏆</span>}
+                      </div>
+                      <p className="text-xs font-medium text-slate-500 mt-0.5">{getCompetitionLabel(match.competition_type)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-4 sm:pt-0 border-t sm:border-0 border-slate-100">
+                    {stat.has_played ? (
+                      <div className="flex items-center flex-wrap gap-2">
+                        {stat.position_played && (
+                          <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-bold border border-slate-200">
+                            {stat.position_played}
+                          </span>
+                        )}
+                        {stat.goals > 0 && <span className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-xs font-bold border border-emerald-100">⚽ {stat.goals}</span>}
+                        {stat.assists > 0 && <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-bold border border-indigo-100">👟 {stat.assists}</span>}
+                        {stat.yellow_cards > 0 && <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
+                        {stat.red_cards > 0 && <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs font-bold border border-red-100">🟥 {stat.red_cards}</span>}
+                        <span className="text-slate-400 font-medium text-sm ml-2">{stat.minutes_played}&apos;</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm font-medium text-slate-400 bg-slate-50 px-3 py-1 rounded-full">N&apos;a pas joué</span>
+                    )}
+                    
+                    <Link href={`/dashboard/edit-match/${match.id}`} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                    </Link>
+                  </div>
+                  
                 </div>
-              </li>
-            )
-          })}
-        </ul>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
