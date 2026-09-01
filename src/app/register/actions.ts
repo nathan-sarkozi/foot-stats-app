@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache' // <-- 1. IMPORT OBLIGATOIRE
 
 export async function registerUser(formData: FormData) {
   const supabase = await createClient()
@@ -17,7 +18,8 @@ export async function registerUser(formData: FormData) {
 
   if (authError || !authData.user) {
     console.error('Erreur Auth:', authError)
-    redirect('/dashboard/register?error=Erreur lors de la création du compte')
+    // Redirection vers le dossier racine /register
+    redirect('/register?error=Erreur lors de la création du compte')
   }
 
   // 2. Récupération des données du formulaire fantôme
@@ -40,8 +42,10 @@ export async function registerUser(formData: FormData) {
 
   if (profileError) {
     console.error('Erreur Profile Update:', profileError)
-    // On ne bloque pas la redirection si l'update échoue, le compte existe
   }
 
+  // 4. LE CORRECTIF EST ICI : Forcer Next.js à re-rendre la page avec la nouvelle session
+  revalidatePath('/', 'layout')
+  
   redirect('/dashboard')
 }
