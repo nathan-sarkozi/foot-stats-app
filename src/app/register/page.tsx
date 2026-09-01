@@ -53,7 +53,7 @@ export default function RegisterWizard() {
         </div>
 
         {/* Conteneur des étapes animé */}
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative min-h-[400px]">
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative min-h-100">
           <AnimatePresence mode="wait">
             
             {/* ÉTAPE 1 : Identité */}

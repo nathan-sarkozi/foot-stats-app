@@ -190,7 +190,7 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
                 return (
                   <div key={index} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center space-x-5">
-                      <div className="shrink-0 text-center min-w-[3rem]">
+                      <div className="shrink-0 text-center min-w-12">
                         <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">{dateStr}</span>
                         <span className={`mt-1.5 inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-bold border ${resultColor}`}>
                           {match.team_score} - {match.opponent_score}
