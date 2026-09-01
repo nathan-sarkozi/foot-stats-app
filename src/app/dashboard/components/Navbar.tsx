@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { cn } from '@/utils/cn'
+import { logout } from './logoutAction' // <-- Import de l'action de déconnexion
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -36,7 +37,7 @@ export default function Navbar() {
               </span>
             </Link>
             
-            {/* Nav Links with Animated Active State */}
+            {/* Nav Links */}
             <div className="hidden md:flex space-x-1">
               {links.map((link) => {
                 const isActive = pathname === link.href
@@ -64,7 +65,8 @@ export default function Navbar() {
           </div>
           
           {/* Secondary Actions */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            {/* Avatar / Paramètres */}
             <Link 
               href="/dashboard/settings"
               className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200 text-indigo-700 text-sm font-bold shadow-sm hover:scale-110 hover:bg-indigo-200 hover:shadow-md transition-all cursor-pointer"
@@ -72,6 +74,21 @@ export default function Navbar() {
             >
               NS
             </Link>
+
+            {/* Bouton de déconnexion */}
+            <form action={logout}>
+              <button 
+                type="submit"
+                className="text-slate-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 flex items-center justify-center cursor-pointer"
+                title="Se déconnecter"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" x2="9" y1="12" y2="12"/>
+                </svg>
+              </button>
+            </form>
           </div>
 
         </div>

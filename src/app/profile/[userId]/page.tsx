@@ -16,10 +16,10 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
   const resolvedParams = await props.params
   const targetUserId = resolvedParams.userId
 
-  // 1. REQUÊTE MISE À JOUR : On récupère toutes les infos du joueur
+  // 1. REQUÊTE MISE À JOUR : Ajout des attributs physiques
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('display_name, club, category, preferred_position')
+    .select('display_name, club, category, preferred_position, foot_preference, jersey_number, height, weight')
     .eq('id', targetUserId)
     .single()
 
@@ -41,7 +41,6 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
     return notFound()
   }
 
-  // SORTING
   const sortedStats = [...stats].sort((a, b) => {
     const matchA = Array.isArray(a.matches) ? a.matches[0] : a.matches
     const matchB = Array.isArray(b.matches) ? b.matches[0] : b.matches
@@ -49,7 +48,6 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
     return new Date(matchB.match_date).getTime() - new Date(matchA.match_date).getTime()
   })
 
-  // MATHS & AGGREGATIONS
   const matchesPlayed = stats.filter(s => s.has_played).length
   const totalGoals = stats.reduce((acc, curr) => acc + (curr.goals || 0), 0)
   const totalAssists = stats.reduce((acc, curr) => acc + (curr.assists || 0), 0)
@@ -100,8 +98,8 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
           </Link>
         </div>
 
-        {/* EN-TÊTE MODERNISÉ */}
-        <header className="mb-8 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center gap-6">
+        {/* EN-TÊTE MODERNISÉ AVEC ATTRIBUTS PHYSIQUES */}
+        <header className="mb-8 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-start gap-6">
           <div className="h-24 w-24 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-extrabold text-4xl border border-indigo-100">
             {profile.display_name.substring(0, 2).toUpperCase()}
           </div>
@@ -126,11 +124,37 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
                 Agent libre
               </p>
             )}
+
+            {/* Badges d'attributs physiques */}
+            <div className="flex flex-wrap items-center gap-2 mt-4">
+              {profile.jersey_number && (
+                <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">
+                  N° {profile.jersey_number}
+                </span>
+              )}
+              {profile.foot_preference && (
+                <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">
+                  🦶 {profile.foot_preference}
+                </span>
+              )}
+              {profile.height && (
+                <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">
+                  📏 {profile.height} cm
+                </span>
+              )}
+              {profile.weight && (
+                <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">
+                  ⚖️ {profile.weight} kg
+                </span>
+              )}
+            </div>
             
-            <p className="text-slate-400 text-xs mt-3 font-mono bg-slate-50 inline-block px-2 py-1 rounded">ID: {targetUserId.split('-')[0]}</p>
+            <p className="text-slate-400 text-xs mt-4 font-mono bg-slate-50 inline-block px-2 py-1 rounded">ID: {targetUserId.split('-')[0]}</p>
           </div>
         </header>
 
+        {/* ... (Le reste du code, grilles et historique, reste strictement identique) ... */}
+        
         {/* Grille de statistiques */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
           <StatCard title="Poste Favori" value={favPosition} subtitle={`${maxPosCount} matchs joués`} delay={0.1} highlight />
@@ -144,7 +168,7 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
           <StatCard title="Cartons Rouges" value={totalReds} subtitle="🟥 Expulsions" delay={0.8} />
         </div>
 
-        {/* Historique (identique) */}
+        {/* Historique */}
         <section className="space-y-4">
           <h2 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">Historique des matchs</h2>
           
