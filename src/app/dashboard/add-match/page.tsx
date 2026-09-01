@@ -1,5 +1,6 @@
 import { addMatch } from './actions'
 import Link from 'next/link'
+import SubmitButton from '@/app/dashboard/components/SubmitButton'
 
 export default function AddMatchPage() {
   // Shared CSS classes for inputs to ensure consistent contrast and styling
@@ -110,12 +111,10 @@ export default function AddMatchPage() {
         </div>
 
         <div className="pt-4 flex justify-end">
-          <button
-            type="submit"
-            className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            Enregistrer le match
-          </button>
+          <SubmitButton 
+            defaultLabel="Enregistrer le match" 
+            loadingLabel="Enregistrement..." 
+          />
         </div>
       </form>
     </div>

@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import DeleteButton from './DeleteButton'
+import SubmitButton from '@/app/dashboard/components/SubmitButton'
 
 interface MatchData {
   id: string
@@ -162,9 +163,10 @@ export default async function EditMatchPage(props: {
         </div>
 
         <div className="pt-4 flex justify-end">
-          <button type="submit" className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
-            Mettre à jour le match
-          </button>
+          <SubmitButton 
+            defaultLabel="Mettre à jour le match" 
+            loadingLabel="Mise à jour..." 
+          />
         </div>
       </form>
 
