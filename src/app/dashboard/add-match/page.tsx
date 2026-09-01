@@ -70,7 +70,7 @@ export default function AddMatchPage() {
           <div className="space-y-6">
             <div className="flex items-center gap-3 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
               <input type="checkbox" id="has_played" name="has_played" value="true" defaultChecked className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-              <label htmlFor="has_played" className="font-bold text-indigo-900">J&aposai participé à ce match</label>
+              <label htmlFor="has_played" className="font-bold text-indigo-900">J&apos;ai participé à ce match</label>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
