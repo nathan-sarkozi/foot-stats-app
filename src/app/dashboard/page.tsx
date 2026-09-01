@@ -2,11 +2,11 @@ import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import StatsChart from './components/StatsChart'
 import CompetitionFilter from './components/CompetitionFilter'
-import StatCard from './components/StatCard' // NOUVEL IMPORT
+import StatCard from './components/StatCard'
 
+// 1. MISE À JOUR DE L'INTERFACE : On passe sur display_name
 interface PlayerProfile {
-  username: string
-  created_at: string
+  display_name: string
 }
 
 interface MatchInfo {
@@ -39,13 +39,17 @@ export default async function DashboardPage(props: {
 
   if (!user) return null
 
+  // 2. MISE À JOUR DE LA REQUÊTE : On tape dans 'profiles' au lieu de 'players'
   const { data: playerProfile, error: profileError } = await supabase
-    .from('players')
-    .select('username, created_at')
+    .from('profiles')
+    .select('display_name')
     .eq('id', user.id)
     .single()
 
-  if (profileError) return <div className="text-red-500">Erreur profil.</div>
+  if (profileError) {
+    console.error("Erreur Fetch Profil:", profileError.message)
+    return <div className="text-red-500 p-4 font-bold bg-red-50 rounded-lg">Erreur profil : {profileError.message}</div>
+  }
 
   const { data: statsData, error: statsError } = await supabase
     .from('statistics')
@@ -129,7 +133,8 @@ export default async function DashboardPage(props: {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between pt-6">
         <div>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Vue d&apos;ensemble</h2>
-          <p className="text-slate-500 mt-2 text-sm">Analyse des performances de {profile.username}.</p>
+          {/* 3. MISE À JOUR DE L'AFFICHAGE : On utilise display_name */}
+          <p className="text-slate-500 mt-2 text-sm">Analyse des performances de {profile.display_name}.</p>
         </div>
         <div className="mt-4 sm:mt-0">
           <Link href="/dashboard/add-match" className="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-105 active:scale-95">
@@ -140,7 +145,7 @@ export default async function DashboardPage(props: {
 
       <CompetitionFilter />
 
-      {/* Grille de statistiques avec Framer Motion (Apparition en cascade) */}
+      {/* Grille de statistiques avec Framer Motion */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <StatCard title="Poste Favori" value={favPosition} subtitle={`${maxPosCount} matchs joués`} delay={0.1} highlight />
         <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.2} highlight />
@@ -159,7 +164,7 @@ export default async function DashboardPage(props: {
         <StatsChart data={chartData} />
       </div>
 
-      {/* Match History - Design Modernisé */}
+      {/* Match History */}
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">Historique des matchs ({filteredStats.length})</h3>
         
