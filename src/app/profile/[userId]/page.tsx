@@ -157,7 +157,7 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
         
         {/* Grille de statistiques */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
-          <StatCard title="Poste Favori" value={favPosition} subtitle={`${maxPosCount} matchs joués`} delay={0.1} highlight />
+          <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} matchs joués`} delay={0.1} highlight />
           <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.2} highlight />
           <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.3} />
           <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.4} />
