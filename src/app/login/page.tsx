@@ -62,7 +62,7 @@ export default async function LoginPage(props: {
 
         {/* LE LIEN MANQUANT EST ICI */}
         <p className="text-center mt-6 text-sm text-slate-500 font-medium">
-          Nouveau joueur ? <Link href="/dashboard/register" className="text-indigo-600 hover:underline font-bold">Créer un profil</Link>
+          Nouveau joueur ? <Link href="/register" className="text-indigo-600 hover:underline font-bold">Créer un profil</Link>
         </p>
       </div>
     </div>
