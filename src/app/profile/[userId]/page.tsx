@@ -4,7 +4,6 @@ import Link from 'next/link'
 import Navbar from '@/app/dashboard/components/Navbar'
 import StatCard from '@/app/dashboard/components/StatCard'
 
-// Strict typing for Next.js 15+ dynamic route parameters
 interface ProfilePageProps {
   params: Promise<{
     userId: string
@@ -14,14 +13,13 @@ interface ProfilePageProps {
 export default async function PublicProfilePage(props: ProfilePageProps) {
   const supabase = await createClient()
   
-  // Resolve params promise before accessing properties
   const resolvedParams = await props.params
   const targetUserId = resolvedParams.userId
 
-  // 1. Fetch player name from the directory
+  // 1. REQUÊTE MISE À JOUR : On récupère toutes les infos du joueur
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('display_name')
+    .select('display_name, club, category, preferred_position')
     .eq('id', targetUserId)
     .single()
 
@@ -30,7 +28,6 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
     return notFound()
   }
 
-  // 2. Fetch statistics and joined matches
   const { data: stats, error: statsError } = await supabase
     .from('statistics')
     .select(`
@@ -44,16 +41,15 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
     return notFound()
   }
 
-  // 3. SORTING (Descending for history)
+  // SORTING
   const sortedStats = [...stats].sort((a, b) => {
-    // Handling the array/object typing quirk from Supabase joins
     const matchA = Array.isArray(a.matches) ? a.matches[0] : a.matches
     const matchB = Array.isArray(b.matches) ? b.matches[0] : b.matches
     if (!matchA || !matchB) return 0
     return new Date(matchB.match_date).getTime() - new Date(matchA.match_date).getTime()
   })
 
-  // 4. MATHS & AGGREGATIONS
+  // MATHS & AGGREGATIONS
   const matchesPlayed = stats.filter(s => s.has_played).length
   const totalGoals = stats.reduce((acc, curr) => acc + (curr.goals || 0), 0)
   const totalAssists = stats.reduce((acc, curr) => acc + (curr.assists || 0), 0)
@@ -95,7 +91,6 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
-        {/* Navigation back button */}
         <div className="mb-6">
           <Link 
             href="/dashboard/community" 
@@ -105,18 +100,38 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
           </Link>
         </div>
 
-        {/* Header du profil */}
-        <header className="mb-8 flex items-center gap-6">
-          <div className="h-20 w-20 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-extrabold text-3xl border-4 border-white shadow-sm">
+        {/* EN-TÊTE MODERNISÉ */}
+        <header className="mb-8 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center gap-6">
+          <div className="h-24 w-24 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-extrabold text-4xl border border-indigo-100">
             {profile.display_name.substring(0, 2).toUpperCase()}
           </div>
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{profile.display_name}</h1>
-            <p className="text-slate-500 text-sm mt-1 font-mono">ID: {targetUserId.split('-')[0]}...</p>
+          
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{profile.display_name}</h1>
+              {profile.preferred_position && (
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-black uppercase tracking-wider rounded-lg border border-indigo-100">
+                  {profile.preferred_position}
+                </span>
+              )}
+            </div>
+            
+            {(profile.club || profile.category) ? (
+              <p className="text-slate-600 font-medium mt-2 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+                {profile.club || 'Club non renseigné'} {profile.category && <span className="text-slate-400">• {profile.category}</span>}
+              </p>
+            ) : (
+              <p className="text-slate-400 font-medium mt-2 italic flex items-center gap-2">
+                Agent libre
+              </p>
+            )}
+            
+            <p className="text-slate-400 text-xs mt-3 font-mono bg-slate-50 inline-block px-2 py-1 rounded">ID: {targetUserId.split('-')[0]}</p>
           </div>
         </header>
 
-        {/* Grille de statistiques avec design system unifié */}
+        {/* Grille de statistiques */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
           <StatCard title="Poste Favori" value={favPosition} subtitle={`${maxPosCount} matchs joués`} delay={0.1} highlight />
           <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.2} highlight />
@@ -129,18 +144,17 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
           <StatCard title="Cartons Rouges" value={totalReds} subtitle="🟥 Expulsions" delay={0.8} />
         </div>
 
-        {/* Match History (Read-only) */}
+        {/* Historique (identique) */}
         <section className="space-y-4">
           <h2 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">Historique des matchs</h2>
           
           {matchesPlayed === 0 ? (
-            <div className="bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center text-slate-500">
+            <div className="bg-white p-8 rounded-3xl border border-dashed border-slate-300 text-center text-slate-500">
               Aucun match enregistré pour le moment.
             </div>
           ) : (
             <div className="space-y-3">
               {sortedStats.map((stat, index) => {
-                // Typage strict Supabase
                 const match = Array.isArray(stat.matches) ? stat.matches[0] : stat.matches
                 if (!match) return null
 
@@ -151,7 +165,6 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
 
                 return (
                   <div key={index} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    
                     <div className="flex items-center space-x-5">
                       <div className="shrink-0 text-center min-w-[3rem]">
                         <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">{dateStr}</span>
@@ -187,7 +200,6 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
                         <span className="text-sm font-medium text-slate-400 bg-slate-50 px-3 py-1 rounded-full">N&apos;a pas joué</span>
                       )}
                     </div>
-                    
                   </div>
                 )
               })}
