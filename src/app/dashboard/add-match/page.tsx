@@ -35,7 +35,6 @@ export default function AddMatchPage() {
 
             <div>
               <label htmlFor="competition_type" className="block text-sm font-medium text-gray-700">Compétition *</label>
-              {/* Values remain in English to match the SQL CHECK constraint ('LEAGUE', 'CUP', 'FRIENDLY') */}
               <select id="competition_type" name="competition_type" required className={inputBaseClasses}>
                 <option value="LEAGUE">Championnat</option>
                 <option value="CUP">Coupe</option>
@@ -60,14 +59,37 @@ export default function AddMatchPage() {
         <div>
           <h3 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Tes statistiques</h3>
           
-          <div className="mb-6 flex items-center">
-            <input id="has_played" name="has_played" type="checkbox" defaultChecked className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-            <label htmlFor="has_played" className="ml-2 block text-sm text-gray-900">
-              J&apos;ai joué ce match
-            </label>
+          <div className="mb-6 flex flex-wrap gap-6">
+            <div className="flex items-center">
+              <input id="has_played" name="has_played" type="checkbox" defaultChecked className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+              <label htmlFor="has_played" className="ml-2 block text-sm text-gray-900">
+                J&apos;ai joué ce match
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input id="is_motm" name="is_motm" type="checkbox" className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+              <label htmlFor="is_motm" className="ml-2 block text-sm text-gray-900 font-medium">
+                Homme du match 🏆
+              </label>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-y-6 gap-x-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-y-6 gap-x-4 sm:grid-cols-3 md:grid-cols-6">
+            <div className="col-span-2 sm:col-span-3 md:col-span-2">
+              <label htmlFor="position_played" className="block text-sm font-medium text-gray-700">Poste</label>
+              <select id="position_played" name="position_played" className={inputBaseClasses}>
+                <option value="">Sélectionner...</option>
+                <option value="BU">BU (Buteur)</option>
+                <option value="AG">AG (Ailier Gauche)</option>
+                <option value="AD">AD (Ailier Droit)</option>
+                <option value="MOC">MOC (Milieu Offensif)</option>
+                <option value="MC">MC (Milieu Central)</option>
+                <option value="MDC">MDC (Milieu Défensif)</option>
+                <option value="DG">DG (Défenseur Gauche)</option>
+                <option value="DD">DD (Défenseur Droit)</option>
+                <option value="DC">DC (Défenseur Central)</option>
+              </select>
+            </div>
             <div>
               <label htmlFor="minutes_played" className="block text-sm font-medium text-gray-700">Minutes</label>
               <input type="number" min="0" max="120" name="minutes_played" id="minutes_played" defaultValue="90" className={inputBaseClasses} />
@@ -81,12 +103,8 @@ export default function AddMatchPage() {
               <input type="number" min="0" name="assists" id="assists" defaultValue="0" className={inputBaseClasses} />
             </div>
             <div>
-              <label htmlFor="yellow_cards" className="block text-sm font-medium text-gray-700">Cartons jaunes</label>
+              <label htmlFor="yellow_cards" className="block text-sm font-medium text-gray-700">Jaunes</label>
               <input type="number" min="0" max="2" name="yellow_cards" id="yellow_cards" defaultValue="0" className={inputBaseClasses} />
-            </div>
-            <div>
-              <label htmlFor="red_cards" className="block text-sm font-medium text-gray-700">Cartons rouges</label>
-              <input type="number" min="0" max="1" name="red_cards" id="red_cards" defaultValue="0" className={inputBaseClasses} />
             </div>
           </div>
         </div>
