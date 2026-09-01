@@ -65,9 +65,13 @@ export default function Navbar() {
           
           {/* Secondary Actions */}
           <div className="flex items-center">
-            <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-600 text-sm font-bold shadow-sm">
+            <Link 
+              href="/dashboard/settings"
+              className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200 text-indigo-700 text-sm font-bold shadow-sm hover:scale-110 hover:bg-indigo-200 hover:shadow-md transition-all cursor-pointer"
+              title="Paramètres"
+            >
               NS
-            </div>
+            </Link>
           </div>
 
         </div>
