@@ -14,7 +14,7 @@ const MatchSchema = z.object({
   opponent_score: z.coerce.number().min(0).max(99),
   has_played: z.boolean(),
   is_motm: z.boolean(),
-  position_played: z.enum(['BU', 'AG', 'AD', 'MOC', 'MC', 'MDC', 'DG', 'DD', 'DC', 'GB', '']).nullable().optional(),
+  position_played: z.enum(['BU', 'AG', 'AD', 'MOC', 'MC', 'MDC', 'DG', 'DD', 'DC', 'GB']).nullable().optional(),
   minutes_played: z.coerce.number().min(0).max(120), // Max 120 mins (Extra time included)
   goals: z.coerce.number().min(0).max(50),
   assists: z.coerce.number().min(0).max(50),
@@ -27,6 +27,12 @@ export async function addMatch(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Unauthorized')
+
+  // Helper to convert empty strings (from the form) to null for PostgreSQL
+  const parseNullableString = (val: FormDataEntryValue | null) => {
+    if (typeof val === 'string' && val.trim() !== '') return val.trim()
+    return null
+  }
 
   // 2. DATA EXTRACTION & FORMATTING
   const hasPlayedRaw = formData.get('has_played')
@@ -41,7 +47,7 @@ export async function addMatch(formData: FormData) {
     opponent_score: formData.get('opponent_score'),
     has_played: hasPlayed,
     is_motm: hasPlayed ? (isMotmRaw === 'true' || isMotmRaw === 'on') : false,
-    position_played: hasPlayed ? formData.get('position_played') : null,
+    position_played: hasPlayed ? parseNullableString(formData.get('position_played')) : null,
     minutes_played: hasPlayed ? formData.get('minutes_played') : 0,
     goals: hasPlayed ? formData.get('goals') : 0,
     assists: hasPlayed ? formData.get('assists') : 0,
