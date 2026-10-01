@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { z } from 'zod'
 
-// 1. SCHEMA DEFINITION: The Single Source of Truth for validation
 const MatchSchema = z.object({
   match_date: z.string().min(1, 'Date required'),
   opponent: z.string().min(2, 'Opponent name too short').max(100, 'Opponent name too long'),
@@ -15,7 +14,7 @@ const MatchSchema = z.object({
   has_played: z.boolean(),
   is_motm: z.boolean(),
   position_played: z.enum(['BU', 'AG', 'AD', 'MOC', 'MC', 'MDC', 'DG', 'DD', 'DC', 'GB']).nullable().optional(),
-  minutes_played: z.coerce.number().min(0).max(120), // Max 120 mins (Extra time included)
+  minutes_played: z.coerce.number().min(0).max(120),
   goals: z.coerce.number().min(0).max(50),
   assists: z.coerce.number().min(0).max(50),
   yellow_cards: z.coerce.number().min(0).max(2),
@@ -28,13 +27,11 @@ export async function addMatch(formData: FormData) {
 
   if (!user) throw new Error('Unauthorized')
 
-  // Helper to convert empty strings (from the form) to null for PostgreSQL
   const parseNullableString = (val: FormDataEntryValue | null) => {
     if (typeof val === 'string' && val.trim() !== '') return val.trim()
     return null
   }
 
-  // 2. DATA EXTRACTION & FORMATTING
   const hasPlayedRaw = formData.get('has_played')
   const isMotmRaw = formData.get('is_motm')
   const hasPlayed = hasPlayedRaw === 'true' || hasPlayedRaw === 'on'
@@ -55,10 +52,8 @@ export async function addMatch(formData: FormData) {
     red_cards: hasPlayed ? formData.get('red_cards') : 0,
   }
 
-  // 3. SAFE PARSING: Zod intercepts and validates the raw data
   const validatedFields = MatchSchema.safeParse(rawData)
 
-  // If validation fails, block execution and log the specific errors
   if (!validatedFields.success) {
     console.error('Validation Error:', validatedFields.error.flatten().fieldErrors)
     throw new Error('Invalid form data provided')
@@ -66,12 +61,11 @@ export async function addMatch(formData: FormData) {
 
   const cleanData = validatedFields.data
 
-  // 4. BUSINESS LOGIC
   let matchResult = 'N'
   if (cleanData.team_score > cleanData.opponent_score) matchResult = 'V'
   if (cleanData.team_score < cleanData.opponent_score) matchResult = 'D'
 
-  // 5. DATABASE INSERTION (Matches)
+  // STEP 1: Insert Match
   const { data: matchData, error: matchError } = await supabase
     .from('matches')
     .insert({
@@ -87,11 +81,10 @@ export async function addMatch(formData: FormData) {
     .single()
 
   if (matchError || !matchData) {
-    console.error('Match Insert Error:', matchError)
-    throw new Error('Failed to create match')
+    throw new Error('Failed to create match details')
   }
 
-  // 6. DATABASE INSERTION (Statistics)
+  // STEP 2: Insert Statistics
   const statsPayload = {
     player_id: user.id,
     match_id: matchData.id,
@@ -109,9 +102,11 @@ export async function addMatch(formData: FormData) {
     .from('statistics')
     .insert(statsPayload)
 
+  // COMPENSATING ACTION: Rollback if stats fail to prevent orphaned rows
   if (statsError) {
-    console.error('Stats Insert Error:', statsError)
-    throw new Error('Failed to save statistics')
+    console.error('Stats Insert Error. Rolling back match creation...', statsError)
+    await supabase.from('matches').delete().eq('id', matchData.id)
+    throw new Error('Transaction failed. Database changes rolled back.')
   }
 
   revalidatePath('/', 'layout')

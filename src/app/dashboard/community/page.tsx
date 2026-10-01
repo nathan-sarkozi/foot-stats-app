@@ -1,13 +1,24 @@
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 
+interface ProfileData {
+  id: string
+  display_name: string
+  club: string | null
+  category: string | null
+  preferred_position: string | null
+}
+
 export default async function CommunityPage() {
   const supabase = await createClient()
 
-  // 1. REQUÊTE MISE À JOUR : On récupère les nouvelles colonnes
-  const { data: profiles, error } = await supabase
+  // SECURITY FIX: Limit queries to prevent excessive DB load and memory leaks
+  const { data: profilesData, error } = await supabase
     .from('profiles')
     .select('id, display_name, club, category, preferred_position')
+    .order('display_name', { ascending: true })
+    .limit(50)
+    .returns<ProfileData[]>()
 
   if (error) {
     console.error('Directory Fetch Error:', error.message)
@@ -19,12 +30,12 @@ export default async function CommunityPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between pt-2">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Communauté</h1>
-          <p className="text-slate-500 mt-2 text-sm">Consultez les statistiques des autres joueurs.</p>
+          <p className="text-slate-500 mt-2 text-sm">Consultez les statistiques des autres joueurs (50 premiers max).</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {profiles?.map((profile) => (
+        {profilesData?.map((profile) => (
           <Link 
             key={profile.id} 
             href={`/profile/${profile.id}`}
@@ -41,7 +52,6 @@ export default async function CommunityPage() {
                   <p className="font-bold text-slate-900 text-lg group-hover:text-indigo-600 transition-colors">
                     {profile.display_name}
                   </p>
-                  {/* Affichage du Club et de la Catégorie */}
                   {(profile.club || profile.category) ? (
                     <p className="text-xs font-medium text-slate-500 mt-0.5">
                       {profile.club} {profile.category && `• ${profile.category}`}
@@ -52,7 +62,6 @@ export default async function CommunityPage() {
                 </div>
               </div>
 
-              {/* Badge de position */}
               {profile.preferred_position && (
                 <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-[10px] font-black uppercase tracking-wider rounded-md border border-slate-200">
                   {profile.preferred_position}

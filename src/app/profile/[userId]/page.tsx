@@ -4,6 +4,25 @@ import Link from 'next/link'
 import Navbar from '@/app/dashboard/components/Navbar'
 import StatCard from '@/app/dashboard/components/StatCard'
 
+// Strict internal typing mapped to the query response
+interface MatchStatRecord {
+  has_played: boolean
+  minutes_played: number
+  goals: number
+  assists: number
+  yellow_cards: number
+  red_cards: number
+  is_motm: boolean
+  position_played: string | null
+  matches: {
+    match_date: string
+    opponent: string
+    team_score: number
+    opponent_score: number
+    competition_type: 'LEAGUE' | 'CUP' | 'FRIENDLY'
+  }
+}
+
 interface ProfilePageProps {
   params: Promise<{
     userId: string
@@ -16,7 +35,6 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
   const resolvedParams = await props.params
   const targetUserId = resolvedParams.userId
 
-  // 1. REQUÊTE MISE À JOUR : Ajout des attributs physiques
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('display_name, club, category, preferred_position, foot_preference, jersey_number, height, weight')
@@ -28,40 +46,51 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
     return notFound()
   }
 
-  const { data: stats, error: statsError } = await supabase
+  // Use !inner to ensure match relation is returned as a strict single object
+  const { data: statsData, error: statsError } = await supabase
     .from('statistics')
     .select(`
       goals, assists, yellow_cards, red_cards, minutes_played, has_played, is_motm, position_played,
-      matches ( opponent, match_date, competition_type, team_score, opponent_score )
+      matches!inner ( opponent, match_date, competition_type, team_score, opponent_score )
     `)
     .eq('player_id', targetUserId)
+    .returns<MatchStatRecord[]>()
 
-  if (statsError || !stats) {
+  if (statsError || !statsData) {
     console.error('Stats Fetch Error:', statsError?.message)
     return notFound()
   }
 
-  const sortedStats = [...stats].sort((a, b) => {
-    const matchA = Array.isArray(a.matches) ? a.matches[0] : a.matches
-    const matchB = Array.isArray(b.matches) ? b.matches[0] : b.matches
-    if (!matchA || !matchB) return 0
-    return new Date(matchB.match_date).getTime() - new Date(matchA.match_date).getTime()
-  })
-
-  const matchesPlayed = stats.filter(s => s.has_played).length
-  const totalGoals = stats.reduce((acc, curr) => acc + (curr.goals || 0), 0)
-  const totalAssists = stats.reduce((acc, curr) => acc + (curr.assists || 0), 0)
-  const totalMinutes = stats.reduce((acc, curr) => acc + (curr.minutes_played || 0), 0)
-  const totalYellows = stats.reduce((acc, curr) => acc + (curr.yellow_cards || 0), 0)
-  const totalReds = stats.reduce((acc, curr) => acc + (curr.red_cards || 0), 0)
-  const totalMotm = stats.filter(s => s.is_motm).length
+  // ALGORITHMIC OPTIMIZATION: Single-pass O(N) iteration
+  let matchesPlayed = 0
+  let totalGoals = 0
+  let totalAssists = 0
+  let totalMinutes = 0
+  let totalYellows = 0
+  let totalReds = 0
+  let totalMotm = 0
+  const positionCounts: Record<string, number> = {}
   
-  const positionCounts = stats.reduce((acc, stat) => {
-    if (stat.position_played) {
-      acc[stat.position_played] = (acc[stat.position_played] || 0) + 1
+  // Sort descending by date (newest first)
+  const sortedStats = [...statsData].sort((a, b) => 
+    new Date(b.matches.match_date).getTime() - new Date(a.matches.match_date).getTime()
+  )
+
+  for (const stat of sortedStats) {
+    if (stat.has_played) {
+      matchesPlayed++
+      totalGoals += stat.goals
+      totalAssists += stat.assists
+      totalMinutes += stat.minutes_played
+      totalYellows += stat.yellow_cards
+      totalReds += stat.red_cards
+      if (stat.is_motm) totalMotm++
+      
+      if (stat.position_played) {
+        positionCounts[stat.position_played] = (positionCounts[stat.position_played] || 0) + 1
+      }
     }
-    return acc
-  }, {} as Record<string, number>)
+  }
 
   let favPosition = 'N/A'
   let maxPosCount = 0
@@ -77,10 +106,8 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
   const p90Assists = totalMinutes > 0 ? ((totalAssists / totalMinutes) * 90).toFixed(2) : '0.00'
 
   const getCompetitionLabel = (type: string) => {
-    if (type === 'LEAGUE') return 'Championnat'
-    if (type === 'CUP') return 'Coupe'
-    if (type === 'FRIENDLY') return 'Amical'
-    return type
+    const labels: Record<string, string> = { LEAGUE: 'Championnat', CUP: 'Coupe', FRIENDLY: 'Amical' }
+    return labels[type] || type
   }
 
   return (
@@ -90,15 +117,11 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
         <div className="mb-6">
-          <Link 
-            href="/dashboard/community" 
-            className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors"
-          >
+          <Link href="/dashboard/community" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
             &larr; Retour à la communauté
           </Link>
         </div>
 
-        {/* EN-TÊTE MODERNISÉ AVEC ATTRIBUTS PHYSIQUES */}
         <header className="mb-8 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-start gap-6">
           <div className="h-24 w-24 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-extrabold text-4xl border border-indigo-100">
             {profile.display_name.substring(0, 2).toUpperCase()}
@@ -125,7 +148,6 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
               </p>
             )}
 
-            {/* Badges d'attributs physiques */}
             <div className="flex flex-wrap items-center gap-2 mt-4">
               {profile.jersey_number && (
                 <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">
@@ -153,22 +175,17 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
           </div>
         </header>
 
-        {/* ... (Le reste du code, grilles et historique, reste strictement identique) ... */}
-        
-        {/* Grille de statistiques */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
           <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} matchs joués`} delay={0.1} highlight />
           <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.2} highlight />
           <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.3} />
           <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.4} />
-          
           <StatCard title="Total Buts" value={totalGoals} subtitle={`${p90Goals} Buts / 90 min`} delay={0.5} />
           <StatCard title="Total Passes" value={totalAssists} subtitle={`${p90Assists} Passes / 90 min`} delay={0.6} />
           <StatCard title="Cartons Jaunes" value={totalYellows} subtitle="🟨 Avertissements" delay={0.7} />
           <StatCard title="Cartons Rouges" value={totalReds} subtitle="🟥 Expulsions" delay={0.8} />
         </div>
 
-        {/* Historique */}
         <section className="space-y-4">
           <h2 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">Historique des matchs</h2>
           
@@ -179,8 +196,7 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
           ) : (
             <div className="space-y-3">
               {sortedStats.map((stat, index) => {
-                const match = Array.isArray(stat.matches) ? stat.matches[0] : stat.matches
-                if (!match) return null
+                const match = stat.matches
 
                 const dateStr = new Date(match.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
                 const isWin = match.team_score > match.opponent_score

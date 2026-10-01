@@ -3,8 +3,24 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { z } from 'zod'
 
-type Position = 'BU' | 'AG' | 'AD' | 'MOC' | 'MC' | 'MDC' | 'DG' | 'DD' | 'DC' | 'GB' | ''
+// STRICT VALIDATION: Unify validation logic with addMatch
+const UpdateMatchSchema = z.object({
+  match_date: z.string().min(1, 'Date required'),
+  opponent: z.string().min(2, 'Opponent name too short').max(100, 'Opponent name too long'),
+  competition_type: z.enum(['LEAGUE', 'CUP', 'FRIENDLY']),
+  team_score: z.coerce.number().min(0).max(99),
+  opponent_score: z.coerce.number().min(0).max(99),
+  has_played: z.boolean(),
+  is_motm: z.boolean(),
+  position_played: z.enum(['BU', 'AG', 'AD', 'MOC', 'MC', 'MDC', 'DG', 'DD', 'DC', 'GB']).nullable().optional(),
+  minutes_played: z.coerce.number().min(0).max(120),
+  goals: z.coerce.number().min(0).max(50),
+  assists: z.coerce.number().min(0).max(50),
+  yellow_cards: z.coerce.number().min(0).max(2),
+  red_cards: z.coerce.number().min(0).max(1),
+})
 
 export async function updateMatch(formData: FormData) {
   const supabase = await createClient()
@@ -13,62 +29,80 @@ export async function updateMatch(formData: FormData) {
   if (!user) throw new Error('Unauthorized')
 
   const matchId = formData.get('match_id') as string
-  const statId = formData.get('stat_id') as string // Requis par ton code
+  const statId = formData.get('stat_id') as string
 
   if (!matchId || !statId) throw new Error('Missing Identifiers')
 
-  // 1. Algorithmic Match Result Calculation
-  const teamScore = parseInt(formData.get('team_score') as string) || 0
-  const opponentScore = parseInt(formData.get('opponent_score') as string) || 0
-  
+  const parseNullableString = (val: FormDataEntryValue | null) => {
+    if (typeof val === 'string' && val.trim() !== '') return val.trim()
+    return null
+  }
+
+  const hasPlayedRaw = formData.get('has_played')
+  const isMotmRaw = formData.get('is_motm')
+  const hasPlayed = hasPlayedRaw === 'true' || hasPlayedRaw === 'on'
+
+  const rawData = {
+    match_date: formData.get('match_date'),
+    opponent: formData.get('opponent'),
+    competition_type: formData.get('competition_type'),
+    team_score: formData.get('team_score'),
+    opponent_score: formData.get('opponent_score'),
+    has_played: hasPlayed,
+    is_motm: hasPlayed ? (isMotmRaw === 'true' || isMotmRaw === 'on') : false,
+    position_played: hasPlayed ? parseNullableString(formData.get('position_played')) : null,
+    minutes_played: hasPlayed ? formData.get('minutes_played') : 0,
+    goals: hasPlayed ? formData.get('goals') : 0,
+    assists: hasPlayed ? formData.get('assists') : 0,
+    yellow_cards: hasPlayed ? formData.get('yellow_cards') : 0,
+    red_cards: hasPlayed ? formData.get('red_cards') : 0,
+  }
+
+  const validatedFields = UpdateMatchSchema.safeParse(rawData)
+
+  if (!validatedFields.success) {
+    console.error('Validation Error:', validatedFields.error.flatten().fieldErrors)
+    throw new Error('Invalid form data provided')
+  }
+
+  const cleanData = validatedFields.data
+
   let matchResult = 'N'
-  if (teamScore > opponentScore) matchResult = 'V'
-  if (teamScore < opponentScore) matchResult = 'D'
+  if (cleanData.team_score > cleanData.opponent_score) matchResult = 'V'
+  if (cleanData.team_score < cleanData.opponent_score) matchResult = 'D'
 
   const matchPayload = {
-    match_date: formData.get('match_date') as string,
-    opponent: formData.get('opponent') as string,
-    competition_type: formData.get('competition_type') as string,
-    team_score: teamScore,
-    opponent_score: opponentScore,
+    match_date: cleanData.match_date,
+    opponent: cleanData.opponent,
+    competition_type: cleanData.competition_type,
+    team_score: cleanData.team_score,
+    opponent_score: cleanData.opponent_score,
     match_result: matchResult, 
   }
 
-  // 2. Update Match
+  // SECURITY FIX: Explicit ownership check enforcing player_id = user.id
   const { error: matchError } = await supabase
     .from('matches')
     .update(matchPayload)
     .eq('id', matchId)
+    .eq('player_id', user.id)
 
   if (matchError) {
     console.error('Match Update Error:', matchError)
-    throw new Error('Failed to update match')
+    throw new Error('Failed to update match details')
   }
 
-  // 3. Extract Stats (Prise en compte des valeurs 'true' du nouveau frontend ou 'on' par défaut)
-  const hasPlayed = formData.get('has_played') === 'true' || formData.get('has_played') === 'on'
-  const isMotm = formData.get('is_motm') === 'true' || formData.get('is_motm') === 'on'
-  const positionPlayed = formData.get('position_played') as Position
-
-  const rawYellow = parseInt(formData.get('yellow_cards') as string) || 0
-  const rawRed = parseInt(formData.get('red_cards') as string) || 0
-
-  // Logique métier préservée
-  const yellowCards = Math.min(rawYellow, 2)
-  const redCards = yellowCards === 2 ? 1 : Math.min(rawRed, 1)
-  
   const statsPayload = {
-    has_played: hasPlayed,
-    is_motm: hasPlayed ? isMotm : false,
-    position_played: hasPlayed ? positionPlayed : null,
-    minutes_played: hasPlayed ? (parseInt(formData.get('minutes_played') as string) || 0) : 0,
-    goals: hasPlayed ? (parseInt(formData.get('goals') as string) || 0) : 0,
-    assists: hasPlayed ? (parseInt(formData.get('assists') as string) || 0) : 0,
-    yellow_cards: hasPlayed ? yellowCards : 0,
-    red_cards: hasPlayed ? redCards : 0,
+    has_played: cleanData.has_played,
+    is_motm: cleanData.is_motm,
+    position_played: cleanData.position_played,
+    minutes_played: cleanData.minutes_played,
+    goals: cleanData.goals,
+    assists: cleanData.assists,
+    yellow_cards: cleanData.yellow_cards,
+    red_cards: cleanData.red_cards,
   }
 
-  // 4. Update Stats
   const { error: statsError } = await supabase
     .from('statistics')
     .update(statsPayload)
@@ -84,17 +118,21 @@ export async function updateMatch(formData: FormData) {
   redirect('/dashboard')
 }
 
-// RESTAURATION DE LA FONCTION DELETE
 export async function deleteMatch(formData: FormData) {
   const supabase = await createClient()
-  const matchId = formData.get('match_id') as string
+  const { data: { user } } = await supabase.auth.getUser()
 
+  if (!user) throw new Error('Unauthorized')
+
+  const matchId = formData.get('match_id') as string
   if (!matchId) throw new Error('Missing ID')
 
+  // SECURITY FIX: Explicit ownership check
   const { error } = await supabase
     .from('matches')
     .delete()
     .eq('id', matchId)
+    .eq('player_id', user.id)
 
   if (error) {
     console.error('Delete Error:', error)
