@@ -1,10 +1,12 @@
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
+import Image from 'next/image'
 import StatsChart from './components/StatsChart'
 import CompetitionFilter from './components/CompetitionFilter'
 import StatCard from './components/StatCard'
 import FormGuide from './components/FormGuide'
 import { redirect } from 'next/navigation'
+import { getClubLogo } from '@/utils/getClubLogo' // IMPORT DU HELPER
 
 interface PlayerProfile {
   display_name: string
@@ -131,7 +133,6 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Vue d&apos;ensemble</h2>
           <div className="mt-3 flex items-center gap-4">
             <p className="text-slate-500 text-sm">Analyse des performances de {profile.display_name}.</p>
-            {/* FIX : On filtre explicitement sur has_played avant de mapper */}
             <FormGuide recentMatches={displayStats.filter(stat => stat.has_played).map(stat => stat.matches)} />
           </div>
         </div>
@@ -175,6 +176,9 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
               const isWin = match.team_score > match.opponent_score
               const isLoss = match.team_score < match.opponent_score
               const resultColor = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
+              
+              // RÉCUPÉRATION DU LOGO ADVERSE
+              const opponentLogo = getClubLogo(match.opponent)
 
               return (
                 <div key={match.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
@@ -187,6 +191,12 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
+                        {/* AFFICHAGE DU LOGO ADVERSE */}
+                        {opponentLogo && (
+                          <div className="relative w-5 h-5 shrink-0">
+                            <Image src={opponentLogo} alt={match.opponent} fill className="object-contain" sizes="20px" />
+                          </div>
+                        )}
                         <p className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">vs {match.opponent}</p>
                         {stat.is_motm && <span title="Homme du Match" className="text-lg">🏆</span>}
                       </div>
