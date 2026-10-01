@@ -162,7 +162,7 @@ export default function RegisterWizard() {
                       
                       {/* NOUVEAU CHAMP : AVATAR (Géré directement par le FormData natif) */}
                       <div>
-                        <label className="text-sm font-bold text-slate-700">Photo de profil (Optionnelle, Max 2MB)</label>
+                        <label className="text-sm font-bold text-slate-700">Photo de profil (Optionnelle, Max 5MB)</label>
                         <input 
                           type="file" 
                           name="avatar" 

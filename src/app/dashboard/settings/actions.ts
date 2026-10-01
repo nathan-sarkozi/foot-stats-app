@@ -65,7 +65,7 @@ export async function updateProfile(formData: FormData) {
 }
 
 // SECURITY: Strict file validation to prevent malicious uploads (CWE-434)
-const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 
 export async function updateAvatar(formData: FormData) {
@@ -76,7 +76,7 @@ export async function updateAvatar(formData: FormData) {
   const file = formData.get('avatar') as File
   if (!file || file.size === 0) throw new Error('No file provided')
 
-  if (file.size > MAX_FILE_SIZE) throw new Error('File exceeds 2MB limit')
+  if (file.size > MAX_FILE_SIZE) throw new Error('File exceeds 5MB limit')
   if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) throw new Error('Invalid file type. Only JPG, PNG and WEBP are allowed.')
 
   // Path Traversal prevention: generate a random UUID for the file name

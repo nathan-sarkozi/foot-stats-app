@@ -51,7 +51,7 @@ export default async function SettingsPage() {
           )}
         </div>
         <div className="flex-1 space-y-3 w-full">
-          <label htmlFor="avatar" className="block text-sm font-bold text-slate-700">Photo de profil (Max 2MB)</label>
+          <label htmlFor="avatar" className="block text-sm font-bold text-slate-700">Photo de profil (Max 5MB)</label>
           <input 
             type="file" 
             id="avatar" 

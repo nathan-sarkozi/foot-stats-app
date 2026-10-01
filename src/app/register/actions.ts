@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
 // SECURITY: Strict file validation limits
-const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 
 export async function registerUser(formData: FormData) {
@@ -32,7 +32,7 @@ export async function registerUser(formData: FormData) {
   const file = formData.get('avatar') as File | null
   if (file && file.size > 0) {
     // Security checks
-    if (file.size > MAX_FILE_SIZE) throw new Error('File exceeds 2MB limit')
+    if (file.size > MAX_FILE_SIZE) throw new Error('File exceeds 5MB limit')
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) throw new Error('Invalid file type.')
 
     // Path Traversal prevention
