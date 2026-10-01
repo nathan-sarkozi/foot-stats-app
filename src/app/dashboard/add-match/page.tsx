@@ -1,6 +1,7 @@
 import { addMatch } from './actions'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import Link from 'next/link'
+import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
 
 export default function AddMatchPage() {
   const inputBaseClasses = "mt-2 block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm transition-all"
@@ -21,7 +22,6 @@ export default function AddMatchPage() {
 
       <form action={addMatch} className="space-y-6">
         
-        {/* BLOC 1 : LE MATCH */}
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6 flex items-center gap-2">
             <span>⚽</span> Informations du match
@@ -33,9 +33,25 @@ export default function AddMatchPage() {
               <input type="date" id="match_date" name="match_date" required className={inputBaseClasses} />
             </div>
             
+            {/* CHAMP ADVERSAIRE AVEC DATALIST RBFA */}
             <div>
               <label htmlFor="opponent" className={labelClasses}>Adversaire *</label>
-              <input type="text" id="opponent" name="opponent" placeholder="Ex: FC Écaussinnes" required className={inputBaseClasses} />
+              <input 
+                type="text" 
+                id="opponent" 
+                name="opponent" 
+                list="belgian-clubs"
+                placeholder="Ex: FC Enghiennois" 
+                required 
+                className={inputBaseClasses} 
+              />
+              <datalist id="belgian-clubs">
+                {clubsData.map((club) => (
+                  <option key={club.matricule} value={club.nom}>
+                    Mat. {club.matricule}
+                  </option>
+                ))}
+              </datalist>
             </div>
 
             <div className="md:col-span-2">
@@ -61,7 +77,6 @@ export default function AddMatchPage() {
           </div>
         </div>
 
-        {/* BLOC 2 : TES STATISTIQUES */}
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6 flex items-center gap-2">
             <span>📊</span> Performances individuelles
@@ -112,7 +127,6 @@ export default function AddMatchPage() {
           </div>
         </div>
 
-        {/* BLOC 3 : DISCIPLINE */}
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6 flex items-center gap-2">
             <span>⚖️</span> Discipline

@@ -1,9 +1,10 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { updateMatch } from './actions' // <-- Mets './action' si ton fichier n'a pas de 's'
+import { updateMatch } from './actions'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import DeleteButton from './DeleteButton'
 import Link from 'next/link'
+import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
 
 interface EditMatchProps {
   params: Promise<{
@@ -20,7 +21,6 @@ export default async function EditMatchPage(props: EditMatchProps) {
 
   if (!user) redirect('/login')
 
-  // Récupération des données existantes
   const { data: match, error: matchError } = await supabase
     .from('matches')
     .select('*, statistics(*)')
@@ -31,7 +31,6 @@ export default async function EditMatchPage(props: EditMatchProps) {
     return <div className="p-8 text-center text-red-500 font-bold">Match introuvable.</div>
   }
 
-  // Vérification de sécurité : le match appartient-il à l'utilisateur ?
   if (match.player_id !== user.id) {
     redirect('/dashboard')
   }
@@ -61,7 +60,6 @@ export default async function EditMatchPage(props: EditMatchProps) {
         <input type="hidden" name="match_id" value={matchId} />
         <input type="hidden" name="stat_id" value={stat.id} />
 
-        {/* BLOC 1 : LE MATCH */}
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6 flex items-center gap-2">
             <span>⚽</span> Informations du match
@@ -73,9 +71,25 @@ export default async function EditMatchPage(props: EditMatchProps) {
               <input type="date" id="match_date" name="match_date" required defaultValue={match.match_date} className={inputBaseClasses} />
             </div>
             
+            {/* CHAMP ADVERSAIRE AVEC DATALIST RBFA */}
             <div>
               <label htmlFor="opponent" className={labelClasses}>Adversaire *</label>
-              <input type="text" id="opponent" name="opponent" required defaultValue={match.opponent} className={inputBaseClasses} />
+              <input 
+                type="text" 
+                id="opponent" 
+                name="opponent" 
+                list="belgian-clubs"
+                required 
+                defaultValue={match.opponent} 
+                className={inputBaseClasses} 
+              />
+              <datalist id="belgian-clubs">
+                {clubsData.map((club) => (
+                  <option key={club.matricule} value={club.nom}>
+                    Mat. {club.matricule}
+                  </option>
+                ))}
+              </datalist>
             </div>
 
             <div className="md:col-span-2">
@@ -101,7 +115,6 @@ export default async function EditMatchPage(props: EditMatchProps) {
           </div>
         </div>
 
-        {/* BLOC 2 : TES STATISTIQUES */}
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6 flex items-center gap-2">
             <span>📊</span> Performances individuelles
@@ -152,7 +165,6 @@ export default async function EditMatchPage(props: EditMatchProps) {
           </div>
         </div>
 
-        {/* BLOC 3 : DISCIPLINE */}
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6 flex items-center gap-2">
             <span>⚖️</span> Discipline

@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { updateProfile, updateAvatar } from './actions'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import Image from 'next/image'
+import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
 
 interface UserProfile {
   display_name: string
@@ -41,7 +42,6 @@ export default async function SettingsPage() {
         <p className="text-slate-500 mt-2 text-sm">Gère tes informations publiques et athlétiques.</p>
       </div>
 
-      {/* BLOC 1: AVATAR (Formulaire séparé) */}
       <form action={updateAvatar} className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center gap-6">
         <div className="h-24 w-24 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-extrabold text-4xl border border-indigo-100 overflow-hidden relative">
           {userProfile.avatar_url ? (
@@ -64,7 +64,6 @@ export default async function SettingsPage() {
         </div>
       </form>
 
-      {/* BLOC 2: INFORMATIONS (Formulaire principal) */}
       <form action={updateProfile} className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 space-y-8">
         <div>
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-2 mb-4">Identité & Club</h3>
@@ -73,10 +72,28 @@ export default async function SettingsPage() {
               <label htmlFor="display_name" className="block text-sm font-bold text-slate-700">Pseudo / Nom affiché *</label>
               <input type="text" name="display_name" id="display_name" required defaultValue={userProfile.display_name} className={inputBaseClasses} />
             </div>
+            
+            {/* CHAMP CLUB AVEC DATALIST RBFA */}
             <div>
               <label htmlFor="club" className="block text-sm font-bold text-slate-700">Club actuel</label>
-              <input type="text" name="club" id="club" placeholder="Ex: FC Dev" defaultValue={userProfile.club || ""} className={inputBaseClasses} />
+              <input 
+                type="text" 
+                name="club" 
+                id="club" 
+                list="belgian-clubs"
+                placeholder="Ex: FC Enghiennois" 
+                defaultValue={userProfile.club || ""} 
+                className={inputBaseClasses} 
+              />
+              <datalist id="belgian-clubs">
+                {clubsData.map((club) => (
+                  <option key={club.matricule} value={club.nom}>
+                    Mat. {club.matricule}
+                  </option>
+                ))}
+              </datalist>
             </div>
+
             <div>
               <label htmlFor="category" className="block text-sm font-bold text-slate-700">Catégorie / Division</label>
               <input type="text" name="category" id="category" placeholder="Ex: Réserve C" defaultValue={userProfile.category || ""} className={inputBaseClasses} />

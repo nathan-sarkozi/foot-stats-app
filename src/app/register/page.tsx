@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { registerUser } from './actions'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import Link from 'next/link'
+import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
 
 export default function RegisterWizard() {
   const [step, setStep] = useState(1)
@@ -53,7 +54,6 @@ export default function RegisterWizard() {
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative min-h-100">
           <AnimatePresence mode="wait">
             
-            {/* ÉTAPE 1 : Identité */}
             {step === 1 && (
               <motion.div key="step1" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full justify-between">
                 <div>
@@ -69,16 +69,32 @@ export default function RegisterWizard() {
               </motion.div>
             )}
 
-            {/* ÉTAPE 2 : Football */}
             {step === 2 && (
               <motion.div key="step2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full justify-between">
                 <div>
                   <h2 className="text-2xl font-extrabold text-slate-900">Où joues-tu ?</h2>
                   <div className="space-y-4 mt-6">
+                    
+                    {/* CHAMP CLUB AVEC DATALIST RBFA */}
                     <div>
                       <label className="text-sm font-bold text-slate-700">Club</label>
-                      <input type="text" placeholder="Ex: FC Dev" value={formData.club} onChange={(e) => updateForm('club', e.target.value)} className={inputBaseClasses} />
+                      <input 
+                        type="text" 
+                        list="belgian-clubs"
+                        placeholder="Ex: FC Enghiennois" 
+                        value={formData.club} 
+                        onChange={(e) => updateForm('club', e.target.value)} 
+                        className={inputBaseClasses} 
+                      />
+                      <datalist id="belgian-clubs">
+                        {clubsData.map((club) => (
+                          <option key={club.matricule} value={club.nom}>
+                            Mat. {club.matricule}
+                          </option>
+                        ))}
+                      </datalist>
                     </div>
+
                     <div>
                       <label className="text-sm font-bold text-slate-700">Catégorie</label>
                       <input type="text" placeholder="Ex: Réserve C" value={formData.category} onChange={(e) => updateForm('category', e.target.value)} className={inputBaseClasses} />
@@ -106,7 +122,6 @@ export default function RegisterWizard() {
               </motion.div>
             )}
 
-            {/* ÉTAPE 3 : Physique */}
             {step === 3 && (
               <motion.div key="step3" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full justify-between">
                 <div>
@@ -144,12 +159,10 @@ export default function RegisterWizard() {
               </motion.div>
             )}
 
-            {/* ÉTAPE 4 : Compte (Formulaire final avec upload natif FormData) */}
             {step === 4 && (
               <motion.div key="step4" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full justify-between">
                 <form action={registerUser} className="flex flex-col h-full justify-between">
                   
-                  {/* INJECTION DES DONNÉES EN MÉMOIRE */}
                   {Object.entries(formData).map(([key, value]) => (
                     <input key={key} type="hidden" name={key} value={value} />
                   ))}
@@ -159,8 +172,6 @@ export default function RegisterWizard() {
                     <p className="text-slate-500 text-sm mt-2">Sécurise ton compte et finalise ton profil.</p>
                     
                     <div className="space-y-4 mt-6">
-                      
-                      {/* NOUVEAU CHAMP : AVATAR (Géré directement par le FormData natif) */}
                       <div>
                         <label className="text-sm font-bold text-slate-700">Photo de profil (Optionnelle, Max 5MB)</label>
                         <input 
