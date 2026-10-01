@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
 import { z } from 'zod'
 
-// 1. SCHEMA DEFINITION: Strict validation rules
 const ProfileSchema = z.object({
   display_name: z.string().trim().min(2, 'Name too short').max(50, 'Name too long'),
   club: z.string().trim().max(100).nullable(),
@@ -22,7 +21,6 @@ export async function updateProfile(formData: FormData) {
 
   if (!user) throw new Error('Unauthorized')
 
-  // Helper to convert empty strings (from the form) to null for PostgreSQL
   const parseNullableString = (key: string) => {
     const val = formData.get(key) as string
     return val && val.trim() !== '' ? val.trim() : null
@@ -33,7 +31,6 @@ export async function updateProfile(formData: FormData) {
     return val && val.trim() !== '' ? val : null
   }
 
-  // 2. DATA EXTRACTION
   const rawData = {
     display_name: formData.get('display_name'),
     club: parseNullableString('club'),
@@ -45,7 +42,6 @@ export async function updateProfile(formData: FormData) {
     weight: parseNullableNumber('weight'),
   }
 
-  // 3. SAFE PARSING: Intercept and validate
   const validatedFields = ProfileSchema.safeParse(rawData)
 
   if (!validatedFields.success) {
@@ -55,7 +51,6 @@ export async function updateProfile(formData: FormData) {
 
   const cleanData = validatedFields.data
 
-  // 4. DATABASE UPDATE (Strict RLS ensures user only updates their row)
   const { error } = await supabase
     .from('profiles')
     .update(cleanData)
@@ -65,6 +60,52 @@ export async function updateProfile(formData: FormData) {
     console.error('Profile Update Error:', error.message)
     throw new Error('Failed to update profile')
   }
+
+  revalidatePath('/', 'layout')
+}
+
+// SECURITY: Strict file validation to prevent malicious uploads (CWE-434)
+const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+
+export async function updateAvatar(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const file = formData.get('avatar') as File
+  if (!file || file.size === 0) throw new Error('No file provided')
+
+  if (file.size > MAX_FILE_SIZE) throw new Error('File exceeds 2MB limit')
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) throw new Error('Invalid file type. Only JPG, PNG and WEBP are allowed.')
+
+  // Path Traversal prevention: generate a random UUID for the file name
+  const fileExtension = file.name.split('.').pop()
+  const fileName = `${crypto.randomUUID()}.${fileExtension}`
+  const filePath = `${user.id}/${fileName}`
+
+  // 1. Upload to Supabase Storage
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, file, { upsert: true })
+
+  if (uploadError) {
+    console.error('Upload Error:', uploadError)
+    throw new Error('Failed to upload image')
+  }
+
+  // 2. Retrieve public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(filePath)
+
+  // 3. Update profile record
+  const { error: dbError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: publicUrl })
+    .eq('id', user.id)
+
+  if (dbError) throw new Error('Failed to link avatar to profile')
 
   revalidatePath('/', 'layout')
 }

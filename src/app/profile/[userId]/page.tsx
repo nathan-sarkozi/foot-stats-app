@@ -1,9 +1,11 @@
 import { createClient } from '@/utils/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import Navbar from '@/app/dashboard/components/Navbar'
 import StatCard from '@/app/dashboard/components/StatCard'
 import StatsChart from '@/app/dashboard/components/StatsChart'
+import FormGuide from '@/app/dashboard/components/FormGuide'
 
 interface MatchStatRecord {
   has_played: boolean
@@ -27,14 +29,16 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
   const supabase = await createClient()
   const targetUserId = (await props.params).userId
 
+  // 1. Fetch Profile (Now including avatar_url)
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('display_name, club, category, preferred_position, foot_preference, jersey_number, height, weight')
+    .select('display_name, avatar_url, club, category, preferred_position, foot_preference, jersey_number, height, weight')
     .eq('id', targetUserId)
     .single()
 
   if (profileError || !profile) return notFound()
 
+  // 2. Fetch Stats
   const { data: statsData, error: statsError } = await supabase
     .from('statistics')
     .select(`
@@ -56,7 +60,6 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
   let totalWins = 0
   const positionCounts: Record<string, number> = {}
   
-  // REQUIRED FOR CHART: Sort Ascending First
   const chartData: Array<{ date: string; goals: number; assists: number; opponent: string }> = []
   const sortedStatsAsc = [...statsData].sort((a, b) => 
     new Date(a.matches.match_date).getTime() - new Date(b.matches.match_date).getTime()
@@ -104,7 +107,6 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
     return labels[type] || type
   }
   
-  // Reverse for List Display
   const displayStats = [...sortedStatsAsc].reverse()
 
   return (
@@ -119,9 +121,15 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
           </Link>
         </div>
 
-        <header className="mb-8 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-start gap-6">
-          <div className="h-24 w-24 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-extrabold text-4xl border border-indigo-100">
-            {profile.display_name.substring(0, 2).toUpperCase()}
+        <header className="mb-8 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-start gap-6 relative">
+          
+          {/* AVATAR UI */}
+          <div className="h-24 w-24 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-extrabold text-4xl border border-indigo-100 overflow-hidden relative">
+            {profile.avatar_url ? (
+              <Image src={profile.avatar_url} alt={`Avatar de ${profile.display_name}`} fill className="object-cover" sizes="96px" />
+            ) : (
+              profile.display_name.substring(0, 2).toUpperCase()
+            )}
           </div>
           
           <div className="flex-1">
@@ -149,6 +157,12 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
               {profile.height && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">📏 {profile.height} cm</span>}
               {profile.weight && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">⚖️ {profile.weight} kg</span>}
             </div>
+            
+            {/* INJECTION DU FORM GUIDE */}
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <FormGuide recentMatches={displayStats.map(stat => stat.matches)} />
+            </div>
+
           </div>
         </header>
 

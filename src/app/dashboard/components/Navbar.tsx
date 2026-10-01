@@ -6,8 +6,9 @@ import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { cn } from '@/utils/cn'
 import { logout } from './logoutAction'
+import Image from 'next/image'
 
-export default function Navbar({ initials = "FS" }: { initials?: string }) {
+export default function Navbar({ initials = "FS", avatarUrl = null }: { initials?: string, avatarUrl?: string | null }) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -36,7 +37,6 @@ export default function Navbar({ initials = "FS" }: { initials?: string }) {
               <span className="text-xl font-bold tracking-tight text-slate-900">FootStats</span>
             </Link>
             
-            {/* Liens Desktop (cachés sur mobile) */}
             <div className="hidden md:flex space-x-1">
               {links.map((link) => {
                 const isActive = pathname === link.href
@@ -50,11 +50,7 @@ export default function Navbar({ initials = "FS" }: { initials?: string }) {
                   >
                     {link.label}
                     {isActive && (
-                      <motion.div
-                        layoutId="navbar-active-indicator"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full"
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      />
+                      <motion.div layoutId="navbar-active-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full" transition={{ type: "spring", stiffness: 300, damping: 30 }} />
                     )}
                   </Link>
                 )
@@ -65,31 +61,26 @@ export default function Navbar({ initials = "FS" }: { initials?: string }) {
           <div className="flex items-center gap-3">
             <Link 
               href="/dashboard/settings"
-              className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200 text-indigo-700 text-sm font-bold shadow-sm hover:scale-110 hover:bg-indigo-200 hover:shadow-md transition-all cursor-pointer"
+              className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200 text-indigo-700 text-sm font-bold shadow-sm hover:scale-110 hover:shadow-md transition-all cursor-pointer overflow-hidden relative"
               title="Paramètres"
             >
-              {initials}
+              {avatarUrl ? (
+                <Image src={avatarUrl} alt="Profil" fill className="object-cover" sizes="32px" />
+              ) : (
+                initials
+              )}
             </Link>
 
             <form action={logout}>
               <button type="submit" className="text-slate-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 flex items-center justify-center" title="Déconnexion">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
               </button>
             </form>
 
-            {/* BOUTON MENU MOBILE (Burger) */}
-            <button 
-              type="button"
-              className="md:hidden p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors ml-1"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
+            <button type="button" className="md:hidden p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors ml-1" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
               {isMobileMenuOpen ? (
-                // Croix de fermeture
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               ) : (
-                // Menu Burger
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
               )}
             </button>
@@ -97,22 +88,13 @@ export default function Navbar({ initials = "FS" }: { initials?: string }) {
         </div>
       </div>
 
-      {/* DROPDOWN MOBILE */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white">
           <div className="space-y-1 px-4 pb-3 pt-2">
             {links.map((link) => {
               const isActive = pathname === link.href
               return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)} // Ferme le menu au clic
-                  className={cn(
-                    "block px-3 py-2 rounded-lg text-base font-bold transition-colors",
-                    isActive ? "bg-indigo-50 text-indigo-600" : "text-slate-600 hover:bg-slate-50 hover:text-indigo-600"
-                  )}
-                >
+                <Link key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)} className={cn("block px-3 py-2 rounded-lg text-base font-bold transition-colors", isActive ? "bg-indigo-50 text-indigo-600" : "text-slate-600 hover:bg-slate-50 hover:text-indigo-600")}>
                   {link.label}
                 </Link>
               )

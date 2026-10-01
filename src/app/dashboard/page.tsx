@@ -4,6 +4,7 @@ import StatsChart from './components/StatsChart'
 import CompetitionFilter from './components/CompetitionFilter'
 import StatCard from './components/StatCard'
 import { redirect } from 'next/navigation'
+import FormGuide from './components/FormGuide'
 
 interface PlayerProfile {
   display_name: string
@@ -129,6 +130,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
         <div>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Vue d&apos;ensemble</h2>
           <p className="text-slate-500 mt-2 text-sm">Analyse des performances de {profile.display_name}.</p>
+          <FormGuide recentMatches={displayStats.map(stat => stat.matches)} />
         </div>
         <div className="mt-4 sm:mt-0">
           <Link href="/dashboard/add-match" className="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-105 active:scale-95">
