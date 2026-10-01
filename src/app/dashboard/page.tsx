@@ -3,8 +3,8 @@ import Link from 'next/link'
 import StatsChart from './components/StatsChart'
 import CompetitionFilter from './components/CompetitionFilter'
 import StatCard from './components/StatCard'
-import { redirect } from 'next/navigation'
 import FormGuide from './components/FormGuide'
+import { redirect } from 'next/navigation'
 
 interface PlayerProfile {
   display_name: string
@@ -129,8 +129,11 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between pt-6">
         <div>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Vue d&apos;ensemble</h2>
-          <p className="text-slate-500 mt-2 text-sm">Analyse des performances de {profile.display_name}.</p>
-          <FormGuide recentMatches={displayStats.map(stat => stat.matches)} />
+          <div className="mt-3 flex items-center gap-4">
+            <p className="text-slate-500 text-sm">Analyse des performances de {profile.display_name}.</p>
+            {/* FIX : On filtre explicitement sur has_played avant de mapper */}
+            <FormGuide recentMatches={displayStats.filter(stat => stat.has_played).map(stat => stat.matches)} />
+          </div>
         </div>
         <div className="mt-4 sm:mt-0">
           <Link href="/dashboard/add-match" className="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-105 active:scale-95">
@@ -141,7 +144,6 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
 
       <CompetitionFilter />
 
-      {/* NEW LOGICAL HIERARCHY */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.1} highlight />
         <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.2} highlight />
@@ -159,7 +161,6 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
         <StatsChart data={chartData} />
       </div>
 
-      {/* HISTORIQUE INCHANGÉ (Non affiché ici pour préserver la concision, garde la même implémentation) */}
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">Historique des matchs ({displayStats.length})</h3>
         {displayStats.length === 0 ? (

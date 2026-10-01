@@ -29,7 +29,26 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
   const supabase = await createClient()
   const targetUserId = (await props.params).userId
 
-  // 1. Fetch Profile (Now including avatar_url)
+  // 1. GESTION DU VISITEUR (Pour la Navbar en haut à droite)
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  
+  let visitorInitials = "FS"
+  let visitorAvatarUrl = null
+
+  if (authUser) {
+    const { data: visitorProfile } = await supabase
+      .from('profiles')
+      .select('display_name, avatar_url')
+      .eq('id', authUser.id)
+      .single()
+      
+    if (visitorProfile && visitorProfile.display_name) {
+      visitorInitials = visitorProfile.display_name.substring(0, 2).toUpperCase()
+      visitorAvatarUrl = visitorProfile.avatar_url
+    }
+  }
+
+  // 2. GESTION DU JOUEUR VISITÉ (Pour le contenu de la page)
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('display_name, avatar_url, club, category, preferred_position, foot_preference, jersey_number, height, weight')
@@ -38,7 +57,7 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
 
   if (profileError || !profile) return notFound()
 
-  // 2. Fetch Stats
+  // 3. RÉCUPÉRATION DES STATISTIQUES DU JOUEUR VISITÉ
   const { data: statsData, error: statsError } = await supabase
     .from('statistics')
     .select(`
@@ -50,6 +69,7 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
 
   if (statsError || !statsData) return notFound()
 
+  // CALCULS ALGORITHMIQUES O(N)
   let matchesPlayed = 0
   let totalGoals = 0
   let totalAssists = 0
@@ -61,6 +81,8 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
   const positionCounts: Record<string, number> = {}
   
   const chartData: Array<{ date: string; goals: number; assists: number; opponent: string }> = []
+  
+  // Tri chronologique ascendant requis pour le graphique
   const sortedStatsAsc = [...statsData].sort((a, b) => 
     new Date(a.matches.match_date).getTime() - new Date(b.matches.match_date).getTime()
   )
@@ -107,11 +129,14 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
     return labels[type] || type
   }
   
+  // Inversion pour l'affichage de l'historique (du plus récent au plus ancien)
   const displayStats = [...sortedStatsAsc].reverse()
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar initials="FS" />
+      
+      {/* CORRECTION : Hydratation de la Navbar avec les données du VISITEUR */}
+      <Navbar initials={visitorInitials} avatarUrl={visitorAvatarUrl} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
@@ -123,7 +148,6 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
 
         <header className="mb-8 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-start gap-6 relative">
           
-          {/* AVATAR UI */}
           <div className="h-24 w-24 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-extrabold text-4xl border border-indigo-100 overflow-hidden relative">
             {profile.avatar_url ? (
               <Image src={profile.avatar_url} alt={`Avatar de ${profile.display_name}`} fill className="object-cover" sizes="96px" />
@@ -158,9 +182,8 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
               {profile.weight && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">⚖️ {profile.weight} kg</span>}
             </div>
             
-            {/* INJECTION DU FORM GUIDE */}
             <div className="mt-5 border-t border-slate-100 pt-4">
-              <FormGuide recentMatches={displayStats.map(stat => stat.matches)} />
+              <FormGuide recentMatches={displayStats.filter(stat => stat.has_played).map(stat => stat.matches)} />
             </div>
 
           </div>

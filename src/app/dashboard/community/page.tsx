@@ -1,9 +1,11 @@
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface ProfileData {
   id: string
   display_name: string
+  avatar_url: string | null
   club: string | null
   category: string | null
   preferred_position: string | null
@@ -12,10 +14,10 @@ interface ProfileData {
 export default async function CommunityPage() {
   const supabase = await createClient()
 
-  // SECURITY FIX: Limit queries to prevent excessive DB load and memory leaks
+  // FIX: Ajout de avatar_url dans la clause select
   const { data: profilesData, error } = await supabase
     .from('profiles')
-    .select('id, display_name, club, category, preferred_position')
+    .select('id, display_name, avatar_url, club, category, preferred_position')
     .order('display_name', { ascending: true })
     .limit(50)
     .returns<ProfileData[]>()
@@ -45,9 +47,22 @@ export default async function CommunityPage() {
             
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg border border-indigo-100 group-hover:scale-105 transition-transform">
-                  {profile.display_name.substring(0, 2).toUpperCase()}
+                
+                {/* FIX: Conteneur d'avatar avec support Image Next.js */}
+                <div className="h-12 w-12 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg border border-indigo-100 group-hover:scale-105 transition-transform overflow-hidden relative">
+                  {profile.avatar_url ? (
+                    <Image 
+                      src={profile.avatar_url} 
+                      alt={`Avatar de ${profile.display_name}`} 
+                      fill 
+                      className="object-cover" 
+                      sizes="48px" 
+                    />
+                  ) : (
+                    profile.display_name.substring(0, 2).toUpperCase()
+                  )}
                 </div>
+
                 <div>
                   <p className="font-bold text-slate-900 text-lg group-hover:text-indigo-600 transition-colors">
                     {profile.display_name}
