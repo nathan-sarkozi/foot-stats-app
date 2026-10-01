@@ -4,14 +4,11 @@ import StatsChart from './components/StatsChart'
 import CompetitionFilter from './components/CompetitionFilter'
 import StatCard from './components/StatCard'
 import { redirect } from 'next/navigation'
-// Note: Import the generated Database types once you run the Supabase CLI command successfully.
-// import { Database } from '@/types/supabase' 
 
 interface PlayerProfile {
   display_name: string
 }
 
-// Strict typing for the joined Supabase query result
 interface MatchStatRecord {
   has_played: boolean
   minutes_played: number
@@ -31,9 +28,7 @@ interface MatchStatRecord {
   }
 }
 
-export default async function DashboardPage(props: {
-  searchParams: Promise<{ comps?: string }>
-}) {
+export default async function DashboardPage(props: { searchParams: Promise<{ comps?: string }> }) {
   const searchParams = await props.searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -46,11 +41,8 @@ export default async function DashboardPage(props: {
     .eq('id', user.id)
     .single()
 
-  if (profileError) {
-    return <div className="text-red-500 p-4 font-bold bg-red-50 rounded-lg">Error: {profileError.message}</div>
-  }
+  if (profileError) return <div className="text-red-500 p-4 font-bold bg-red-50 rounded-lg">Error: {profileError.message}</div>
 
-  // Type definition applied directly to the query response
   const { data: statsData, error: statsError } = await supabase
     .from('statistics')
     .select(`
@@ -60,14 +52,11 @@ export default async function DashboardPage(props: {
     .eq('player_id', user.id)
     .returns<MatchStatRecord[]>()
 
-  if (statsError || !statsData) {
-    return <div className="text-red-500">Failed to load statistics.</div>
-  }
+  if (statsError || !statsData) return <div className="text-red-500">Failed to load statistics.</div>
 
   const profile = playerProfile as PlayerProfile
   const activeComps = searchParams.comps ? searchParams.comps.split(',') : ['LEAGUE', 'CUP', 'FRIENDLY']
   
-  // ALGORITHMIC OPTIMIZATION: Single-pass iteration (O(N))
   let matchesPlayed = 0
   let totalGoals = 0
   let totalAssists = 0
@@ -75,11 +64,12 @@ export default async function DashboardPage(props: {
   let totalYellows = 0
   let totalReds = 0
   let totalMotm = 0
+  let totalWins = 0
+  
   const positionCounts: Record<string, number> = {}
   const filteredStats: MatchStatRecord[] = []
-  const chartData: Array<{ date: string; goals: number; assists: number; yellow_cards: number; red_cards: number; opponent: string }> = []
+  const chartData: Array<{ date: string; goals: number; assists: number; opponent: string }> = []
 
-  // Sort first so chart data accumulates chronologically (oldest to newest)
   const sortedByDateAsc = [...statsData].sort((a, b) => 
     new Date(a.matches.match_date).getTime() - new Date(b.matches.match_date).getTime()
   )
@@ -87,7 +77,6 @@ export default async function DashboardPage(props: {
   for (const stat of sortedByDateAsc) {
     if (!activeComps.includes(stat.matches.competition_type)) continue
 
-    // Add to filtered list for the UI list (we will reverse it for display later)
     filteredStats.push(stat)
 
     if (stat.has_played) {
@@ -99,23 +88,21 @@ export default async function DashboardPage(props: {
       totalReds += stat.red_cards
       if (stat.is_motm) totalMotm++
       
+      if (stat.matches.team_score > stat.matches.opponent_score) totalWins++
+
       if (stat.position_played) {
         positionCounts[stat.position_played] = (positionCounts[stat.position_played] || 0) + 1
       }
     }
 
-    // Accumulate chart data chronologically
     chartData.push({
       date: new Date(stat.matches.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
       goals: totalGoals,
       assists: totalAssists,
-      yellow_cards: totalYellows,
-      red_cards: totalReds,
       opponent: stat.matches.opponent
     })
   }
 
-  // Determine favorite position
   let favPosition = 'N/A'
   let maxPosCount = 0
   for (const [pos, count] of Object.entries(positionCounts)) {
@@ -126,10 +113,9 @@ export default async function DashboardPage(props: {
   }
 
   const totalGA = totalGoals + totalAssists
-  const p90Goals = totalMinutes > 0 ? ((totalGoals / totalMinutes) * 90).toFixed(2) : '0.00'
-  const p90Assists = totalMinutes > 0 ? ((totalAssists / totalMinutes) * 90).toFixed(2) : '0.00'
+  const winRate = matchesPlayed > 0 ? Math.round((totalWins / matchesPlayed) * 100) : 0
+  const minsPerGoal = totalGoals > 0 ? Math.round(totalMinutes / totalGoals) : 0
   
-  // Reverse for the match history list (newest first)
   const displayStats = [...filteredStats].reverse()
 
   const getCompetitionLabel = (type: string) => {
@@ -153,25 +139,27 @@ export default async function DashboardPage(props: {
 
       <CompetitionFilter />
 
+      {/* NEW LOGICAL HIERARCHY */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-        <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} matchs joués`} delay={0.1} highlight />
-        <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.2} highlight />
-        <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.3} />
-        <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.4} />
-        <StatCard title="Total Buts" value={totalGoals} subtitle={`${p90Goals} Buts / 90 min`} delay={0.5} />
-        <StatCard title="Total Passes" value={totalAssists} subtitle={`${p90Assists} Passes / 90 min`} delay={0.6} />
-        <StatCard title="Cartons Jaunes" value={totalYellows} subtitle="🟨 Avertissements" delay={0.7} />
-        <StatCard title="Cartons Rouges" value={totalReds} subtitle="🟥 Expulsions" delay={0.8} />
+        <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.1} highlight />
+        <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.2} highlight />
+        <StatCard title="Total Buts" value={totalGoals} subtitle={minsPerGoal > 0 ? `1 but / ${minsPerGoal} min` : '0 but'} delay={0.3} />
+        <StatCard title="Total Passes" value={totalAssists} subtitle={`${totalGoals > 0 ? (totalAssists/matchesPlayed).toFixed(2) : 0} par match`} delay={0.4} />
+        
+        <StatCard title="Ratio Victoires" value={`${winRate}%`} subtitle={`${totalWins} V en ${matchesPlayed} M`} delay={0.5} />
+        <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.6} />
+        <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} apparitions`} delay={0.7} />
+        <StatCard title="Discipline" value={totalYellows + totalReds} subtitle={`${totalYellows} 🟨 | ${totalReds} 🟥`} delay={0.8} />
       </div>
 
       <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
-        <h3 className="text-lg font-bold text-slate-800 mb-6 tracking-tight">Évolution de la saison</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-6 tracking-tight">Impact Offensif de la Saison</h3>
         <StatsChart data={chartData} />
       </div>
 
+      {/* HISTORIQUE INCHANGÉ (Non affiché ici pour préserver la concision, garde la même implémentation) */}
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">Historique des matchs ({displayStats.length})</h3>
-        
         {displayStats.length === 0 ? (
            <div className="bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center text-slate-500">
              Aucun match enregistré avec ces filtres.

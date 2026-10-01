@@ -3,8 +3,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/app/dashboard/components/Navbar'
 import StatCard from '@/app/dashboard/components/StatCard'
+import StatsChart from '@/app/dashboard/components/StatsChart'
 
-// Strict internal typing mapped to the query response
 interface MatchStatRecord {
   has_played: boolean
   minutes_played: number
@@ -23,17 +23,9 @@ interface MatchStatRecord {
   }
 }
 
-interface ProfilePageProps {
-  params: Promise<{
-    userId: string
-  }>
-}
-
-export default async function PublicProfilePage(props: ProfilePageProps) {
+export default async function PublicProfilePage(props: { params: Promise<{ userId: string }> }) {
   const supabase = await createClient()
-  
-  const resolvedParams = await props.params
-  const targetUserId = resolvedParams.userId
+  const targetUserId = (await props.params).userId
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
@@ -41,12 +33,8 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
     .eq('id', targetUserId)
     .single()
 
-  if (profileError || !profile) {
-    console.error('Profile Fetch Error:', profileError?.message)
-    return notFound()
-  }
+  if (profileError || !profile) return notFound()
 
-  // Use !inner to ensure match relation is returned as a strict single object
   const { data: statsData, error: statsError } = await supabase
     .from('statistics')
     .select(`
@@ -56,12 +44,8 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
     .eq('player_id', targetUserId)
     .returns<MatchStatRecord[]>()
 
-  if (statsError || !statsData) {
-    console.error('Stats Fetch Error:', statsError?.message)
-    return notFound()
-  }
+  if (statsError || !statsData) return notFound()
 
-  // ALGORITHMIC OPTIMIZATION: Single-pass O(N) iteration
   let matchesPlayed = 0
   let totalGoals = 0
   let totalAssists = 0
@@ -69,14 +53,16 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
   let totalYellows = 0
   let totalReds = 0
   let totalMotm = 0
+  let totalWins = 0
   const positionCounts: Record<string, number> = {}
   
-  // Sort descending by date (newest first)
-  const sortedStats = [...statsData].sort((a, b) => 
-    new Date(b.matches.match_date).getTime() - new Date(a.matches.match_date).getTime()
+  // REQUIRED FOR CHART: Sort Ascending First
+  const chartData: Array<{ date: string; goals: number; assists: number; opponent: string }> = []
+  const sortedStatsAsc = [...statsData].sort((a, b) => 
+    new Date(a.matches.match_date).getTime() - new Date(b.matches.match_date).getTime()
   )
 
-  for (const stat of sortedStats) {
+  for (const stat of sortedStatsAsc) {
     if (stat.has_played) {
       matchesPlayed++
       totalGoals += stat.goals
@@ -85,11 +71,19 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
       totalYellows += stat.yellow_cards
       totalReds += stat.red_cards
       if (stat.is_motm) totalMotm++
+      if (stat.matches.team_score > stat.matches.opponent_score) totalWins++
       
       if (stat.position_played) {
         positionCounts[stat.position_played] = (positionCounts[stat.position_played] || 0) + 1
       }
     }
+
+    chartData.push({
+      date: new Date(stat.matches.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
+      goals: totalGoals,
+      assists: totalAssists,
+      opponent: stat.matches.opponent
+    })
   }
 
   let favPosition = 'N/A'
@@ -102,13 +96,16 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
   }
 
   const totalGA = totalGoals + totalAssists
-  const p90Goals = totalMinutes > 0 ? ((totalGoals / totalMinutes) * 90).toFixed(2) : '0.00'
-  const p90Assists = totalMinutes > 0 ? ((totalAssists / totalMinutes) * 90).toFixed(2) : '0.00'
+  const winRate = matchesPlayed > 0 ? Math.round((totalWins / matchesPlayed) * 100) : 0
+  const minsPerGoal = totalGoals > 0 ? Math.round(totalMinutes / totalGoals) : 0
 
   const getCompetitionLabel = (type: string) => {
     const labels: Record<string, string> = { LEAGUE: 'Championnat', CUP: 'Coupe', FRIENDLY: 'Amical' }
     return labels[type] || type
   }
+  
+  // Reverse for List Display
+  const displayStats = [...sortedStatsAsc].reverse()
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -143,47 +140,33 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
                 {profile.club || 'Club non renseigné'} {profile.category && <span className="text-slate-400">• {profile.category}</span>}
               </p>
             ) : (
-              <p className="text-slate-400 font-medium mt-2 italic flex items-center gap-2">
-                Agent libre
-              </p>
+              <p className="text-slate-400 font-medium mt-2 italic flex items-center gap-2">Agent libre</p>
             )}
 
             <div className="flex flex-wrap items-center gap-2 mt-4">
-              {profile.jersey_number && (
-                <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">
-                  N° {profile.jersey_number}
-                </span>
-              )}
-              {profile.foot_preference && (
-                <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">
-                  🦶 {profile.foot_preference}
-                </span>
-              )}
-              {profile.height && (
-                <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">
-                  📏 {profile.height} cm
-                </span>
-              )}
-              {profile.weight && (
-                <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">
-                  ⚖️ {profile.weight} kg
-                </span>
-              )}
+              {profile.jersey_number && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">N° {profile.jersey_number}</span>}
+              {profile.foot_preference && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">🦶 {profile.foot_preference}</span>}
+              {profile.height && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">📏 {profile.height} cm</span>}
+              {profile.weight && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">⚖️ {profile.weight} kg</span>}
             </div>
-            
-            <p className="text-slate-400 text-xs mt-4 font-mono bg-slate-50 inline-block px-2 py-1 rounded">ID: {targetUserId.split('-')[0]}</p>
           </div>
         </header>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
-          <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} matchs joués`} delay={0.1} highlight />
-          <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.2} highlight />
-          <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.3} />
-          <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.4} />
-          <StatCard title="Total Buts" value={totalGoals} subtitle={`${p90Goals} Buts / 90 min`} delay={0.5} />
-          <StatCard title="Total Passes" value={totalAssists} subtitle={`${p90Assists} Passes / 90 min`} delay={0.6} />
-          <StatCard title="Cartons Jaunes" value={totalYellows} subtitle="🟨 Avertissements" delay={0.7} />
-          <StatCard title="Cartons Rouges" value={totalReds} subtitle="🟥 Expulsions" delay={0.8} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+          <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.1} highlight />
+          <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.2} highlight />
+          <StatCard title="Total Buts" value={totalGoals} subtitle={minsPerGoal > 0 ? `1 but / ${minsPerGoal} min` : '0 but'} delay={0.3} />
+          <StatCard title="Total Passes" value={totalAssists} subtitle={`${totalGoals > 0 ? (totalAssists/matchesPlayed).toFixed(2) : 0} par match`} delay={0.4} />
+          
+          <StatCard title="Ratio Victoires" value={`${winRate}%`} subtitle={`${totalWins} V en ${matchesPlayed} M`} delay={0.5} />
+          <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.6} />
+          <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} apparitions`} delay={0.7} />
+          <StatCard title="Discipline" value={totalYellows + totalReds} subtitle={`${totalYellows} 🟨 | ${totalReds} 🟥`} delay={0.8} />
+        </div>
+
+        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 mb-8">
+          <h3 className="text-lg font-bold text-slate-800 mb-6 tracking-tight">Impact Offensif de la Saison</h3>
+          <StatsChart data={chartData} />
         </div>
 
         <section className="space-y-4">
@@ -195,9 +178,8 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              {sortedStats.map((stat, index) => {
+              {displayStats.map((stat, index) => {
                 const match = stat.matches
-
                 const dateStr = new Date(match.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
                 const isWin = match.team_score > match.opponent_score
                 const isLoss = match.team_score < match.opponent_score
@@ -225,11 +207,7 @@ export default async function PublicProfilePage(props: ProfilePageProps) {
                     <div className="flex items-center flex-wrap gap-2 pt-4 sm:pt-0 border-t sm:border-0 border-slate-100">
                       {stat.has_played ? (
                         <>
-                          {stat.position_played && (
-                            <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-bold border border-slate-200">
-                              {stat.position_played}
-                            </span>
-                          )}
+                          {stat.position_played && <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-bold border border-slate-200">{stat.position_played}</span>}
                           {stat.goals > 0 && <span className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-xs font-bold border border-emerald-100">⚽ {stat.goals}</span>}
                           {stat.assists > 0 && <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-bold border border-indigo-100">👟 {stat.assists}</span>}
                           {stat.yellow_cards > 0 && <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
