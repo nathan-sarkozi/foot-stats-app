@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { updateProfile, updateAvatar } from './actions'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import Image from 'next/image'
-import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
+import clubsData from '@/data/belgian_clubs.json'
 
 interface UserProfile {
   display_name: string
@@ -16,7 +16,9 @@ interface UserProfile {
   weight: number | null
 }
 
-export default async function SettingsPage() {
+// 1. AJOUT DES SEARCHPARAMS DANS LES PROPS POUR NEXT.JS 15
+export default async function SettingsPage(props: { searchParams: Promise<{ success?: string }> }) {
+  const searchParams = await props.searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -41,6 +43,16 @@ export default async function SettingsPage() {
         <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Paramètres du profil</h2>
         <p className="text-slate-500 mt-2 text-sm">Gère tes informations publiques et athlétiques.</p>
       </div>
+
+      {/* 2. BANNIÈRE DE SUCCÈS DYNAMIQUE */}
+      {searchParams?.success && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          {searchParams.success === 'avatar' 
+            ? "Ta photo de profil a été mise à jour avec succès." 
+            : "Tes informations ont été enregistrées avec succès."}
+        </div>
+      )}
 
       <form action={updateAvatar} className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center gap-6">
         <div className="h-24 w-24 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-extrabold text-4xl border border-indigo-100 overflow-hidden relative">
@@ -73,7 +85,6 @@ export default async function SettingsPage() {
               <input type="text" name="display_name" id="display_name" required defaultValue={userProfile.display_name} className={inputBaseClasses} />
             </div>
             
-            {/* CHAMP CLUB AVEC DATALIST RBFA */}
             <div>
               <label htmlFor="club" className="block text-sm font-bold text-slate-700">Club actuel</label>
               <input 
