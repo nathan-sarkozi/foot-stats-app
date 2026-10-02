@@ -6,7 +6,7 @@ import Navbar from '@/app/dashboard/components/Navbar'
 import StatCard from '@/app/dashboard/components/StatCard'
 import StatsChart from '@/app/dashboard/components/StatsChart'
 import FormGuide from '@/app/dashboard/components/FormGuide'
-import { getClubLogo } from '@/utils/getClubLogo' // IMPORT DU HELPER
+import { getClubLogo } from '@/utils/getClubLogo'
 
 interface MatchStatRecord {
   has_played: boolean
@@ -126,7 +126,6 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
   
   const displayStats = [...sortedStatsAsc].reverse()
 
-  // RECUPERATION DU LOGO DU JOUEUR
   const playerClubLogo = getClubLogo(profile.club)
 
   return (
@@ -162,29 +161,30 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
               )}
             </div>
             
+            {/* CLUB BADGE BLOCK */}
             {(profile.club || profile.category) ? (
-              <div className="text-slate-600 font-medium mt-2 flex items-center gap-2">
-                {/* AFFICHAGE DU LOGO DU JOUEUR */}
-                {playerClubLogo ? (
-                  <div className="relative w-5 h-5 shrink-0">
-                    <Image src={playerClubLogo} alt={profile.club!} fill className="object-contain" sizes="20px" />
-                  </div>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
-                )}
-                <p>
-                  {profile.club || 'Club non renseigné'} {profile.category && <span className="text-slate-400">• {profile.category}</span>}
-                </p>
+              <div className="mt-4 inline-flex items-center gap-4 bg-slate-50 pr-6 pl-2 py-2 rounded-2xl border border-slate-100">
+                <div className="relative w-12 h-12 shrink-0 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden">
+                  {playerClubLogo ? (
+                    <Image src={playerClubLogo} alt={profile.club!} fill className="object-contain p-1.5" sizes="48px" />
+                  ) : (
+                    <span className="text-slate-400 font-extrabold text-lg">{profile.club?.substring(0, 1).toUpperCase() || '?'}</span>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-extrabold text-slate-900">{profile.club || 'Club non renseigné'}</span>
+                  {profile.category && <span className="text-xs font-bold text-slate-500">{profile.category}</span>}
+                </div>
               </div>
             ) : (
               <p className="text-slate-400 font-medium mt-2 italic flex items-center gap-2">Agent libre</p>
             )}
 
-            <div className="flex flex-wrap items-center gap-2 mt-4">
+            <div className="flex flex-wrap items-center gap-2 mt-5">
               {profile.jersey_number && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">N° {profile.jersey_number}</span>}
               {profile.foot_preference && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">🦶 {profile.foot_preference}</span>}
               {profile.height && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">📏 {profile.height} cm</span>}
-              {profile.weight && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">⚖️️ {profile.weight} kg</span>}
+              {profile.weight && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">⚖️ {profile.weight} kg</span>}
             </div>
             
             <div className="mt-5 border-t border-slate-100 pt-4">
@@ -227,46 +227,54 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
                 const isLoss = match.team_score < match.opponent_score
                 const resultColor = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
                 
-                // RECUPERATION DU LOGO ADVERSE
                 const opponentLogo = getClubLogo(match.opponent)
 
                 return (
                   <div key={index} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center space-x-5">
-                      <div className="shrink-0 text-center min-w-12">
-                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">{dateStr}</span>
-                        <span className={`mt-1.5 inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-bold border ${resultColor}`}>
+                    <div className="flex items-center space-x-4 sm:space-x-6">
+                      
+                      {/* SCORE BLOCK */}
+                      <div className="shrink-0 text-center min-w-16">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{dateStr}</span>
+                        <span className={`mt-1.5 flex w-full items-center justify-center px-2 py-1.5 rounded-lg text-sm font-black border ${resultColor}`}>
                           {match.team_score} - {match.opponent_score}
                         </span>
                       </div>
                       
-                      <div>
-                        <div className="flex items-center gap-2">
-                          {/* AFFICHAGE DU LOGO ADVERSE */}
-                          {opponentLogo && (
-                            <div className="relative w-5 h-5 shrink-0">
-                              <Image src={opponentLogo} alt={match.opponent} fill className="object-contain" sizes="20px" />
-                            </div>
+                      {/* OPPONENT LOGO & DETAILS BLOCK */}
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-12 h-12 shrink-0 bg-slate-50 rounded-full border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden">
+                          {opponentLogo ? (
+                            <Image src={opponentLogo} alt={match.opponent} fill className="object-contain p-2" sizes="48px" />
+                          ) : (
+                            <span className="text-slate-400 font-extrabold text-lg">{match.opponent.substring(0, 1).toUpperCase()}</span>
                           )}
-                          <p className="text-base font-bold text-slate-900">vs {match.opponent}</p>
-                          {stat.is_motm && <span title="Homme du Match" className="text-lg">🏆</span>}
                         </div>
-                        <p className="text-xs font-medium text-slate-500 mt-0.5">{getCompetitionLabel(match.competition_type)}</p>
+                        
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-base font-bold text-slate-900">{match.opponent}</p>
+                            {stat.is_motm && <span title="Homme du Match" className="text-lg">🏆</span>}
+                          </div>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">{getCompetitionLabel(match.competition_type)}</p>
+                        </div>
                       </div>
+
                     </div>
                     
+                    {/* STATS BLOCK */}
                     <div className="flex items-center flex-wrap gap-2 pt-4 sm:pt-0 border-t sm:border-0 border-slate-100">
                       {stat.has_played ? (
                         <>
-                          {stat.position_played && <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-bold border border-slate-200">{stat.position_played}</span>}
-                          {stat.goals > 0 && <span className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-xs font-bold border border-emerald-100">⚽ {stat.goals}</span>}
-                          {stat.assists > 0 && <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-bold border border-indigo-100">👟 {stat.assists}</span>}
-                          {stat.yellow_cards > 0 && <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
-                          {stat.red_cards > 0 && <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs font-bold border border-red-100">🟥 {stat.red_cards}</span>}
-                          <span className="text-slate-400 font-medium text-sm ml-2">{stat.minutes_played}&apos;</span>
+                          {stat.position_played && <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-black uppercase border border-slate-200">{stat.position_played}</span>}
+                          {stat.goals > 0 && <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-bold border border-emerald-100">⚽ {stat.goals}</span>}
+                          {stat.assists > 0 && <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-bold border border-indigo-100">👟 {stat.assists}</span>}
+                          {stat.yellow_cards > 0 && <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
+                          {stat.red_cards > 0 && <span className="px-2.5 py-1 bg-red-50 text-red-700 rounded-md text-xs font-bold border border-red-100">🟥 {stat.red_cards}</span>}
+                          <span className="text-slate-400 font-semibold text-sm ml-2">{stat.minutes_played}&apos;</span>
                         </>
                       ) : (
-                        <span className="text-sm font-medium text-slate-400 bg-slate-50 px-3 py-1 rounded-full">N&apos;a pas joué</span>
+                        <span className="text-sm font-semibold text-slate-400 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">N&apos;a pas joué</span>
                       )}
                     </div>
                   </div>
