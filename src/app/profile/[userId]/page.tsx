@@ -1,11 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
-import Navbar from '@/app/dashboard/components/Navbar'
+import Image from 'next/image' // IMPORT LINK SUPPRIMÉ
 import StatCard from '@/app/dashboard/components/StatCard'
 import StatsChart from '@/app/dashboard/components/StatsChart'
-import FormGuide from '@/app/dashboard/components/FormGuide'
 import { getClubLogo } from '@/utils/getClubLogo'
 
 interface MatchStatRecord {
@@ -18,6 +15,7 @@ interface MatchStatRecord {
   is_motm: boolean
   position_played: string | null
   matches: {
+    id: string
     match_date: string
     opponent: string
     team_score: number
@@ -26,41 +24,15 @@ interface MatchStatRecord {
   }
 }
 
-export default async function PublicProfilePage(props: { params: Promise<{ userId: string }> }) {
+export default async function CurrentSeasonPage(props: { params: Promise<{ userId: string }> }) {
   const supabase = await createClient()
   const targetUserId = (await props.params).userId
-
-  const { data: { user: authUser } } = await supabase.auth.getUser()
-  
-  let visitorInitials = null
-  let visitorAvatarUrl = null
-
-  if (authUser) {
-    const { data: visitorProfile } = await supabase
-      .from('profiles')
-      .select('display_name, avatar_url')
-      .eq('id', authUser.id)
-      .single()
-      
-    if (visitorProfile && visitorProfile.display_name) {
-      visitorInitials = visitorProfile.display_name.substring(0, 2).toUpperCase()
-      visitorAvatarUrl = visitorProfile.avatar_url
-    }
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('display_name, avatar_url, club, category, preferred_position, foot_preference, jersey_number, height, weight')
-    .eq('id', targetUserId)
-    .single()
-
-  if (profileError || !profile) return notFound()
 
   const { data: statsData, error: statsError } = await supabase
     .from('statistics')
     .select(`
       goals, assists, yellow_cards, red_cards, minutes_played, has_played, is_motm, position_played,
-      matches!inner ( opponent, match_date, competition_type, team_score, opponent_score )
+      matches!inner ( id, opponent, match_date, competition_type, team_score, opponent_score )
     `)
     .eq('player_id', targetUserId)
     .returns<MatchStatRecord[]>()
@@ -126,164 +98,96 @@ export default async function PublicProfilePage(props: { params: Promise<{ userI
   
   const displayStats = [...sortedStatsAsc].reverse()
 
-  const playerClubLogo = getClubLogo(profile.club)
-
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      <Navbar initials={visitorInitials} avatarUrl={visitorAvatarUrl} />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.1} highlight />
+        <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.2} highlight />
+        <StatCard title="Total Buts" value={totalGoals} subtitle={minsPerGoal > 0 ? `1 but / ${minsPerGoal} min` : '0 but'} delay={0.3} />
+        <StatCard title="Total Passes" value={totalAssists} subtitle={`${totalGoals > 0 ? (totalAssists/matchesPlayed).toFixed(2) : 0} par match`} delay={0.4} />
         
-        <div className="mb-6">
-          <Link href="/dashboard/community" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
-            &larr; Retour à la communauté
-          </Link>
-        </div>
+        <StatCard title="Ratio Victoires" value={`${winRate}%`} subtitle={`${totalWins} V en ${matchesPlayed} M`} delay={0.5} />
+        <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.6} />
+        <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} apparitions`} delay={0.7} />
+        <StatCard title="Discipline" value={totalYellows + totalReds} subtitle={`${totalYellows} 🟨 | ${totalReds} 🟥`} delay={0.8} />
+      </div>
 
-        <header className="mb-8 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-start gap-6 relative">
-          
-          <div className="h-24 w-24 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-extrabold text-4xl border border-indigo-100 overflow-hidden relative">
-            {profile.avatar_url ? (
-              <Image src={profile.avatar_url} alt={`Avatar de ${profile.display_name}`} fill className="object-cover" sizes="96px" />
-            ) : (
-              profile.display_name.substring(0, 2).toUpperCase()
-            )}
+      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 mb-8">
+        <h3 className="text-lg font-bold text-slate-800 mb-6 tracking-tight">Impact Offensif de la Saison</h3>
+        <StatsChart data={chartData} />
+      </div>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">Historique des matchs</h2>
+        
+        {matchesPlayed === 0 ? (
+          <div className="bg-white p-8 rounded-3xl border border-dashed border-slate-300 text-center text-slate-500">
+            Aucun match enregistré pour le moment.
           </div>
-          
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{profile.display_name}</h1>
-              {profile.preferred_position && (
-                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-black uppercase tracking-wider rounded-lg border border-indigo-100">
-                  {profile.preferred_position}
-                </span>
-              )}
-            </div>
-            
-            {/* CLUB BADGE BLOCK */}
-            {(profile.club || profile.category) ? (
-              <div className="mt-4 inline-flex items-center gap-4 bg-slate-50 pr-6 pl-2 py-2 rounded-2xl border border-slate-100">
-                <div className="relative w-12 h-12 shrink-0 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden">
-                  {playerClubLogo ? (
-                    <Image src={playerClubLogo} alt={profile.club!} fill className="object-contain p-1.5" sizes="48px" />
-                  ) : (
-                    <span className="text-slate-400 font-extrabold text-lg">{profile.club?.substring(0, 1).toUpperCase() || '?'}</span>
-                  )}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-extrabold text-slate-900">{profile.club || 'Club non renseigné'}</span>
-                  {profile.category && <span className="text-xs font-bold text-slate-500">{profile.category}</span>}
-                </div>
-              </div>
-            ) : (
-              <p className="text-slate-400 font-medium mt-2 italic flex items-center gap-2">Agent libre</p>
-            )}
+        ) : (
+          <div className="space-y-3">
+            {displayStats.map((stat) => {
+              const match = stat.matches
+              const dateStr = new Date(match.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+              const isWin = match.team_score > match.opponent_score
+              const isLoss = match.team_score < match.opponent_score
+              const resultColor = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
+              
+              const opponentLogo = getClubLogo(match.opponent)
 
-            <div className="flex flex-wrap items-center gap-2 mt-5">
-              {profile.jersey_number && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">N° {profile.jersey_number}</span>}
-              {profile.foot_preference && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">🦶 {profile.foot_preference}</span>}
-              {profile.height && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">📏 {profile.height} cm</span>}
-              {profile.weight && <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-md border border-slate-200">⚖️ {profile.weight} kg</span>}
-            </div>
-            
-            <div className="mt-5 border-t border-slate-100 pt-4">
-              <FormGuide recentMatches={displayStats.filter(stat => stat.has_played).map(stat => stat.matches)} />
-            </div>
-
-          </div>
-        </header>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
-          <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.1} highlight />
-          <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.2} highlight />
-          <StatCard title="Total Buts" value={totalGoals} subtitle={minsPerGoal > 0 ? `1 but / ${minsPerGoal} min` : '0 but'} delay={0.3} />
-          <StatCard title="Total Passes" value={totalAssists} subtitle={`${totalGoals > 0 ? (totalAssists/matchesPlayed).toFixed(2) : 0} par match`} delay={0.4} />
-          
-          <StatCard title="Ratio Victoires" value={`${winRate}%`} subtitle={`${totalWins} V en ${matchesPlayed} M`} delay={0.5} />
-          <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.6} />
-          <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} apparitions`} delay={0.7} />
-          <StatCard title="Discipline" value={totalYellows + totalReds} subtitle={`${totalYellows} 🟨 | ${totalReds} 🟥`} delay={0.8} />
-        </div>
-
-        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 mb-8">
-          <h3 className="text-lg font-bold text-slate-800 mb-6 tracking-tight">Impact Offensif de la Saison</h3>
-          <StatsChart data={chartData} />
-        </div>
-
-        <section className="space-y-4">
-          <h2 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">Historique des matchs</h2>
-          
-          {matchesPlayed === 0 ? (
-            <div className="bg-white p-8 rounded-3xl border border-dashed border-slate-300 text-center text-slate-500">
-              Aucun match enregistré pour le moment.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {displayStats.map((stat, index) => {
-                const match = stat.matches
-                const dateStr = new Date(match.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-                const isWin = match.team_score > match.opponent_score
-                const isLoss = match.team_score < match.opponent_score
-                const resultColor = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
-                
-                const opponentLogo = getClubLogo(match.opponent)
-
-                return (
-                  <div key={index} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center space-x-4 sm:space-x-6">
-                      
-                      {/* SCORE BLOCK */}
-                      <div className="shrink-0 text-center min-w-16">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{dateStr}</span>
-                        <span className={`mt-1.5 flex w-full items-center justify-center px-2 py-1.5 rounded-lg text-sm font-black border ${resultColor}`}>
-                          {match.team_score} - {match.opponent_score}
-                        </span>
-                      </div>
-                      
-                      {/* OPPONENT LOGO & DETAILS BLOCK */}
-                      <div className="flex items-center gap-4">
-                        <div className="relative w-12 h-12 shrink-0 bg-slate-50 rounded-full border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden">
-                          {opponentLogo ? (
-                            <Image src={opponentLogo} alt={match.opponent} fill className="object-contain p-2" sizes="48px" />
-                          ) : (
-                            <span className="text-slate-400 font-extrabold text-lg">{match.opponent.substring(0, 1).toUpperCase()}</span>
-                          )}
-                        </div>
-                        
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="text-base font-bold text-slate-900">{match.opponent}</p>
-                            {stat.is_motm && <span title="Homme du Match" className="text-lg">🏆</span>}
-                          </div>
-                          <p className="text-xs font-semibold text-slate-500 mt-0.5">{getCompetitionLabel(match.competition_type)}</p>
-                        </div>
-                      </div>
-
+              return (
+                <div key={match.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center space-x-4 sm:space-x-6">
+                    
+                    {/* CORRECTION TAILWIND: min-w-[64px] -> min-w-16 */}
+                    <div className="shrink-0 text-center min-w-16">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{dateStr}</span>
+                      <span className={`mt-1.5 flex w-full items-center justify-center px-2 py-1.5 rounded-lg text-sm font-black border ${resultColor}`}>
+                        {match.team_score} - {match.opponent_score}
+                      </span>
                     </div>
                     
-                    {/* STATS BLOCK */}
-                    <div className="flex items-center flex-wrap gap-2 pt-4 sm:pt-0 border-t sm:border-0 border-slate-100">
-                      {stat.has_played ? (
-                        <>
-                          {stat.position_played && <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-black uppercase border border-slate-200">{stat.position_played}</span>}
-                          {stat.goals > 0 && <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-bold border border-emerald-100">⚽ {stat.goals}</span>}
-                          {stat.assists > 0 && <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-bold border border-indigo-100">👟 {stat.assists}</span>}
-                          {stat.yellow_cards > 0 && <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
-                          {stat.red_cards > 0 && <span className="px-2.5 py-1 bg-red-50 text-red-700 rounded-md text-xs font-bold border border-red-100">🟥 {stat.red_cards}</span>}
-                          <span className="text-slate-400 font-semibold text-sm ml-2">{stat.minutes_played}&apos;</span>
-                        </>
-                      ) : (
-                        <span className="text-sm font-semibold text-slate-400 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">N&apos;a pas joué</span>
-                      )}
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-12 h-12 shrink-0 bg-slate-50 rounded-full border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden">
+                        {opponentLogo ? (
+                          <Image src={opponentLogo} alt={match.opponent} fill className="object-contain p-2" sizes="48px" />
+                        ) : (
+                          <span className="text-slate-400 font-extrabold text-lg">{match.opponent.substring(0, 1).toUpperCase()}</span>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-base font-bold text-slate-900">{match.opponent}</p>
+                          {stat.is_motm && <span title="Homme du Match" className="text-lg">🏆</span>}
+                        </div>
+                        <p className="text-xs font-semibold text-slate-500 mt-0.5">{getCompetitionLabel(match.competition_type)}</p>
+                      </div>
                     </div>
+
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
-      </main>
+                  
+                  <div className="flex items-center flex-wrap gap-2 pt-4 sm:pt-0 border-t sm:border-0 border-slate-100">
+                    {stat.has_played ? (
+                      <>
+                        {stat.position_played && <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-black uppercase border border-slate-200">{stat.position_played}</span>}
+                        {stat.goals > 0 && <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-bold border border-emerald-100">⚽ {stat.goals}</span>}
+                        {stat.assists > 0 && <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-bold border border-indigo-100">👟 {stat.assists}</span>}
+                        {stat.yellow_cards > 0 && <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
+                        {stat.red_cards > 0 && <span className="px-2.5 py-1 bg-red-50 text-red-700 rounded-md text-xs font-bold border border-red-100">🟥 {stat.red_cards}</span>}
+                        <span className="text-slate-400 font-semibold text-sm ml-2">{stat.minutes_played}&apos;</span>
+                      </>
+                    ) : (
+                      <span className="text-sm font-semibold text-slate-400 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">N&apos;a pas joué</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
     </div>
   )
 }

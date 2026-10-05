@@ -14,7 +14,8 @@ export default function Navbar({ initials = "FS", avatarUrl = null }: { initials
 
   const links = [
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/dashboard/community', label: 'Communauté' }
+    { href: '/dashboard/community', label: 'Communauté' },
+    { href: '/dashboard/career', label: 'Ma Carrière' }
   ]
 
   return (
