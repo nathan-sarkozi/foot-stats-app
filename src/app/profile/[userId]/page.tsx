@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { notFound } from 'next/navigation'
-import Image from 'next/image' // IMPORT LINK SUPPRIMÉ
+import Image from 'next/image'
 import StatCard from '@/app/dashboard/components/StatCard'
 import StatsChart from '@/app/dashboard/components/StatsChart'
 import { getClubLogo } from '@/utils/getClubLogo'
@@ -126,7 +126,7 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
             Aucun match enregistré pour le moment.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {displayStats.map((stat) => {
               const match = stat.matches
               const dateStr = new Date(match.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
@@ -137,49 +137,48 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
               const opponentLogo = getClubLogo(match.opponent)
 
               return (
-                <div key={match.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center space-x-4 sm:space-x-6">
-                    
-                    {/* CORRECTION TAILWIND: min-w-[64px] -> min-w-16 */}
-                    <div className="shrink-0 text-center min-w-16">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{dateStr}</span>
-                      <span className={`mt-1.5 flex w-full items-center justify-center px-2 py-1.5 rounded-lg text-sm font-black border ${resultColor}`}>
-                        {match.team_score} - {match.opponent_score}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="relative w-12 h-12 shrink-0 bg-slate-50 rounded-full border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden">
-                        {opponentLogo ? (
-                          <Image src={opponentLogo} alt={match.opponent} fill className="object-contain p-2" sizes="48px" />
-                        ) : (
-                          <span className="text-slate-400 font-extrabold text-lg">{match.opponent.substring(0, 1).toUpperCase()}</span>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-base font-bold text-slate-900">{match.opponent}</p>
-                          {stat.is_motm && <span title="Homme du Match" className="text-lg">🏆</span>}
-                        </div>
-                        <p className="text-xs font-semibold text-slate-500 mt-0.5">{getCompetitionLabel(match.competition_type)}</p>
-                      </div>
-                    </div>
-
+                <div key={match.id} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{dateStr}</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">{getCompetitionLabel(match.competition_type)}</span>
                   </div>
                   
-                  <div className="flex items-center flex-wrap gap-2 pt-4 sm:pt-0 border-t sm:border-0 border-slate-100">
+                  <div className="flex flex-col items-center flex-1">
+                    <div className="relative w-16 h-16 bg-white rounded-full border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden mb-3">
+                      {opponentLogo ? (
+                        <Image src={opponentLogo} alt={match.opponent} fill className="object-contain p-2.5" sizes="64px" />
+                      ) : (
+                        <span className="text-slate-300 font-extrabold text-2xl">{match.opponent.substring(0, 1).toUpperCase()}</span>
+                      )}
+                    </div>
+                    
+                    <p className="text-sm font-bold text-slate-900 text-center mb-3 line-clamp-1" title={match.opponent}>
+                      {match.opponent}
+                    </p>
+                    
+                    <span className={`px-5 py-1.5 rounded-xl text-xl font-black border ${resultColor}`}>
+                      {match.team_score} - {match.opponent_score}
+                    </span>
+                    
+                    {stat.is_motm && (
+                      <div className="mt-3 text-[10px] font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 flex items-center gap-1.5 shadow-sm">
+                        <span className="text-sm">🏆</span> Homme du Match
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-center flex-wrap gap-2">
                     {stat.has_played ? (
                       <>
-                        {stat.position_played && <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-black uppercase border border-slate-200">{stat.position_played}</span>}
-                        {stat.goals > 0 && <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-bold border border-emerald-100">⚽ {stat.goals}</span>}
-                        {stat.assists > 0 && <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-bold border border-indigo-100">👟 {stat.assists}</span>}
-                        {stat.yellow_cards > 0 && <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
-                        {stat.red_cards > 0 && <span className="px-2.5 py-1 bg-red-50 text-red-700 rounded-md text-xs font-bold border border-red-100">🟥 {stat.red_cards}</span>}
-                        <span className="text-slate-400 font-semibold text-sm ml-2">{stat.minutes_played}&apos;</span>
+                        {stat.position_played && <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-black uppercase border border-slate-200">{stat.position_played}</span>}
+                        {stat.goals > 0 && <span className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-[10px] font-bold border border-emerald-100">⚽ {stat.goals}</span>}
+                        {stat.assists > 0 && <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold border border-indigo-100">👟 {stat.assists}</span>}
+                        {stat.yellow_cards > 0 && <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-[10px] font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
+                        {stat.red_cards > 0 && <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-[10px] font-bold border border-red-100">🟥 {stat.red_cards}</span>}
+                        <span className="text-slate-400 font-bold text-xs ml-1">{stat.minutes_played}&apos;</span>
                       </>
                     ) : (
-                      <span className="text-sm font-semibold text-slate-400 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">N&apos;a pas joué</span>
+                      <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">N&apos;a pas joué</span>
                     )}
                   </div>
                 </div>
