@@ -8,19 +8,24 @@ async function fetchFromRBFA(body: unknown) {
     if (!scraperApiKey) {
       console.error("🚨 API KEY MANQUANTE : process.env.SCRAPER_API_KEY n'est pas défini !");
     } else {
-      // LE COMBO GAGNANT : premium=true (IP résidentielle) + keep_headers=true (Préserve le format JSON pour GraphQL)
-      urlToFetch = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(RBFA_GRAPHQL_ENDPOINT)}&keep_headers=true&premium=true&timeout=20000`
+      // COMBO COMPLET : IP Résidentielle (premium) + En-têtes préservés + Routeur Européen (country_code)
+      urlToFetch = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(RBFA_GRAPHQL_ENDPOINT)}&keep_headers=true&premium=true&country_code=eu&timeout=20000`
     }
 
-    console.log("📡 FETCH RBFA via:", scraperApiKey ? "ScraperAPI (Premium)" : "Direct");
+    console.log("📡 FETCH RBFA via:", scraperApiKey ? "ScraperAPI (Premium EU)" : "Direct");
 
     const response = await fetch(urlToFetch, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        // SPOOFING OBLIGATOIRE : Puisqu'on garde nos headers, on doit fournir un faux navigateur parfait
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Origin': 'https://www.rbfa.be',
+        'Referer': 'https://www.rbfa.be/',
+        'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
       },
-      // ⚠️ DÉSACTIVATION COMPLÈTE DU CACHE LE TEMPS DU DEBUG ⚠️
+      // Toujours en mode debug pour purger le cache
       cache: 'no-store', 
       body: JSON.stringify(body)
     })
