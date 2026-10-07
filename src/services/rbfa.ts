@@ -8,8 +8,8 @@ async function fetchFromRBFA(body: unknown) {
     if (!scraperApiKey) {
       console.error("🚨 API KEY MANQUANTE : process.env.SCRAPER_API_KEY n'est pas défini !");
     } else {
-      // J'ai retiré keep_headers=true pour laisser ScraperAPI gérer l'anonymat à 100%
-      urlToFetch = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(RBFA_GRAPHQL_ENDPOINT)}&timeout=15000&premium=true`
+      // LE COMBO GAGNANT : premium=true (IP résidentielle) + keep_headers=true (Préserve le format JSON pour GraphQL)
+      urlToFetch = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(RBFA_GRAPHQL_ENDPOINT)}&keep_headers=true&premium=true&timeout=20000`
     }
 
     console.log("📡 FETCH RBFA via:", scraperApiKey ? "ScraperAPI (Premium)" : "Direct");
