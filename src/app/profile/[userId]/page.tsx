@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import StatCard from '@/app/dashboard/components/StatCard'
 import StatsChart from '@/app/dashboard/components/StatsChart'
+import TeamWidget from '@/app/dashboard/components/TeamWidget'
 import { getClubLogo } from '@/utils/getClubLogo'
 
 interface MatchStatRecord {
@@ -27,6 +28,13 @@ interface MatchStatRecord {
 export default async function CurrentSeasonPage(props: { params: Promise<{ userId: string }> }) {
   const supabase = await createClient()
   const targetUserId = (await props.params).userId
+
+  // NOUVEAU : On récupère l'ID RBFA du joueur ciblé
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('rbfa_team_id')
+    .eq('id', targetUserId)
+    .single()
 
   const { data: statsData, error: statsError } = await supabase
     .from('statistics')
@@ -101,6 +109,9 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       
+      {/* WIDGET DYNAMIQUE : S'affiche uniquement si profileData.rbfa_team_id existe */}
+      <TeamWidget teamId={profileData?.rbfa_team_id} />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
         <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.1} highlight />
         <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.2} highlight />

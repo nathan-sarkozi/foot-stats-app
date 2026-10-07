@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation' // IMPORT AJOUTÉ
+import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { z } from 'zod'
 
@@ -14,6 +14,7 @@ const ProfileSchema = z.object({
   jersey_number: z.coerce.number().min(1).max(99).nullable(),
   height: z.coerce.number().min(100).max(250).nullable(),
   weight: z.coerce.number().min(30).max(150).nullable(),
+  rbfa_team_id: z.string().max(50).nullable(), // NOUVEAU CHAMP
 })
 
 export async function updateProfile(formData: FormData) {
@@ -32,6 +33,21 @@ export async function updateProfile(formData: FormData) {
     return val && val.trim() !== '' ? val : null
   }
 
+  // Extracteur intelligent : si l'utilisateur colle toute l'URL de la RBFA au lieu de juste l'ID,
+  // on extrait automatiquement le bon numéro avec une expression régulière.
+  const parseRbfaTeamId = (key: string) => {
+    const val = formData.get(key) as string
+    if (!val || val.trim() === '') return null
+    
+    if (val.includes('/team/')) {
+      const match = val.match(/\/team\/(\d+)/)
+      if (match) return match[1]
+    }
+    
+    const clean = val.replace(/\D/g, '')
+    return clean !== '' ? clean : null
+  }
+
   const rawData = {
     display_name: formData.get('display_name'),
     club: parseNullableString('club'),
@@ -41,6 +57,7 @@ export async function updateProfile(formData: FormData) {
     jersey_number: parseNullableNumber('jersey_number'),
     height: parseNullableNumber('height'),
     weight: parseNullableNumber('weight'),
+    rbfa_team_id: parseRbfaTeamId('rbfa_team_id'), // NOUVEAU CHAMP
   }
 
   const validatedFields = ProfileSchema.safeParse(rawData)
@@ -63,7 +80,6 @@ export async function updateProfile(formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
-  // REDIRECTION AVEC FEEDBACK
   redirect('/dashboard/settings?success=profile')
 }
 
@@ -106,6 +122,5 @@ export async function updateAvatar(formData: FormData) {
   if (dbError) throw new Error('Failed to link avatar to profile')
 
   revalidatePath('/', 'layout')
-  // REDIRECTION AVEC FEEDBACK
   redirect('/dashboard/settings?success=avatar')
 }

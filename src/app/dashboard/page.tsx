@@ -7,9 +7,11 @@ import StatCard from './components/StatCard'
 import FormGuide from './components/FormGuide'
 import { redirect } from 'next/navigation'
 import { getClubLogo } from '@/utils/getClubLogo'
+import TeamWidget from './components/TeamWidget'
 
 interface PlayerProfile {
   display_name: string
+  rbfa_team_id: string | null // TYPAGE STRICT CORRIGÉ
 }
 
 interface MatchStatRecord {
@@ -40,7 +42,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
 
   const { data: playerProfile, error: profileError } = await supabase
     .from('profiles')
-    .select('display_name')
+    .select('display_name, rbfa_team_id')
     .eq('id', user.id)
     .single()
 
@@ -143,6 +145,8 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
         </div>
       </div>
 
+      <TeamWidget teamId={profile.rbfa_team_id} isDashboard={true} />
+
       <CompetitionFilter />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -184,22 +188,17 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
                   href={`/dashboard/edit-match/${match.id}`}
                   className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-indigo-300 hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all group flex flex-col focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  {/* EN-TÊTE DESKTOP (Caché sur mobile) */}
                   <div className="hidden sm:flex justify-between items-center mb-4">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{dateStr}</span>
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">{getCompetitionLabel(match.competition_type)}</span>
                   </div>
                   
-                  {/* CORPS : Ligne sur Mobile, Colonne sur Desktop */}
                   <div className="flex flex-row sm:flex-col items-center gap-3 sm:gap-0">
-                    
-                    {/* DATE MOBILE (Caché sur desktop) */}
                     <div className="sm:hidden flex flex-col items-center justify-center min-w-10 pr-3 border-r border-slate-100">
                       <span className="text-sm font-black text-slate-700">{new Date(match.match_date).getDate()}</span>
                       <span className="text-[10px] font-bold text-slate-400 uppercase">{new Date(match.match_date).toLocaleDateString('fr-FR', {month: 'short'})}</span>
                     </div>
 
-                    {/* LOGO */}
                     <div className="relative w-10 h-10 sm:w-16 sm:h-16 shrink-0 bg-slate-50 sm:bg-white rounded-full border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden sm:mb-3 group-hover:scale-105 transition-transform">
                       {opponentLogo ? (
                         <Image src={opponentLogo} alt={match.opponent} fill className="object-contain p-1.5 sm:p-2.5" sizes="(max-width: 640px) 40px, 64px" />
@@ -208,7 +207,6 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
                       )}
                     </div>
                     
-                    {/* INFO ADVERSAIRE */}
                     <div className="flex flex-col sm:items-center flex-1 min-w-0">
                       <p className="text-sm font-bold text-slate-900 sm:text-center sm:mb-3 group-hover:text-indigo-600 transition-colors truncate w-full" title={match.opponent}>
                         {match.opponent}
@@ -219,14 +217,12 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
                       </div>
                     </div>
                     
-                    {/* SCORE */}
                     <div className="shrink-0 sm:w-full sm:flex sm:justify-center">
                       <span className={`flex items-center justify-center px-2.5 py-1 sm:px-5 sm:py-1.5 rounded-lg sm:rounded-xl text-sm sm:text-xl font-black border ${resultColor}`}>
                         {match.team_score} - {match.opponent_score}
                       </span>
                     </div>
 
-                    {/* MOTM DESKTOP (Caché sur mobile) */}
                     {stat.is_motm && (
                       <div className="hidden sm:flex mt-3 text-[10px] font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 items-center gap-1.5 shadow-sm">
                         <span className="text-sm">🏆</span> Homme du Match
@@ -234,7 +230,6 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
                     )}
                   </div>
                   
-                  {/* PIED : Statistiques du joueur */}
                   <div className="mt-3 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-100 flex items-center justify-between sm:justify-center flex-wrap gap-2">
                     {stat.has_played ? (
                       <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto justify-between sm:justify-center">

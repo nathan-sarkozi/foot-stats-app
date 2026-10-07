@@ -14,9 +14,9 @@ interface UserProfile {
   jersey_number: number | null
   height: number | null
   weight: number | null
+  rbfa_team_id: string | null // NOUVEAU CHAMP
 }
 
-// 1. AJOUT DES SEARCHPARAMS DANS LES PROPS POUR NEXT.JS 15
 export default async function SettingsPage(props: { searchParams: Promise<{ success?: string }> }) {
   const searchParams = await props.searchParams
   const supabase = await createClient()
@@ -26,7 +26,8 @@ export default async function SettingsPage(props: { searchParams: Promise<{ succ
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('display_name, avatar_url, club, category, preferred_position, foot_preference, jersey_number, height, weight')
+    // Ajout de rbfa_team_id dans le select
+    .select('display_name, avatar_url, club, category, preferred_position, foot_preference, jersey_number, height, weight, rbfa_team_id') 
     .eq('id', user.id)
     .single()
 
@@ -44,7 +45,6 @@ export default async function SettingsPage(props: { searchParams: Promise<{ succ
         <p className="text-slate-500 mt-2 text-sm">Gère tes informations publiques et athlétiques.</p>
       </div>
 
-      {/* 2. BANNIÈRE DE SUCCÈS DYNAMIQUE */}
       {searchParams?.success && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -108,6 +108,22 @@ export default async function SettingsPage(props: { searchParams: Promise<{ succ
             <div>
               <label htmlFor="category" className="block text-sm font-bold text-slate-700">Catégorie / Division</label>
               <input type="text" name="category" id="category" placeholder="Ex: Réserve C" defaultValue={userProfile.category || ""} className={inputBaseClasses} />
+            </div>
+
+            {/* NOUVEAU CHAMP RBFA */}
+            <div className="sm:col-span-2 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+              <label htmlFor="rbfa_team_id" className="block text-sm font-bold text-indigo-900">Connexion RBFA (Widget Dashboard)</label>
+              <input 
+                type="text" 
+                name="rbfa_team_id" 
+                id="rbfa_team_id" 
+                placeholder="Ex: 368465 ou colle l'URL de ton équipe" 
+                defaultValue={userProfile.rbfa_team_id || ""} 
+                className={`mt-2 ${inputBaseClasses}`} 
+              />
+              <p className="text-xs text-indigo-700/80 mt-2 font-medium">
+                Va sur la page de ton équipe sur le site officiel de la RBFA. Colle l&apos;URL complète ici ou saisis uniquement le numéro situé après <code className="bg-white/60 px-1 py-0.5 rounded text-indigo-900 font-bold">/team/</code>.
+              </p>
             </div>
           </div>
         </div>
