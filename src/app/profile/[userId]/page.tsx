@@ -5,6 +5,7 @@ import StatCard from '@/app/dashboard/components/StatCard'
 import StatsChart from '@/app/dashboard/components/StatsChart'
 import TeamWidget from '@/app/dashboard/components/TeamWidget'
 import { getClubLogo } from '@/utils/getClubLogo'
+import { Suspense } from 'react'
 
 interface MatchStatRecord {
   has_played: boolean
@@ -110,7 +111,16 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* WIDGET DYNAMIQUE : S'affiche uniquement si profileData.rbfa_team_id existe */}
-      <TeamWidget teamId={profileData?.rbfa_team_id} />
+      <Suspense fallback={
+        <div className="h-62.5 bg-slate-50 border border-slate-200 rounded-3xl mb-8 flex items-center justify-center animate-pulse shadow-sm">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-6 h-6 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+            <span className="text-slate-400 font-bold text-sm">Connexion à la fédération en cours...</span>
+          </div>
+        </div>
+      }>
+        <TeamWidget teamId={profileData?.rbfa_team_id} />
+      </Suspense>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
         <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.1} highlight />

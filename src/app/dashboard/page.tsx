@@ -8,6 +8,7 @@ import FormGuide from './components/FormGuide'
 import { redirect } from 'next/navigation'
 import { getClubLogo } from '@/utils/getClubLogo'
 import TeamWidget from './components/TeamWidget'
+import { Suspense } from 'react'
 
 interface PlayerProfile {
   display_name: string
@@ -145,7 +146,16 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
         </div>
       </div>
 
-      <TeamWidget teamId={profile.rbfa_team_id} isDashboard={true} />
+      <Suspense fallback={
+        <div className="h-62.5 bg-slate-50 border border-slate-200 rounded-3xl mb-8 flex items-center justify-center animate-pulse shadow-sm">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-6 h-6 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+            <span className="text-slate-400 font-bold text-sm">Connexion à la fédération en cours...</span>
+          </div>
+        </div>
+      }>
+        <TeamWidget teamId={profile.rbfa_team_id} isDashboard={true} />
+      </Suspense>
 
       <CompetitionFilter />
 

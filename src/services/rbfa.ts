@@ -9,7 +9,7 @@ async function fetchFromRBFA(body: unknown) {
     
     // Si la clé est dispo (en Prod), on construit l'URL du proxy
     if (scraperApiKey) {
-      urlToFetch = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(RBFA_GRAPHQL_ENDPOINT)}&keep_headers=true`
+      urlToFetch = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(RBFA_GRAPHQL_ENDPOINT)}&keep_headers=true&timeout=8000`
     }
 
     const response = await fetch(urlToFetch, {
