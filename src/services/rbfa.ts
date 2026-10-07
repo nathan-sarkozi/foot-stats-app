@@ -7,13 +7,18 @@ async function fetchFromRBFA(body: unknown) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        // Anti-Bot Spoofing : On simule un navigateur légitime
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*', // Changé pour imiter un navigateur
+        // Anti-Bot Spoofing Avancé : On imite Safari sur Mac OS
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
         'Origin': 'https://www.rbfa.be',
         'Referer': 'https://www.rbfa.be/',
+        'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Connection': 'keep-alive',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-site',
       },
-      next: { revalidate: 10800 }, // Cache de 3 heures pour économiser les requêtes
+      next: { revalidate: 10800 }, // Cache de 3 heures
       body: JSON.stringify(body)
     })
 
@@ -60,7 +65,6 @@ export async function getTeamRankings(teamId: string) {
   if (!teamId) return null
 
   const result = await fetchFromRBFA({
-    // Mise à jour avec tes données exactes
     operationName: "getSeriesAndRankingsQuery", 
     variables: { teamId, language: "fr" },
     extensions: {
@@ -71,6 +75,5 @@ export async function getTeamRankings(teamId: string) {
     }
   })
 
-  // Le chemin d'accès au tableau de classement correspond au JSON que tu m'as envoyé
   return result?.data?.teamSeriesAndRankings?.rankings?.[0]?.rankings?.[0] || null
 }
