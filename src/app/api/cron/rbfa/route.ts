@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     if (!scraperApiKey) throw new Error('Clé ScraperAPI manquante')
 
     // Liste de tes équipes à rafraîchir (Ajoute les IDs de tes 2 équipes ici)
-    const teamsToUpdate = ['ID_EQUIPE_1', 'ID_EQUIPE_2'] 
+    const teamsToUpdate = ['368465', '368464'] 
 
     for (const teamId of teamsToUpdate) {
       // 1. Fetch réseau payant
