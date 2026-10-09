@@ -1,6 +1,9 @@
+import { unstable_cache } from 'next/cache'
+
 const RBFA_GRAPHQL_ENDPOINT = 'https://datalake-prod2018.rbfa.be/graphql'
 
-async function fetchFromRBFA(body: unknown) {
+// 1. La fonction réseau pure (ne gère pas le cache Next.js directement)
+async function fetchFromRBFARaw(body: unknown) {
   try {
     const scraperApiKey = process.env.SCRAPER_API_KEY
     let urlToFetch = RBFA_GRAPHQL_ENDPOINT
@@ -19,22 +22,14 @@ async function fetchFromRBFA(body: unknown) {
         'Referer': 'https://www.rbfa.be/',
         'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
       },
-      // ARCHITECTURE FINALE : Cache persistant (On-Demand Revalidation via Cron)
-      cache: 'force-cache',
-      next: { tags: ['rbfa-data'] }, 
+      cache: 'no-store', // On désactive le cache fetch, c'est unstable_cache qui prend le relais au-dessus
       body: JSON.stringify(body)
     })
 
-    if (!response.ok) {
-      console.error(`Échec HTTP : ${response.status}`)
-      return null
-    }
+    if (!response.ok) return null
     
     const rawText = await response.text()
-    if (rawText.trim().startsWith('<')) {
-      console.error('Blocage WAF intercepté')
-      return null
-    }
+    if (rawText.trim().startsWith('<')) return null
 
     return JSON.parse(rawText)
   } catch (error) {
@@ -43,26 +38,42 @@ async function fetchFromRBFA(body: unknown) {
   }
 }
 
+// 2. Récupération du prochain match (Mis en cache persistant par ID d'équipe)
 export async function getUpcomingMatch(teamId: string) {
   if (!teamId) return null
-  const result = await fetchFromRBFA({
-    operationName: "GetUpcomingMatch",
-    variables: { teamId, language: "fr" },
-    extensions: {
-      persistedQuery: { version: 1, sha256Hash: "7e0aa25b6dbe45cede5f1a16320b091be9078a7b9d8cb9cb1402fc35292696fb" }
-    }
-  })
-  return result?.data?.upcomingMatch || null
+
+  return unstable_cache(
+    async () => {
+      const result = await fetchFromRBFARaw({
+        operationName: "GetUpcomingMatch",
+        variables: { teamId, language: "fr" },
+        extensions: {
+          persistedQuery: { version: 1, sha256Hash: "7e0aa25b6dbe45cede5f1a16320b091be9078a7b9d8cb9cb1402fc35292696fb" }
+        }
+      })
+      return result?.data?.upcomingMatch || null
+    },
+    [`rbfa-upcoming-${teamId}`], // Clé de stockage
+    { tags: ['rbfa-data', `rbfa-team-${teamId}`] } // Invalidation via ton cron
+  )()
 }
 
+// 3. Récupération du classement (Mis en cache persistant par ID d'équipe)
 export async function getTeamRankings(teamId: string) {
   if (!teamId) return null
-  const result = await fetchFromRBFA({
-    operationName: "getSeriesAndRankingsQuery", 
-    variables: { teamId, language: "fr" },
-    extensions: {
-      persistedQuery: { version: 1, sha256Hash: "ace90f0250b37a504282e27289c62ea6a3f444ef8821f663bd1faa8e3689e358" }
-    }
-  })
-  return result?.data?.teamSeriesAndRankings?.rankings?.[0]?.rankings?.[0] || null
+
+  return unstable_cache(
+    async () => {
+      const result = await fetchFromRBFARaw({
+        operationName: "getSeriesAndRankingsQuery", 
+        variables: { teamId, language: "fr" },
+        extensions: {
+          persistedQuery: { version: 1, sha256Hash: "ace90f0250b37a504282e27289c62ea6a3f444ef8821f663bd1faa8e3689e358" }
+        }
+      })
+      return result?.data?.teamSeriesAndRankings?.rankings?.[0]?.rankings?.[0] || null
+    },
+    [`rbfa-rankings-${teamId}`], // Clé de stockage
+    { tags: ['rbfa-data', `rbfa-team-${teamId}`] } // Invalidation via ton cron
+  )()
 }
