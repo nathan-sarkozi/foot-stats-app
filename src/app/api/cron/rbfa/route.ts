@@ -13,8 +13,11 @@ async function fetchScraperAPI(scraperApiKey: string, operationName: string, has
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Origin': 'https://www.rbfa.be',
+      'Referer': 'https://www.rbfa.be/',
+      'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
     },
-    cache: 'no-store', // On s'en fout du cache ici, le Cron l'appelle volontairement
+    cache: 'no-store',
     body: JSON.stringify({
       operationName,
       variables: { teamId, language: "fr" },
@@ -22,7 +25,12 @@ async function fetchScraperAPI(scraperApiKey: string, operationName: string, has
     })
   })
 
-  if (!response.ok) throw new Error('Échec HTTP ScraperAPI')
+  if (!response.ok) {
+    const errorBody = await response.text()
+    console.error(`ScraperAPI HTTP Error [${response.status}]:`, errorBody)
+    throw new Error(`ScraperAPI a retourné un statut ${response.status}: ${errorBody.slice(0, 100)}`)
+  }
+
   const json = await response.json()
   return json.data
 }
