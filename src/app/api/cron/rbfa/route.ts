@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js' // Ici on utilise le client admin
+import { createClient } from '@supabase/supabase-js'
+
+// 1. Force l'exécution dynamique et pousse le timeout Vercel à 60s
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60 
 
 const RBFA_GRAPHQL_ENDPOINT = 'https://datalake-prod2018.rbfa.be/graphql'
 
-// Fonction interne pour taper ScraperAPI
 async function fetchScraperAPI(scraperApiKey: string, operationName: string, hash: string, teamId: string) {
   const urlToFetch = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(RBFA_GRAPHQL_ENDPOINT)}&keep_headers=true&premium=true&country_code=eu&timeout=20000`
   
@@ -28,7 +31,7 @@ async function fetchScraperAPI(scraperApiKey: string, operationName: string, has
   if (!response.ok) {
     const errorBody = await response.text()
     console.error(`ScraperAPI HTTP Error [${response.status}]:`, errorBody)
-    throw new Error(`ScraperAPI a retourné un statut ${response.status}: ${errorBody.slice(0, 100)}`)
+    throw new Error(`ScraperAPI status ${response.status}: ${errorBody.slice(0, 100)}`)
   }
 
   const json = await response.json()
@@ -38,13 +41,16 @@ async function fetchScraperAPI(scraperApiKey: string, operationName: string, has
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
   
-  // Sécurité du Cron
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET_2}`) {
+  // 2. Accepte le CRON_SECRET natif de Vercel OU ton CRON_SECRET_2 manuel
+  const isAuthorized = 
+    (process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`) ||
+    (process.env.CRON_SECRET_2 && authHeader === `Bearer ${process.env.CRON_SECRET_2}`)
+
+  if (!isAuthorized) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
   try {
-    // ⚠️ On utilise le client Supabase avec la SERVICE_ROLE_KEY pour contourner le RLS en insertion
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -53,18 +59,25 @@ export async function GET(request: Request) {
     const scraperApiKey = process.env.SCRAPER_API_KEY
     if (!scraperApiKey) throw new Error('Clé ScraperAPI manquante')
 
-    // Liste de tes équipes à rafraîchir (Ajoute les IDs de tes 2 équipes ici)
     const teamsToUpdate = ['368465', '368464'] 
 
     for (const teamId of teamsToUpdate) {
-      // 1. Fetch réseau payant
-      const upcomingData = await fetchScraperAPI(scraperApiKey, "GetUpcomingMatch", "7e0aa25b6dbe45cede5f1a16320b091be9078a7b9d8cb9cb1402fc35292696fb", teamId)
-      const rankingsData = await fetchScraperAPI(scraperApiKey, "getSeriesAndRankingsQuery", "ace90f0250b37a504282e27289c62ea6a3f444ef8821f663bd1faa8e3689e358", teamId)
+      const upcomingData = await fetchScraperAPI(
+        scraperApiKey, 
+        "GetUpcomingMatch", 
+        "7e0aa25b6dbe45cede5f1a16320b091be9078a7b9d8cb9cb1402fc35292696fb", 
+        teamId
+      )
+      const rankingsData = await fetchScraperAPI(
+        scraperApiKey, 
+        "getSeriesAndRankingsQuery", 
+        "ace90f0250b37a504282e27289c62ea6a3f444ef8821f663bd1faa8e3689e358", 
+        teamId
+      )
 
       const upcomingMatch = upcomingData?.upcomingMatch || null
       const rankings = rankingsData?.teamSeriesAndRankings?.rankings?.[0]?.rankings?.[0] || null
 
-      // 2. Upsert (Insertion ou Mise à jour) dans Supabase
       await supabaseAdmin.from('rbfa_cache').upsert({
         team_id: teamId,
         upcoming_match: upcomingMatch,
@@ -76,7 +89,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, message: 'Base de données RBFA synchronisée avec succès.' })
 
   } catch (error) {
-    console.error('Erreur Cron:', error)
-    return NextResponse.json({ success: false, message: 'Erreur lors de la synchro' }, { status: 500 })
+    const err = error as Error
+    console.error('Erreur Cron:', err)
+    return NextResponse.json({ success: false, message: 'Erreur lors de la synchro', detail: err.message }, { status: 500 })
   }
 }
