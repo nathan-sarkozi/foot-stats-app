@@ -44,3 +44,4 @@ next-env.d.ts
 scraper.mjs
 
 repomix*
+supabase-schema.sql
