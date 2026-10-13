@@ -8,7 +8,7 @@ export const maxDuration = 60
 const RBFA_GRAPHQL_ENDPOINT = 'https://datalake-prod2018.rbfa.be/graphql'
 
 async function fetchScraperAPI(scraperApiKey: string, operationName: string, hash: string, teamId: string) {
-  const urlToFetch = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(RBFA_GRAPHQL_ENDPOINT)}&keep_headers=true&premium=true&country_code=eu&timeout=20000`
+  const urlToFetch = `https://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(RBFA_GRAPHQL_ENDPOINT)}&keep_headers=true&premium=true&country_code=eu&timeout=20000`
   
   const response = await fetch(urlToFetch, {
     method: 'POST',
