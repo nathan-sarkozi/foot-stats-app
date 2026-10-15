@@ -5,6 +5,8 @@ import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import DeleteButton from './DeleteButton'
 import Link from 'next/link'
 import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
+import type { Tables } from '@/types/supabase'
+import { matchIdSchema } from '../../match-form'
 
 interface EditMatchProps {
   params: Promise<{
@@ -21,21 +23,49 @@ export default async function EditMatchPage(props: EditMatchProps) {
 
   if (!user) redirect('/login')
 
-  const { data: match, error: matchError } = await supabase
-    .from('matches')
-    .select('*, statistics(*)')
-    .eq('id', matchId)
-    .single()
+  if (!matchIdSchema.safeParse(matchId).success) {
+    return <div className="p-8 text-center text-red-500 font-bold">Match introuvable.</div>
+  }
+
+  const [matchResponse, statisticsResponse] = await Promise.all([
+    supabase
+      .from('matches')
+      .select('*')
+      .eq('id', matchId)
+      .eq('player_id', user.id)
+      .single<Tables<'matches'>>(),
+    supabase
+      .from('statistics')
+      .select('*')
+      .eq('match_id', matchId)
+      .eq('player_id', user.id)
+      .maybeSingle<Tables<'statistics'>>(),
+  ])
+  const { data: match, error: matchError } = matchResponse
+  const { data: stat, error: statisticsError } = statisticsResponse
 
   if (matchError || !match) {
     return <div className="p-8 text-center text-red-500 font-bold">Match introuvable.</div>
   }
 
-  if (match.player_id !== user.id) {
-    redirect('/dashboard')
+  if (statisticsError || !stat) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6 pb-12 pt-6">
+        <h2 className="text-3xl font-extrabold text-slate-900">Modifier le match</h2>
+        <p role="alert" className="text-red-600">
+          {statisticsError
+            ? 'Impossible de charger les statistiques de ce match. Réessaie avant de le modifier.'
+            : 'Les statistiques de ce match sont absentes. La modification est indisponible.'}
+        </p>
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard" className="text-sm font-medium text-slate-500 hover:text-indigo-600">
+            Retour au dashboard
+          </Link>
+          <DeleteButton matchId={matchId} />
+        </div>
+      </div>
+    )
   }
-
-  const stat = match.statistics[0] || {}
   
   const inputBaseClasses = "mt-2 block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm transition-all"
   const labelClasses = "block text-sm font-bold text-slate-700"
@@ -58,7 +88,6 @@ export default async function EditMatchPage(props: EditMatchProps) {
 
       <form action={updateMatch} className="space-y-6">
         <input type="hidden" name="match_id" value={matchId} />
-        <input type="hidden" name="stat_id" value={stat.id} />
 
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6 flex items-center gap-2">
@@ -104,12 +133,12 @@ export default async function EditMatchPage(props: EditMatchProps) {
             <div className="flex items-center gap-4 md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
               <div className="flex-1">
                 <label htmlFor="team_score" className={labelClasses}>Buts marqués (Équipe)</label>
-                <input type="number" id="team_score" name="team_score" min="0" required defaultValue={match.team_score} className={inputBaseClasses} />
+                <input type="number" id="team_score" name="team_score" min="0" required defaultValue={match.team_score ?? ''} className={inputBaseClasses} />
               </div>
               <span className="text-2xl font-bold text-slate-300 mt-6">-</span>
               <div className="flex-1">
                 <label htmlFor="opponent_score" className={labelClasses}>Buts encaissés</label>
-                <input type="number" id="opponent_score" name="opponent_score" min="0" required defaultValue={match.opponent_score} className={inputBaseClasses} />
+                <input type="number" id="opponent_score" name="opponent_score" min="0" required defaultValue={match.opponent_score ?? ''} className={inputBaseClasses} />
               </div>
             </div>
           </div>
@@ -122,7 +151,7 @@ export default async function EditMatchPage(props: EditMatchProps) {
 
           <div className="space-y-6">
             <div className="flex items-center gap-3 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-              <input type="checkbox" id="has_played" name="has_played" value="true" defaultChecked={stat.has_played} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <input type="checkbox" id="has_played" name="has_played" value="true" defaultChecked={stat.has_played ?? false} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
               <label htmlFor="has_played" className="font-bold text-indigo-900">J&apos;ai participé à ce match</label>
             </div>
 
@@ -159,7 +188,7 @@ export default async function EditMatchPage(props: EditMatchProps) {
             </div>
 
             <div className="flex items-center gap-3 bg-amber-50 p-4 rounded-xl border border-amber-100 mt-4">
-              <input type="checkbox" id="is_motm" name="is_motm" value="true" defaultChecked={stat.is_motm} className="h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500" />
+              <input type="checkbox" id="is_motm" name="is_motm" value="true" defaultChecked={stat.is_motm ?? false} className="h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500" />
               <label htmlFor="is_motm" className="font-bold text-amber-900">Élu Homme du Match (MOTM) 🏆</label>
             </div>
           </div>

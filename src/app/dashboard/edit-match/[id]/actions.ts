@@ -3,24 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { z } from 'zod'
-
-// STRICT VALIDATION: Unify validation logic with addMatch
-const UpdateMatchSchema = z.object({
-  match_date: z.string().min(1, 'Date required'),
-  opponent: z.string().min(2, 'Opponent name too short').max(100, 'Opponent name too long'),
-  competition_type: z.enum(['LEAGUE', 'CUP', 'FRIENDLY']),
-  team_score: z.coerce.number().min(0).max(99),
-  opponent_score: z.coerce.number().min(0).max(99),
-  has_played: z.boolean(),
-  is_motm: z.boolean(),
-  position_played: z.enum(['BU', 'AG', 'AD', 'MOC', 'MC', 'MDC', 'DG', 'DD', 'DC', 'GB']).nullable().optional(),
-  minutes_played: z.coerce.number().min(0).max(120),
-  goals: z.coerce.number().min(0).max(50),
-  assists: z.coerce.number().min(0).max(50),
-  yellow_cards: z.coerce.number().min(0).max(2),
-  red_cards: z.coerce.number().min(0).max(1),
-})
+import { matchIdSchema, parseMatchFormData, toMatchRpcArgs } from '../../match-form'
 
 export async function updateMatch(formData: FormData) {
   const supabase = await createClient()
@@ -28,90 +11,25 @@ export async function updateMatch(formData: FormData) {
 
   if (!user) throw new Error('Unauthorized')
 
-  const matchId = formData.get('match_id') as string
-  const statId = formData.get('stat_id') as string
+  const matchId = matchIdSchema.safeParse(formData.get('match_id'))
+  if (!matchId.success) throw new Error('Invalid match identifier')
 
-  if (!matchId || !statId) throw new Error('Missing Identifiers')
-
-  const parseNullableString = (val: FormDataEntryValue | null) => {
-    if (typeof val === 'string' && val.trim() !== '') return val.trim()
-    return null
-  }
-
-  const hasPlayedRaw = formData.get('has_played')
-  const isMotmRaw = formData.get('is_motm')
-  const hasPlayed = hasPlayedRaw === 'true' || hasPlayedRaw === 'on'
-
-  const rawData = {
-    match_date: formData.get('match_date'),
-    opponent: formData.get('opponent'),
-    competition_type: formData.get('competition_type'),
-    team_score: formData.get('team_score'),
-    opponent_score: formData.get('opponent_score'),
-    has_played: hasPlayed,
-    is_motm: hasPlayed ? (isMotmRaw === 'true' || isMotmRaw === 'on') : false,
-    position_played: hasPlayed ? parseNullableString(formData.get('position_played')) : null,
-    minutes_played: hasPlayed ? formData.get('minutes_played') : 0,
-    goals: hasPlayed ? formData.get('goals') : 0,
-    assists: hasPlayed ? formData.get('assists') : 0,
-    yellow_cards: hasPlayed ? formData.get('yellow_cards') : 0,
-    red_cards: hasPlayed ? formData.get('red_cards') : 0,
-  }
-
-  const validatedFields = UpdateMatchSchema.safeParse(rawData)
+  const validatedFields = parseMatchFormData(formData)
 
   if (!validatedFields.success) {
     console.error('Validation Error:', validatedFields.error.flatten().fieldErrors)
     throw new Error('Invalid form data provided')
   }
 
-  const cleanData = validatedFields.data
+  const { data, error } = await supabase.rpc(
+    'save_match_with_statistics',
+    toMatchRpcArgs(validatedFields.data, matchId.data),
+  )
 
-  let matchResult = 'N'
-  if (cleanData.team_score > cleanData.opponent_score) matchResult = 'V'
-  if (cleanData.team_score < cleanData.opponent_score) matchResult = 'D'
-
-  const matchPayload = {
-    match_date: cleanData.match_date,
-    opponent: cleanData.opponent,
-    competition_type: cleanData.competition_type,
-    team_score: cleanData.team_score,
-    opponent_score: cleanData.opponent_score,
-    match_result: matchResult, 
-  }
-
-  // SECURITY FIX: Explicit ownership check enforcing player_id = user.id
-  const { error: matchError } = await supabase
-    .from('matches')
-    .update(matchPayload)
-    .eq('id', matchId)
-    .eq('player_id', user.id)
-
-  if (matchError) {
-    console.error('Match Update Error:', matchError)
-    throw new Error('Failed to update match details')
-  }
-
-  const statsPayload = {
-    has_played: cleanData.has_played,
-    is_motm: cleanData.is_motm,
-    position_played: cleanData.position_played,
-    minutes_played: cleanData.minutes_played,
-    goals: cleanData.goals,
-    assists: cleanData.assists,
-    yellow_cards: cleanData.yellow_cards,
-    red_cards: cleanData.red_cards,
-  }
-
-  const { error: statsError } = await supabase
-    .from('statistics')
-    .update(statsPayload)
-    .eq('id', statId)
-    .eq('player_id', user.id)
-
-  if (statsError) {
-    console.error('Stats Update Error:', statsError)
-    throw new Error('Failed to update statistics')
+  const savedMatchId = matchIdSchema.safeParse(data)
+  if (error || !savedMatchId.success || savedMatchId.data !== matchId.data) {
+    console.error('Match Update Error:', error)
+    throw new Error('Failed to update match and statistics')
   }
 
   revalidatePath('/', 'layout')
@@ -124,14 +42,13 @@ export async function deleteMatch(formData: FormData) {
 
   if (!user) throw new Error('Unauthorized')
 
-  const matchId = formData.get('match_id') as string
-  if (!matchId) throw new Error('Missing ID')
+  const matchId = matchIdSchema.safeParse(formData.get('match_id'))
+  if (!matchId.success) throw new Error('Invalid match identifier')
 
-  // SECURITY FIX: Explicit ownership check
   const { error } = await supabase
     .from('matches')
     .delete()
-    .eq('id', matchId)
+    .eq('id', matchId.data)
     .eq('player_id', user.id)
 
   if (error) {

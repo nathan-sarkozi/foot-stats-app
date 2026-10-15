@@ -177,10 +177,10 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "statistics_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
+            columns: ["match_id", "player_id"]
+            isOneToOne: true
             referencedRelation: "matches"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "player_id"]
           },
           {
             foreignKeyName: "statistics_player_id_fkey"
@@ -213,7 +213,25 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      save_match_with_statistics: {
+        Args: {
+          p_match_date: string
+          p_opponent: string
+          p_competition_type: string
+          p_team_score: number
+          p_opponent_score: number
+          p_has_played: boolean
+          p_is_motm: boolean
+          p_minutes_played: number
+          p_goals: number
+          p_assists: number
+          p_yellow_cards: number
+          p_red_cards: number
+          p_position_played?: string | null
+          p_match_id?: string | null
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
