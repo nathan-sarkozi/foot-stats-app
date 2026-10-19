@@ -3,6 +3,7 @@ import { updateProfile, updateAvatar } from './actions'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import Image from 'next/image'
 import clubsData from '@/data/belgian_clubs.json'
+import ActionForm from '@/components/ActionForm'
 
 interface UserProfile {
   display_name: string
@@ -54,7 +55,7 @@ export default async function SettingsPage(props: { searchParams: Promise<{ succ
         </div>
       )}
 
-      <form action={updateAvatar} className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center gap-6">
+      <ActionForm action={updateAvatar} className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center gap-6">
         <div className="h-24 w-24 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-extrabold text-4xl border border-indigo-100 overflow-hidden relative">
           {userProfile.avatar_url ? (
             <Image src={userProfile.avatar_url} alt="Avatar" fill className="object-cover" sizes="96px" />
@@ -74,9 +75,9 @@ export default async function SettingsPage(props: { searchParams: Promise<{ succ
           />
           <SubmitButton defaultLabel="Changer la photo" loadingLabel="Upload..." />
         </div>
-      </form>
+      </ActionForm>
 
-      <form action={updateProfile} className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 space-y-8">
+      <ActionForm action={updateProfile} className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 space-y-8">
         <div>
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-2 mb-4">Identité & Club</h3>
           <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
@@ -176,7 +177,7 @@ export default async function SettingsPage(props: { searchParams: Promise<{ succ
         <div className="pt-6 border-t border-slate-100 flex justify-end">
           <SubmitButton defaultLabel="Enregistrer les modifications" loadingLabel="Mise à jour..." />
         </div>
-      </form>
+      </ActionForm>
     </div>
   )
 }

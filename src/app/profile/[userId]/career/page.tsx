@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import { getClubLogo } from '@/utils/getClubLogo'
 import { getCurrentSeason, summarizeSeasonStats, type MatchStatRecord } from '@/utils/playerStats'
+import { checkReadError, resourceIdSchema } from '@/utils/readErrors'
 
 interface CareerEntry {
   id: string
@@ -23,12 +24,14 @@ interface CareerEntry {
 }
 
 export default async function CareerPage(props: { params: Promise<{ userId: string }> }) {
-  const supabase = await createClient()
   const targetUserId = (await props.params).userId
+  if (!resourceIdSchema.safeParse(targetUserId).success) return notFound()
+  const supabase = await createClient()
 
-  const { data: profile, error: profileError } = await supabase.from('profiles').select('club, category').eq('id', targetUserId).single()
+  const { data: profile, error: profileError } = await supabase.from('profiles').select('club, category').eq('id', targetUserId).maybeSingle()
 
-  if (profileError || !profile) return notFound()
+  checkReadError(profileError, 'Lecture du profil de carrière')
+  if (!profile) return notFound()
   
   const { data: careerData, error } = await supabase
     .from('career_entries')
@@ -37,7 +40,8 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
     .order('season_end', { ascending: false })
     .returns<CareerEntry[]>()
 
-  if (error) return notFound()
+  checkReadError(error, 'Lecture de la carrière publique')
+  const careerEntries = careerData ?? []
 
   const season = getCurrentSeason()
   const { data: currentStats, error: statsError } = await supabase
@@ -47,6 +51,13 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
     .gte('matches.match_date', season.startDate)
     .lt('matches.match_date', season.endDate)
     .returns<MatchStatRecord[]>()
+
+  if (statsError) {
+    console.error('Lecture des statistiques de carrière', {
+      code: statsError.code,
+      message: statsError.message,
+    })
+  }
 
   const totals = summarizeSeasonStats(currentStats ?? [], season)
 
@@ -73,12 +84,12 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
   const seniorCareer: CareerEntry[] = []
   const youthCareer: CareerEntry[] = []
 
-  if (!careerData.find(c => c.season_start === season.startYear)) {
+  if (!careerEntries.find(c => c.season_start === season.startYear)) {
     if (isYouthCategory) youthCareer.push(currentEntry)
     else seniorCareer.push(currentEntry)
   }
 
-  for (const entry of careerData) {
+  for (const entry of careerEntries) {
     if (entry.is_youth) youthCareer.push(entry)
     else seniorCareer.push(entry)
   }

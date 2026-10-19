@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import { updateMatch } from './actions'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import DeleteButton from './DeleteButton'
@@ -7,6 +7,8 @@ import Link from 'next/link'
 import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
 import type { Tables } from '@/types/supabase'
 import { matchIdSchema } from '../../match-form'
+import ActionForm from '@/components/ActionForm'
+import { checkReadError } from '@/utils/readErrors'
 
 interface EditMatchProps {
   params: Promise<{
@@ -24,7 +26,7 @@ export default async function EditMatchPage(props: EditMatchProps) {
   if (!user) redirect('/login')
 
   if (!matchIdSchema.safeParse(matchId).success) {
-    return <div className="p-8 text-center text-red-500 font-bold">Match introuvable.</div>
+    return notFound()
   }
 
   const [matchResponse, statisticsResponse] = await Promise.all([
@@ -33,7 +35,7 @@ export default async function EditMatchPage(props: EditMatchProps) {
       .select('*')
       .eq('id', matchId)
       .eq('player_id', user.id)
-      .single<Tables<'matches'>>(),
+      .maybeSingle<Tables<'matches'>>(),
     supabase
       .from('statistics')
       .select('*')
@@ -44,11 +46,13 @@ export default async function EditMatchPage(props: EditMatchProps) {
   const { data: match, error: matchError } = matchResponse
   const { data: stat, error: statisticsError } = statisticsResponse
 
-  if (matchError || !match) {
-    return <div className="p-8 text-center text-red-500 font-bold">Match introuvable.</div>
+  checkReadError(matchError, 'Edit match read failed')
+  if (!match) {
+    return notFound()
   }
 
   if (statisticsError || !stat) {
+    if (statisticsError) console.error('Edit match statistics read failed', { code: statisticsError.code, message: statisticsError.message })
     return (
       <div className="max-w-3xl mx-auto space-y-6 pb-12 pt-6">
         <h2 className="text-3xl font-extrabold text-slate-900">Modifier le match</h2>
@@ -86,7 +90,7 @@ export default async function EditMatchPage(props: EditMatchProps) {
         </div>
       </div>
 
-      <form action={updateMatch} className="space-y-6">
+      <ActionForm action={updateMatch} className="space-y-6">
         <input type="hidden" name="match_id" value={matchId} />
 
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
@@ -219,7 +223,7 @@ export default async function EditMatchPage(props: EditMatchProps) {
           />
         </div>
 
-      </form>
+      </ActionForm>
     </div>
   )
 }

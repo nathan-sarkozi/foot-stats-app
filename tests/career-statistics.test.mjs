@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { renderServerPage } from './helpers/render-server-page.mjs'
+import { PUBLIC_USER_ID, renderServerPage } from './helpers/render-server-page.mjs'
 
 // Offline component tests: the actual page and statistics helper use only
 // synthetic fixtures, with no .env, network calls or database connection.
@@ -30,7 +30,7 @@ async function renderCareer({
   careerError = null, statsError = null,
 } = {}) {
   return renderServerPage('src/app/profile/[userId]/career/page.tsx', {
-    profile: profile === null ? null : { id: 'test-player', display_name: 'Synthetic', rbfa_team_id: null, ...profile },
+    profile: profile === null ? null : { id: PUBLIC_USER_ID, display_name: 'Synthetic', rbfa_team_id: null, ...profile },
     careerEntries: entries,
     statistics,
     profileError,
@@ -66,7 +66,7 @@ test('public career restricts automatic totals to the current season', async () 
   const statsQuery = queries.find(query => query.table === 'statistics')
   assert.match(statsQuery.select, /matches!inner\(/)
   assert.deepEqual(statsQuery.filters, [
-    { method: 'eq', args: ['player_id', 'test-player'] },
+    { method: 'eq', args: ['player_id', PUBLIC_USER_ID] },
     { method: 'gte', args: ['matches.match_date', '2026-07-01'] },
     { method: 'lt', args: ['matches.match_date', '2027-07-01'] },
   ])
@@ -94,7 +94,9 @@ test('youth and free-agent career rows remain visible without participation', as
   assert.doesNotMatch(freeAgent.html, /Pas de données historiques/)
 })
 
-test('statistics failures show unavailable values instead of fabricated zero totals', async () => {
+test('statistics failures show unavailable values instead of fabricated zero totals', async t => {
+  const errors = []
+  t.mock.method(console, 'error', (...args) => errors.push(args))
   const { html } = await renderCareer({
     entries: [careerEntry()], statsError: { message: 'Synthetic statistics error' },
   })
@@ -103,9 +105,44 @@ test('statistics failures show unavailable values instead of fabricated zero tot
   assert.match(html, /Non communiquées/)
   assert.match(html, /Synthetic previous club/)
   assert.match(html, />11<\/span>/)
+  assert.equal(errors.length, 1)
+  assert.doesNotMatch(html, /Synthetic statistics error/)
 })
 
-test('missing profiles and failed career reads retain the not-found behavior', async () => {
+test('missing profiles retain the not-found behavior', async () => {
   await assert.rejects(renderCareer({ profile: null }), /NOT_FOUND/)
-  await assert.rejects(renderCareer({ careerError: { message: 'Synthetic career error' } }), /NOT_FOUND/)
+})
+
+test('manual youth entry wins over an automatic senior row for the same season', async () => {
+  const { html } = await renderCareer({
+    entries: [careerEntry({ season_start: 2026, season_end: 2027, is_youth: true })],
+    statistics: [statistic({ goals: 7 })],
+  })
+  assert.match(html, /Parcours Jeune/)
+  assert.match(html, /Synthetic previous club/)
+  assert.doesNotMatch(html, /Carrière Senior|Synthetic current club|>7<\/span>/)
+  assert.equal(html.match(/26\/27/g)?.length, 1)
+})
+
+test('manual senior entry wins over an automatic youth row for the same season', async () => {
+  const { html } = await renderCareer({
+    profile: { club: 'Synthetic youth club', category: 'U17' },
+    entries: [careerEntry({ season_start: 2026, season_end: 2027 })],
+    statistics: [statistic({ goals: 7 })],
+  })
+  assert.match(html, /Carrière Senior/)
+  assert.match(html, /Synthetic previous club/)
+  assert.doesNotMatch(html, /Parcours Jeune|Synthetic youth club|>7<\/span>/)
+  assert.equal(html.match(/26\/27/g)?.length, 1)
+})
+
+test('manual entries without communicated statistics are not replaced by automatic totals', async () => {
+  const { html } = await renderCareer({
+    entries: [careerEntry({ season_start: 2026, season_end: 2027, has_stats: false })],
+    statistics: [statistic({ goals: 7 })],
+  })
+  assert.match(html, /Synthetic previous club/)
+  assert.match(html, /Non communiquées/)
+  assert.doesNotMatch(html, /Synthetic current club|>7<\/span>/)
+  assert.equal(html.match(/26\/27/g)?.length, 1)
 })

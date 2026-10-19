@@ -3,76 +3,70 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { z } from 'zod'
+import type { FormState } from '@/utils/formState'
+import { careerEntryIdSchema, parseCareerFormData } from './career-form'
 
-const CareerEntrySchema = z.object({
-  season_start: z.coerce.number().min(1990).max(2030),
-  is_free_agent: z.boolean(),
-  club: z.string().trim().max(100).nullable(),
-  category: z.string().trim().max(50).nullable(),
-  is_youth: z.boolean(),
-  has_stats: z.boolean(),
-  matches_played: z.coerce.number().min(0).max(100).default(0),
-  goals: z.coerce.number().min(0).max(200).default(0),
-  assists: z.coerce.number().min(0).max(200).default(0),
-  yellow_cards: z.coerce.number().min(0).max(50).default(0),
-  red_cards: z.coerce.number().min(0).max(20).default(0),
-})
-
-export async function saveCareerEntry(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
-
-  const entryId = formData.get('entry_id') as string | null
-  const isFreeAgent = formData.has('is_free_agent')
-  const hasStats = formData.has('has_stats')
-
-  const rawData = {
-    season_start: formData.get('season_start'),
-    is_free_agent: isFreeAgent,
-    club: isFreeAgent ? null : (formData.get('club') || null),
-    category: isFreeAgent ? null : (formData.get('category') || null),
-    is_youth: formData.has('is_youth'),
-    has_stats: hasStats,
-    matches_played: hasStats ? formData.get('matches_played') : 0,
-    goals: hasStats ? formData.get('goals') : 0,
-    assists: hasStats ? formData.get('assists') : 0,
-    yellow_cards: hasStats ? formData.get('yellow_cards') : 0,
-    red_cards: hasStats ? formData.get('red_cards') : 0,
-  }
-
-  const validatedFields = CareerEntrySchema.safeParse(rawData)
-  if (!validatedFields.success) throw new Error('Données invalides')
-
-  const dbData = {
-    player_id: user.id,
-    season_end: validatedFields.data.season_start + 1,
-    ...validatedFields.data
-  }
-
-  if (entryId) {
-    const { error } = await supabase.from('career_entries').update(dbData).match({ id: entryId, player_id: user.id })
-    if (error) throw new Error('Erreur mise à jour')
-  } else {
-    const { error } = await supabase.from('career_entries').insert(dbData)
-    if (error) throw new Error('Erreur insertion')
-  }
-
-  revalidatePath('/', 'layout')
-  if (entryId) redirect('/dashboard/career')
+function databaseFailure(operation: string, error: { code?: string; message: string }): FormState {
+  console.error(`Carrière : ${operation}`, { code: error.code, message: error.message })
+  return { status: 'error', message: 'Impossible d’enregistrer cette opération. Réessayez dans quelques instants.' }
 }
 
-export async function deleteCareerEntry(formData: FormData) {
+export async function saveCareerEntry(_previousState: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return { status: 'error', message: 'Votre session a expiré. Reconnectez-vous.' }
 
-  const entryId = formData.get('entry_id') as string
-  if (!entryId) throw new Error('ID manquant')
+  const rawId = formData.get('entry_id')
+  const entryId = rawId === null ? null : careerEntryIdSchema.safeParse(rawId)
+  if (entryId && !entryId.success) return { status: 'error', message: 'Identifiant de saison invalide.' }
+  const id = entryId?.success ? entryId.data : null
 
-  const { error } = await supabase.from('career_entries').delete().match({ id: entryId, player_id: user.id })
-  if (error) throw new Error('Erreur suppression')
+  let existingSeasonStart: number | undefined
+  if (id) {
+    const { data: existing, error } = await supabase.from('career_entries')
+      .select('id, season_start').match({ id, player_id: user.id }).maybeSingle()
+    if (error) return databaseFailure('lecture avant modification', error)
+    if (!existing) return { status: 'error', message: 'Cette saison est introuvable ou ne vous appartient pas.' }
+    existingSeasonStart = existing.season_start
+  }
+
+  const validated = parseCareerFormData(formData, existingSeasonStart)
+  if (!validated.success) {
+    return {
+      status: 'error', message: 'Vérifiez les informations de la saison.',
+      fieldErrors: validated.error.flatten().fieldErrors,
+    }
+  }
+  const dbData = { ...validated.data, player_id: user.id, season_end: validated.data.season_start + 1 }
+
+  if (id) {
+    const { data, error } = await supabase.from('career_entries').update(dbData)
+      .match({ id, player_id: user.id }).select('id').maybeSingle()
+    if (error) return databaseFailure('modification', error)
+    if (!data) return { status: 'error', message: 'Cette saison est introuvable ou ne vous appartient pas.' }
+  } else {
+    const { error } = await supabase.from('career_entries').insert(dbData)
+    if (error) return databaseFailure('création', error)
+  }
 
   revalidatePath('/', 'layout')
+  if (id) redirect('/dashboard/career')
+  return { status: 'success', message: 'La saison a été ajoutée à votre carrière.' }
+}
+
+export async function deleteCareerEntry(_previousState: FormState, formData: FormData): Promise<FormState> {
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return { status: 'error', message: 'Votre session a expiré. Reconnectez-vous.' }
+
+  const entryId = careerEntryIdSchema.safeParse(formData.get('entry_id'))
+  if (!entryId.success) return { status: 'error', message: 'Identifiant de saison invalide.' }
+
+  const { data, error } = await supabase.from('career_entries').delete()
+    .match({ id: entryId.data, player_id: user.id }).select('id').maybeSingle()
+  if (error) return databaseFailure('suppression', error)
+  if (!data) return { status: 'error', message: 'Cette saison est introuvable ou ne vous appartient pas.' }
+
+  revalidatePath('/', 'layout')
+  return { status: 'success', message: 'La saison a été supprimée.' }
 }

@@ -6,6 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { matchIdSchema, parseMatchFormData, toMatchRpcArgs } from '../src/app/dashboard/match-form.ts'
+import { PostgrestClient } from '@supabase/postgrest-js'
 
 // Linux, Node 24+, Docker, and the two pinned images below are required.
 // Run: node --test --test-isolation=none tests/match-writes.test.mjs
@@ -369,6 +370,31 @@ test('isolated PostgreSQL and PostgREST match writes', { timeout: 240_000 }, asy
           assert.equal((await request(`matches?id=eq.${id}&player_id=eq.${player(1)}`, { method: 'DELETE' })).status, 204)
           assert.equal(sql(`SELECT count(*) FROM statistics WHERE match_id=${quote(id)};`), '0')
         }
+        assert.deepEqual(snapshot(), initial)
+      })
+
+      await t.test(`${phase}: delete returning maybeSingle distinguishes owner rows from zero affected rows`, async () => {
+        const rest = new PostgrestClient(baseUrl, {
+          headers: { Authorization: `Bearer ${token('authenticated')}` },
+          fetch(input, init) {
+            assert.equal(new URL(typeof input === 'string' ? input : input.url).origin, new URL(baseUrl).origin)
+            return fetch(input, { ...init, signal: AbortSignal.timeout(5000) })
+          },
+        })
+        const forbidden = await rest.from('matches').delete().eq('id', match(9)).select('id').maybeSingle()
+        assert.equal(forbidden.error, null)
+        assert.equal(forbidden.data, null)
+        assert.deepEqual(snapshot(), initial)
+        const created = await rpc(payload())
+        assert.equal(created.status, 200)
+        const deleted = await rest.from('matches').delete().eq('id', created.data)
+          .eq('player_id', player(1)).select('id').maybeSingle()
+        assert.equal(deleted.error, null)
+        assert.deepEqual(deleted.data, { id: created.data })
+        const absent = await rest.from('matches').delete().eq('id', created.data)
+          .eq('player_id', player(1)).select('id').maybeSingle()
+        assert.equal(absent.error, null)
+        assert.equal(absent.data, null)
         assert.deepEqual(snapshot(), initial)
       })
 

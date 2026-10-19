@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { getCurrentSeason, summarizeSeasonStats } from '../src/utils/playerStats.ts'
-import { renderServerPage } from './helpers/render-server-page.mjs'
+import { PUBLIC_USER_ID, renderServerPage } from './helpers/render-server-page.mjs'
 
 // Run offline: node --test --test-isolation=none tests/player-stats.test.mjs
 const season = getCurrentSeason(new Date(2026, 9, 19))
@@ -152,7 +152,7 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
     assert.doesNotMatch(html, /Synthetic opponent old|Synthetic opponent next/)
     const query = queries.find(q => q.table === 'statistics')
     assert.deepEqual(query.filters, [
-      { method: 'eq', args: ['player_id', 'test-player'] },
+      { method: 'eq', args: ['player_id', page.includes('/profile/') ? PUBLIC_USER_ID : 'test-player'] },
       { method: 'gte', args: ['matches.match_date', '2026-07-01'] },
       { method: 'lt', args: ['matches.match_date', '2027-07-01'] },
     ])

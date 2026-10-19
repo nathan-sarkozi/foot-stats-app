@@ -223,8 +223,10 @@ test('anonymous dashboard, public profile, login and registration requests are n
 test('an invalid refresh token clears the obsolete session without a proxy redirect', async t => {
   // Auth-js reports the intentionally rejected fake token. Keep this expected
   // failure out of the test logs without suppressing other errors.
-  t.mock.method(console, 'error', error => {
-    assert.equal(error.message, 'Synthetic invalid refresh token')
+  const originalError = console.error
+  t.mock.method(console, 'error', (...args) => {
+    if (args[0]?.message === 'Synthetic invalid refresh token') return
+    originalError(...args)
   })
   const { proxy, requests } = loadProxy({ rejectRefresh: true })
   const request = requestFor('/login', sessionCookies(session({ expired: true })))
@@ -329,7 +331,9 @@ test('existing mutation guards still reject unauthenticated writes before valida
   const add = loadModule('src/app/dashboard/add-match/actions.ts', mocks)
   const edit = loadModule('src/app/dashboard/edit-match/[id]/actions.ts', mocks)
   for (const action of [add.addMatch, edit.updateMatch, edit.deleteMatch]) {
-    await assert.rejects(action(new FormData()), { message: 'Unauthorized' })
+    const result = await action({ status: 'idle', message: '' }, new FormData())
+    assert.equal(result.status, 'error')
+    assert.match(result.message, /session a expiré/)
   }
 })
 

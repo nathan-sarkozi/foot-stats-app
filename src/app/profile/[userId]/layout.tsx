@@ -5,10 +5,12 @@ import Image from 'next/image'
 import Navbar from '@/app/dashboard/components/Navbar'
 import ProfileTabs from './components/ProfileTabs'
 import { getClubLogo } from '@/utils/getClubLogo'
+import { checkReadError, resourceIdSchema } from '@/utils/readErrors'
 
 export default async function ProfileLayout(props: { children: React.ReactNode, params: Promise<{ userId: string }> }) {
-  const supabase = await createClient()
   const targetUserId = (await props.params).userId
+  if (!resourceIdSchema.safeParse(targetUserId).success) return notFound()
+  const supabase = await createClient()
 
   const { data: { user: authUser } } = await supabase.auth.getUser()
   
@@ -16,7 +18,8 @@ export default async function ProfileLayout(props: { children: React.ReactNode, 
   let visitorAvatarUrl = null
 
   if (authUser) {
-    const { data: visitorProfile } = await supabase.from('profiles').select('display_name, avatar_url').eq('id', authUser.id).single()
+    const { data: visitorProfile, error: visitorProfileError } = await supabase.from('profiles').select('display_name, avatar_url').eq('id', authUser.id).maybeSingle()
+    checkReadError(visitorProfileError, 'Lecture du profil visiteur')
     if (visitorProfile?.display_name) {
       visitorInitials = visitorProfile.display_name.substring(0, 2).toUpperCase()
       visitorAvatarUrl = visitorProfile.avatar_url
@@ -27,9 +30,10 @@ export default async function ProfileLayout(props: { children: React.ReactNode, 
     .from('profiles')
     .select('display_name, avatar_url, club, category, preferred_position, foot_preference, jersey_number, height, weight')
     .eq('id', targetUserId)
-    .single()
+    .maybeSingle()
 
-  if (error || !profile) return notFound()
+  checkReadError(error, 'Lecture du profil public')
+  if (!profile) return notFound()
 
   const playerClubLogo = getClubLogo(profile.club)
 

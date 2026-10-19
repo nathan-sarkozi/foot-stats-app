@@ -2,6 +2,7 @@ import { addMatch } from './actions'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import Link from 'next/link'
 import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
+import ActionForm from '@/components/ActionForm'
 
 export default function AddMatchPage() {
   const inputBaseClasses = "mt-2 block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm transition-all"
@@ -20,7 +21,7 @@ export default function AddMatchPage() {
         </Link>
       </div>
 
-      <form action={addMatch} className="space-y-6">
+      <ActionForm action={addMatch} className="space-y-6">
         
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6 flex items-center gap-2">
@@ -152,7 +153,7 @@ export default function AddMatchPage() {
           />
         </div>
 
-      </form>
+      </ActionForm>
     </div>
   )
 }

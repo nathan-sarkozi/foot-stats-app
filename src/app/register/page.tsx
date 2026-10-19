@@ -1,14 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useActionState, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { registerUser } from './actions'
+import type { RegisterState } from './actions'
+import { EMPTY_FORM_STATE } from '@/utils/formState'
+import { FormFeedback } from '@/components/ActionForm'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import Link from 'next/link'
 import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
 
 export default function RegisterWizard() {
   const [step, setStep] = useState(1)
+  const [state, formAction, pending] = useActionState<RegisterState, FormData>(registerUser, EMPTY_FORM_STATE)
   
   const [formData, setFormData] = useState({
     display_name: '',
@@ -52,7 +56,17 @@ export default function RegisterWizard() {
         </div>
 
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative min-h-100">
-          <AnimatePresence mode="wait">
+          <FormFeedback state={state} />
+          {state.accountCreated ? (
+            <div className="mt-6 space-y-4">
+              <Link href={state.needsConfirmation ? '/login' : '/dashboard/settings'} className="block text-center rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white hover:bg-indigo-700">
+                {state.needsConfirmation ? 'Se connecter' : 'Compléter mon profil'}
+              </Link>
+              {!state.needsConfirmation && (
+                <Link href="/dashboard" className="block text-center font-bold text-indigo-600 hover:underline">Accéder au dashboard</Link>
+              )}
+            </div>
+          ) : <AnimatePresence mode="wait">
             
             {step === 1 && (
               <motion.div key="step1" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full justify-between">
@@ -60,10 +74,10 @@ export default function RegisterWizard() {
                   <h2 className="text-2xl font-extrabold text-slate-900">Comment t&apos;appelles-tu ?</h2>
                   <p className="text-slate-500 text-sm mt-2">C&apos;est le nom qui s&apos;affichera sur tes statistiques.</p>
                   <div className="mt-6">
-                    <input type="text" placeholder="Pseudo ou Prénom" value={formData.display_name} onChange={(e) => updateForm('display_name', e.target.value)} className={inputBaseClasses} />
+                    <input type="text" placeholder="Pseudo ou Prénom" minLength={2} maxLength={50} value={formData.display_name} onChange={(e) => updateForm('display_name', e.target.value)} className={inputBaseClasses} />
                   </div>
                 </div>
-                <button onClick={nextStep} disabled={!formData.display_name} className="mt-8 w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all">
+                <button onClick={nextStep} disabled={formData.display_name.trim().length < 2} className="mt-8 w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all">
                   Continuer
                 </button>
               </motion.div>
@@ -80,6 +94,7 @@ export default function RegisterWizard() {
                       <label className="text-sm font-bold text-slate-700">Club</label>
                       <input 
                         type="text" 
+                        maxLength={100}
                         list="belgian-clubs"
                         placeholder="Ex: FC Enghiennois" 
                         value={formData.club} 
@@ -97,7 +112,7 @@ export default function RegisterWizard() {
 
                     <div>
                       <label className="text-sm font-bold text-slate-700">Catégorie</label>
-                      <input type="text" placeholder="Ex: Réserve C" value={formData.category} onChange={(e) => updateForm('category', e.target.value)} className={inputBaseClasses} />
+                      <input type="text" placeholder="Ex: Réserve C" maxLength={50} value={formData.category} onChange={(e) => updateForm('category', e.target.value)} className={inputBaseClasses} />
                     </div>
                     <div>
                       <label className="text-sm font-bold text-slate-700">Poste favori</label>
@@ -139,16 +154,16 @@ export default function RegisterWizard() {
                     <div className="flex gap-4">
                       <div className="w-1/2">
                         <label className="text-sm font-bold text-slate-700">Taille (cm)</label>
-                        <input type="number" value={formData.height} onChange={(e) => updateForm('height', e.target.value)} className={inputBaseClasses} />
+                        <input type="number" min={100} max={250} step={1} value={formData.height} onChange={(e) => updateForm('height', e.target.value)} className={inputBaseClasses} />
                       </div>
                       <div className="w-1/2">
                         <label className="text-sm font-bold text-slate-700">Poids (kg)</label>
-                        <input type="number" value={formData.weight} onChange={(e) => updateForm('weight', e.target.value)} className={inputBaseClasses} />
+                        <input type="number" min={30} max={150} step={1} value={formData.weight} onChange={(e) => updateForm('weight', e.target.value)} className={inputBaseClasses} />
                       </div>
                     </div>
                     <div>
                       <label className="text-sm font-bold text-slate-700">Numéro de maillot</label>
-                      <input type="number" value={formData.jersey_number} onChange={(e) => updateForm('jersey_number', e.target.value)} className={inputBaseClasses} />
+                      <input type="number" min={1} max={99} step={1} value={formData.jersey_number} onChange={(e) => updateForm('jersey_number', e.target.value)} className={inputBaseClasses} />
                     </div>
                   </div>
                 </div>
@@ -161,7 +176,7 @@ export default function RegisterWizard() {
 
             {step === 4 && (
               <motion.div key="step4" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full justify-between">
-                <form action={registerUser} className="flex flex-col h-full justify-between">
+                <form action={formAction} onReset={(event) => event.preventDefault()} className="flex flex-col h-full justify-between">
                   
                   {Object.entries(formData).map(([key, value]) => (
                     <input key={key} type="hidden" name={key} value={value} />
@@ -188,13 +203,13 @@ export default function RegisterWizard() {
                       </div>
                       <div>
                         <label className="text-sm font-bold text-slate-700">Mot de passe *</label>
-                        <input type="password" name="password" required className={inputBaseClasses} />
+                        <input type="password" name="password" minLength={6} required className={inputBaseClasses} />
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex gap-3 mt-8">
-                    <button type="button" onClick={prevStep} className="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all">Retour</button>
+                    <button type="button" onClick={prevStep} disabled={pending} className="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all disabled:opacity-50">Retour</button>
                     <div className="w-2/3">
                       <SubmitButton defaultLabel="Créer le profil" loadingLabel="Création..." className="w-full py-3 rounded-xl text-lg" />
                     </div>
@@ -203,7 +218,7 @@ export default function RegisterWizard() {
               </motion.div>
             )}
             
-          </AnimatePresence>
+          </AnimatePresence>}
         </div>
 
         <p className="text-center mt-6 text-sm text-slate-500 font-medium">

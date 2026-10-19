@@ -1,100 +1,158 @@
 'use server'
 
+import { z } from 'zod'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { parseProfileFormData } from '@/utils/profile-form'
+import type { FormState } from '@/utils/formState'
 
-// SECURITY: Strict file validation limits
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+export interface RegisterState extends FormState {
+  accountCreated?: boolean
+  needsConfirmation?: boolean
+}
 
-export async function registerUser(formData: FormData) {
-  const supabase = await createClient()
-  
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  
-  // 1. Account Creation (Triggers SQL handle_new_user to create basic profile row)
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
+const CredentialsSchema = z.object({
+  email: z.string({ error: 'Saisis une adresse e-mail valide.' }).trim().email('Saisis une adresse e-mail valide.'),
+  password: z.string({ error: 'Saisis un mot de passe valide.' }).min(6, 'Le mot de passe doit contenir au moins 6 caractères.'),
+})
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024
+const IMAGE_EXTENSIONS: Readonly<Record<string, string>> = {
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+
+function logRegistrationError(stage: string, error: unknown) {
+  // Database/Auth messages can contain an e-mail, profile value or JWT. Log
+  // only technical identifiers; never echo submitted values or raw errors.
+  const details = typeof error === 'object' && error !== null ? error : {}
+  console.error(`Registration ${stage} failed`, {
+    code: 'code' in details && typeof details.code === 'string' ? details.code : undefined,
+    status: 'status' in details && typeof details.status === 'number' ? details.status : undefined,
+    name: 'name' in details && typeof details.name === 'string' ? details.name : undefined,
   })
+}
 
-  if (authError || !authData.user) {
-    console.error('Auth Error:', authError)
-    redirect('/register?error=Erreur lors de la création du compte')
+function authErrorMessage(error: { code?: string; status?: number }) {
+  if (error.code === 'user_already_exists' || error.code === 'email_exists') {
+    return 'Cette adresse est déjà utilisée. Connecte-toi ou utilise une autre adresse.'
   }
+  if (error.code === 'weak_password') {
+    return 'Ce mot de passe ne respecte pas les exigences de sécurité. Choisis un mot de passe plus fort.'
+  }
+  if (error.status === 429 || error.code === 'over_email_send_rate_limit' || error.code === 'over_request_rate_limit') {
+    return 'Trop de tentatives. Patiente quelques minutes avant de réessayer.'
+  }
+  if (error.code === 'signup_disabled') return 'Les inscriptions sont temporairement désactivées.'
+  return 'La création du compte a échoué. Réessaie dans quelques instants. Si tu as reçu un e-mail de confirmation, vérifie-le avant de réessayer.'
+}
 
-  const userId = authData.user.id
-  let avatarUrl: string | null = null
+export async function registerUser(previousState: RegisterState, formData: FormData): Promise<RegisterState> {
+  if (previousState.accountCreated) return previousState
 
-  // 2. Avatar Upload (Optional)
-  const file = formData.get('avatar') as File | null
-  if (file && file.size > 0) {
-    // Security checks
-    if (file.size > MAX_FILE_SIZE) throw new Error('File exceeds 5MB limit')
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) throw new Error('Invalid file type.')
+  const profile = parseProfileFormData(formData)
+  const credentials = CredentialsSchema.safeParse({
+    email: formData.get('email'),
+    password: formData.get('password'),
+  })
+  const avatar = formData.get('avatar')
+  const avatarError = avatar !== null && !(avatar instanceof File)
+    ? 'Sélectionne une image JPG, PNG ou WebP.'
+    : avatar instanceof File && avatar.size > MAX_FILE_SIZE
+      ? 'La photo ne doit pas dépasser 5 Mo.'
+      : avatar instanceof File && avatar.size > 0 && !IMAGE_EXTENSIONS[avatar.type]
+        ? 'La photo doit être au format JPG, PNG ou WebP.'
+        : null
 
-    // Path Traversal prevention
-    const fileExtension = file.name.split('.').pop()
-    const fileName = `${crypto.randomUUID()}.${fileExtension}`
-    const filePath = `${userId}/${fileName}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, file, { upsert: true })
-
-    if (uploadError) {
-      console.error('Avatar upload failed during registration:', uploadError)
-      // We don't block registration if avatar fails, we just log it
-    } else {
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath)
-      avatarUrl = publicUrl
+  // Validate every input before creating an Auth user or writing to Storage.
+  if (!profile.success || !credentials.success || avatarError) {
+    return {
+      status: 'error',
+      message: 'Vérifie les champs indiqués avant de créer ton compte.',
+      fieldErrors: {
+        ...(!profile.success ? profile.error.flatten().fieldErrors : {}),
+        ...(!credentials.success ? credentials.error.flatten().fieldErrors : {}),
+        ...(avatarError ? { avatar: [avatarError] } : {}),
+      },
     }
   }
 
-// Define strict typing for the update payload
-  interface ProfileUpdatePayload {
-    display_name: string
-    club: string | null
-    category: string | null
-    preferred_position: string | null
-    foot_preference: string | null
-    jersey_number: number | null
-    height: number | null
-    weight: number | null
-    avatar_url?: string // Optional property
+  const supabase = await createClient()
+  let accountCreated = false
+  let avatarFailed = false
+
+  try {
+    const { data: authData, error: authError } = await supabase.auth.signUp(credentials.data)
+    if (authError || !authData.user) {
+      logRegistrationError('auth', authError)
+      return { status: 'error', message: authErrorMessage(authError ?? {}) }
+    }
+
+    // With e-mail confirmation there is no authenticated session. Do not try
+    // owner-only writes, nor reveal whether an address already exists.
+    if (!authData.session || authData.user.identities?.length === 0) {
+      return {
+        status: 'success',
+        message: 'Si cette adresse peut être inscrite, un e-mail de confirmation a été envoyé. Consulte ta boîte de réception, puis connecte-toi pour compléter ton profil dans les paramètres. Si tu as déjà un compte, connecte-toi directement.',
+        accountCreated: true,
+        needsConfirmation: true,
+      }
+    }
+
+    accountCreated = true
+    const userId = authData.user.id
+    let avatarUrl: string | undefined
+    if (avatar instanceof File && avatar.size > 0) {
+      const filePath = `${userId}/${crypto.randomUUID()}.${IMAGE_EXTENSIONS[avatar.type]}`
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, avatar, { upsert: true })
+      if (uploadError) {
+        logRegistrationError('avatar upload', uploadError)
+        avatarFailed = true
+      } else {
+        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath)
+        avatarUrl = publicUrl
+      }
+    }
+
+    const { data: savedProfile, error: profileError } = await supabase
+      .from('profiles')
+      .update({ ...profile.data, ...(avatarUrl ? { avatar_url: avatarUrl } : {}) })
+      .eq('id', userId)
+      .select('id')
+      .maybeSingle()
+
+    if (profileError || !savedProfile) {
+      logRegistrationError('profile update', profileError ?? { code: 'PROFILE_ROW_MISSING' })
+      revalidatePath('/', 'layout')
+      return {
+        status: 'error',
+        message: 'Ton compte a été créé, mais ton profil n’a pas pu être complété. Ne crée pas un autre compte : ouvre les paramètres pour renseigner ton profil.',
+        accountCreated: true,
+      }
+    }
+  } catch (error) {
+    logRegistrationError(accountCreated ? 'profile completion' : 'request', error)
+    return {
+      status: 'error',
+      message: accountCreated
+        ? 'Ton compte a été créé, mais la finalisation du profil a échoué. Ne recrée pas de compte : complète ton profil dans les paramètres.'
+        : 'Le service d’inscription est momentanément indisponible. Vérifie ta boîte e-mail avant de réessayer, puis connecte-toi si le compte a été créé.',
+      accountCreated,
+    }
   }
 
-  // 3. Profile Payload Construction (Merging ghost form data)
-  const profilePayload: ProfileUpdatePayload = {
-    display_name: formData.get('display_name') as string,
-    club: (formData.get('club') as string) || null,
-    category: (formData.get('category') as string) || null,
-    preferred_position: (formData.get('preferred_position') as string) || null,
-    foot_preference: (formData.get('foot_preference') as string) || null,
-    jersey_number: formData.get('jersey_number') ? parseInt(formData.get('jersey_number') as string) : null,
-    height: formData.get('height') ? parseInt(formData.get('height') as string) : null,
-    weight: formData.get('weight') ? parseInt(formData.get('weight') as string) : null,
-  }
-
-  // Attach avatar if upload succeeded
-  if (avatarUrl) {
-    profilePayload.avatar_url = avatarUrl
-  }
-
-  // 4. Update the profile row generated by the trigger
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .update(profilePayload)
-    .eq('id', userId)
-
-  if (profileError) {
-    console.error('Profile Update Error:', profileError)
-  }
-
-  // 5. Force UI hydration with new session
   revalidatePath('/', 'layout')
-  
+  if (avatarFailed) {
+    return {
+      status: 'error',
+      message: 'Ton compte et ton profil ont été créés, mais la photo n’a pas pu être enregistrée. Tu peux la renvoyer depuis les paramètres.',
+      accountCreated: true,
+    }
+  }
   redirect('/dashboard')
 }

@@ -7,17 +7,22 @@ import TeamWidget from '@/app/dashboard/components/TeamWidget'
 import { getClubLogo } from '@/utils/getClubLogo'
 import { Suspense } from 'react'
 import { getCurrentSeason, summarizeSeasonStats, type MatchStatRecord } from '@/utils/playerStats'
+import { checkReadError, resourceIdSchema } from '@/utils/readErrors'
 
 export default async function CurrentSeasonPage(props: { params: Promise<{ userId: string }> }) {
-  const supabase = await createClient()
   const targetUserId = (await props.params).userId
+  if (!resourceIdSchema.safeParse(targetUserId).success) return notFound()
+  const supabase = await createClient()
 
   // NOUVEAU : On récupère l'ID RBFA du joueur ciblé
-  const { data: profileData } = await supabase
+  const { data: profileData, error: profileError } = await supabase
     .from('profiles')
     .select('rbfa_team_id')
     .eq('id', targetUserId)
-    .single()
+    .maybeSingle()
+
+  checkReadError(profileError, 'Lecture du profil de saison')
+  if (!profileData) return notFound()
 
   const season = getCurrentSeason()
   const { data: statsData, error: statsError } = await supabase
@@ -31,13 +36,13 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
     .lt('matches.match_date', season.endDate)
     .returns<MatchStatRecord[]>()
 
-  if (statsError || !statsData) return notFound()
+  checkReadError(statsError, 'Lecture des statistiques publiques')
 
   const {
     matchesPlayed, totalGoals, totalAssists, totalMinutes, totalYellows,
     totalReds, totalMotm, totalWins, favPosition, maxPosCount, totalGA,
     winRate, goalSubtitle, assistsPerMatch, chartData, displayStats,
-  } = summarizeSeasonStats(statsData, season)
+  } = summarizeSeasonStats(statsData ?? [], season)
 
   const getCompetitionLabel = (type: string) => {
     const labels: Record<string, string> = { LEAGUE: 'Championnat', CUP: 'Coupe', FRIENDLY: 'Amical' }

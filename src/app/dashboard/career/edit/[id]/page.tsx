@@ -2,21 +2,28 @@ import { createClient } from '@/utils/supabase/server'
 import CareerForm from '../../components/CareerForm'
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
+import { careerEntryIdSchema, type CareerEntry } from '../../career-form'
 
 export default async function EditCareerPage(props: { params: Promise<{ id: string }> }) {
   const resolvedParams = await props.params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  const entryId = careerEntryIdSchema.safeParse(resolvedParams.id)
+  if (!entryId.success) notFound()
 
   const { data: entry, error } = await supabase
     .from('career_entries')
     .select('*')
-    .eq('id', resolvedParams.id)
+    .eq('id', entryId.data)
     .eq('player_id', user.id)
-    .single()
+    .maybeSingle<CareerEntry>()
 
-  if (error || !entry) return notFound()
+  if (error) {
+    console.error('Carrière : chargement de la saison', { code: error.code, message: error.message })
+    throw new Error('Impossible de charger cette saison de carrière.')
+  }
+  if (!entry) notFound()
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12 pt-6 px-4 sm:px-6 lg:px-8">

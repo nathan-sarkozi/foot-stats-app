@@ -2,10 +2,11 @@
 
 import { deleteMatch } from './actions'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
+import ActionForm from '@/components/ActionForm'
 
 export default function DeleteButton({ matchId }: { matchId: string }) {
   return (
-    <form action={deleteMatch} onSubmit={(e) => {
+    <ActionForm action={deleteMatch} onSubmit={(e) => {
       if (!window.confirm('Supprimer définitivement ce match ?')) {
         e.preventDefault() 
       }
@@ -18,6 +19,6 @@ export default function DeleteButton({ matchId }: { matchId: string }) {
         loadingLabel="Suppression en cours..." 
         variant="danger" 
       />
-    </form>
+    </ActionForm>
   )
 }
