@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import { getClubLogo } from '@/utils/getClubLogo'
+import { getCurrentSeason, summarizeSeasonStats, type MatchStatRecord } from '@/utils/playerStats'
 
 interface CareerEntry {
   id: string
@@ -25,7 +26,9 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
   const supabase = await createClient()
   const targetUserId = (await props.params).userId
 
-  const { data: profile } = await supabase.from('profiles').select('club, category').eq('id', targetUserId).single()
+  const { data: profile, error: profileError } = await supabase.from('profiles').select('club, category').eq('id', targetUserId).single()
+
+  if (profileError || !profile) return notFound()
   
   const { data: careerData, error } = await supabase
     .from('career_entries')
@@ -36,49 +39,41 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
 
   if (error) return notFound()
 
-  const currentMonth = new Date().getMonth()
-  const currentYear = new Date().getFullYear()
-  const currentSeasonStart = currentMonth >= 6 ? currentYear : currentYear - 1
+  const season = getCurrentSeason()
+  const { data: currentStats, error: statsError } = await supabase
+    .from('statistics')
+    .select('has_played, minutes_played, goals, assists, yellow_cards, red_cards, is_motm, position_played, matches!inner(id, match_date, opponent, team_score, opponent_score, competition_type)')
+    .eq('player_id', targetUserId)
+    .gte('matches.match_date', season.startDate)
+    .lt('matches.match_date', season.endDate)
+    .returns<MatchStatRecord[]>()
 
-  const { data: currentStats } = await supabase.from('statistics').select('has_played, goals, assists, yellow_cards, red_cards').eq('player_id', targetUserId)
-  
-  // CORRECTION : Déclaration propre des variables
-  let matchesPlayed = 0, goals = 0, assists = 0, yellowCards = 0, redCards = 0
-  
-  currentStats?.forEach(stat => {
-    if (stat.has_played) { 
-      matchesPlayed++
-      goals += stat.goals
-      assists += stat.assists
-      yellowCards += stat.yellow_cards
-      redCards += stat.red_cards 
-    }
-  })
+  const totals = summarizeSeasonStats(currentStats ?? [], season)
 
   const isYouthCategory = profile?.category ? /U\d{1,2}/i.test(profile.category) : false
   
   const currentEntry: CareerEntry = {
     id: 'current',
-    season_start: currentSeasonStart,
-    season_end: currentSeasonStart + 1,
+    season_start: season.startYear,
+    season_end: season.endYear,
     is_free_agent: !profile?.club,
     club: profile?.club || null,
     category: profile?.category || null,
     is_youth: isYouthCategory,
     is_verified: true,
-    has_stats: true,
-    matches_played: matchesPlayed, // Assignation corrigée
-    goals: goals,
-    assists: assists,
-    yellow_cards: yellowCards,
-    red_cards: redCards,
+    has_stats: !statsError,
+    matches_played: totals.matchesPlayed,
+    goals: totals.totalGoals,
+    assists: totals.totalAssists,
+    yellow_cards: totals.totalYellows,
+    red_cards: totals.totalReds,
     is_current: true
   }
 
   const seniorCareer: CareerEntry[] = []
   const youthCareer: CareerEntry[] = []
 
-  if (!careerData.find(c => c.season_start === currentSeasonStart)) {
+  if (!careerData.find(c => c.season_start === season.startYear)) {
     if (isYouthCategory) youthCareer.push(currentEntry)
     else seniorCareer.push(currentEntry)
   }
@@ -198,8 +193,12 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* CORRECTION : TypeScript reconnaît maintenant matchesPlayed */}
-      {careerData.length === 0 && matchesPlayed === 0 ? (
+      {statsError && (
+        <p role="alert" className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Impossible de charger les statistiques de la saison actuelle. Réessayez plus tard.
+        </p>
+      )}
+      {seniorCareer.length === 0 && youthCareer.length === 0 ? (
         <div className="bg-white p-8 rounded-3xl border border-dashed border-slate-300 text-center text-slate-500">
           Pas de données historiques disponibles pour ce joueur.
         </div>
