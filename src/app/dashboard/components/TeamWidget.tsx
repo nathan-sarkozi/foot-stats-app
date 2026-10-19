@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { getUpcomingMatch, getTeamRankings } from '@/services/rbfa'
+import { getTeamRbfaData } from '@/services/rbfa'
+import { formatRbfaKickoff } from '@/utils/rbfaDate'
 
 interface TeamWidgetProps {
   teamId?: string | null
@@ -29,22 +30,16 @@ export default async function TeamWidget({ teamId, isDashboard = false }: TeamWi
     )
   }
 
-  const [nextMatchData, rankingData] = await Promise.all([
-    getUpcomingMatch(teamId!),
-    getTeamRankings(teamId!)
-  ])
+  const { upcoming, rankings: rankingData } = await getTeamRbfaData(teamId!)
+  const nextMatchData = upcoming.match
 
-  if (!nextMatchData && !rankingData) {
+  if (upcoming.status !== 'none' && !nextMatchData && !rankingData) {
     return isDashboard ? <div className="text-slate-400 text-sm text-center mb-8 bg-slate-50 p-4 rounded-xl border border-slate-100">Service RBFA temporairement indisponible.</div> : null
   }
 
-  let matchDate = "Date à déterminer"
-  let matchTime = "--:--"
-  if (nextMatchData?.startTime) {
-    const d = new Date(nextMatchData.startTime)
-    matchDate = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-    matchTime = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-  }
+  const kickoff = formatRbfaKickoff(nextMatchData?.startTime)
+  const matchDate = kickoff?.date ?? 'Date à déterminer'
+  const matchTime = kickoff?.time ?? '--:--'
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -82,7 +77,9 @@ export default async function TeamWidget({ teamId, isDashboard = false }: TeamWi
               </div>
             </div>
           ) : (
-             <div className="text-center text-indigo-200 py-8">Aucun match planifié.</div>
+             <div className="text-center text-indigo-200 py-8">
+               {upcoming.status === 'none' ? 'Aucun match planifié.' : 'Prochain match temporairement indisponible.'}
+             </div>
           )}
         </div>
 
@@ -90,6 +87,7 @@ export default async function TeamWidget({ teamId, isDashboard = false }: TeamWi
           <div className="mt-8 relative z-10 bg-black/20 rounded-2xl p-4 backdrop-blur-sm border border-white/5 flex items-center justify-center flex-col">
             <span className="text-sm font-bold text-indigo-100 capitalize">{matchDate}</span>
             <span className="text-2xl font-black tracking-tight">{matchTime}</span>
+            {kickoff?.warning && <span className="mt-1 text-xs text-indigo-100" role="status">{kickoff.warning}</span>}
           </div>
         )}
       </div>
@@ -120,9 +118,8 @@ export default async function TeamWidget({ teamId, isDashboard = false }: TeamWi
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {/* NOUVEAU : Remplacement de .slice(0, 5) par l'affichage complet */}
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {rankingData.teams.map((team: any) => {
-                  const isMyTeam = team.teamId === teamId
+                {rankingData.teams.map(team => {
+                  const isMyTeam = String(team.teamId) === teamId
                   return (
                     <tr key={team.teamId} className={`${isMyTeam ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}`}>
                       <td className="py-2.5">
@@ -143,7 +140,7 @@ export default async function TeamWidget({ teamId, isDashboard = false }: TeamWi
                       <td className="py-2.5 text-center font-black text-slate-900">{team.points}</td>
                       <td className="py-2.5 text-center font-semibold text-slate-500 hidden sm:table-cell">{team.matchesPlayed}</td>
                       <td className="py-2.5 text-center font-semibold text-slate-500 hidden sm:table-cell">
-                        {team.goalDifference > 0 ? `+${team.goalDifference}` : team.goalDifference}
+                        {Number(team.goalDifference) > 0 ? `+${team.goalDifference}` : team.goalDifference}
                       </td>
                     </tr>
                   )
