@@ -2,15 +2,6 @@ import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import Image from 'next/image'
 
-interface ProfileData {
-  id: string
-  display_name: string
-  avatar_url: string | null
-  club: string | null
-  category: string | null
-  preferred_position: string | null
-}
-
 export default async function CommunityPage() {
   const supabase = await createClient()
 
@@ -20,7 +11,6 @@ export default async function CommunityPage() {
     .select('id, display_name, avatar_url, club, category, preferred_position')
     .order('display_name', { ascending: true })
     .limit(50)
-    .returns<ProfileData[]>()
 
   if (error) {
     console.error('Directory Fetch Error:', error.message)

@@ -6,7 +6,7 @@ import StatsChart from '@/app/dashboard/components/StatsChart'
 import TeamWidget from '@/app/dashboard/components/TeamWidget'
 import { getClubLogo } from '@/utils/getClubLogo'
 import { Suspense } from 'react'
-import { getCurrentSeason, summarizeSeasonStats, type MatchStatRecord } from '@/utils/playerStats'
+import { getCurrentSeason, summarizeSeasonStats } from '@/utils/playerStats'
 import { checkReadError, resourceIdSchema } from '@/utils/readErrors'
 
 export default async function CurrentSeasonPage(props: { params: Promise<{ userId: string }> }) {
@@ -34,7 +34,6 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
     .eq('player_id', targetUserId)
     .gte('matches.match_date', season.startDate)
     .lt('matches.match_date', season.endDate)
-    .returns<MatchStatRecord[]>()
 
   checkReadError(statsError, 'Lecture des statistiques publiques')
 
@@ -93,8 +92,8 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
             {displayStats.map((stat) => {
               const match = stat.matches
               const dateStr = new Date(match.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-              const isWin = match.team_score > match.opponent_score
-              const isLoss = match.team_score < match.opponent_score
+              const isWin = Number(match.team_score) > Number(match.opponent_score)
+              const isLoss = Number(match.team_score) < Number(match.opponent_score)
               const resultColor = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
               const opponentLogo = getClubLogo(match.opponent)
 

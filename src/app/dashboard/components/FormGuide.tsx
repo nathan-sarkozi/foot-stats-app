@@ -1,7 +1,9 @@
 'use client'
 
+import type { Tables } from '@/types/supabase'
+
 interface FormGuideProps {
-  recentMatches: Array<{ team_score: number; opponent_score: number }>
+  recentMatches: Array<Pick<Tables<'matches'>, 'team_score' | 'opponent_score'>>
 }
 
 export default function FormGuide({ recentMatches }: FormGuideProps) {
@@ -14,7 +16,7 @@ export default function FormGuide({ recentMatches }: FormGuideProps) {
     <div className="flex items-center gap-1.5">
       <span className="text-xs font-bold text-slate-400 mr-2 uppercase tracking-wider">Forme :</span>
       {form.map((match, i) => {
-        const isWin = match.team_score > match.opponent_score
+        const isWin = Number(match.team_score) > Number(match.opponent_score)
         const isDraw = match.team_score === match.opponent_score
         
         const bgColor = isWin ? 'bg-emerald-500' : isDraw ? 'bg-slate-400' : 'bg-red-500'

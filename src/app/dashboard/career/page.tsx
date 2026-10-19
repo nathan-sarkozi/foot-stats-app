@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import CareerForm from './components/CareerForm'
 import DeleteCareerButton from './components/DeleteCareerButton'
-import type { CareerEntry } from './career-form'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -15,7 +14,6 @@ export default async function ManageCareerPage() {
     .select('*')
     .eq('player_id', user.id)
     .order('season_end', { ascending: false })
-    .returns<CareerEntry[]>()
 
   if (error) {
     console.error('Carrière : chargement des saisons', { code: error.code, message: error.message })

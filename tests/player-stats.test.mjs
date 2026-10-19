@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { test } from 'node:test'
+import vm from 'node:vm'
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import ts from 'typescript'
 import { getCurrentSeason, summarizeSeasonStats } from '../src/utils/playerStats.ts'
 import { PUBLIC_USER_ID, renderServerPage } from './helpers/render-server-page.mjs'
 
@@ -126,6 +132,54 @@ test('nullable legacy numeric values do not produce NaN', () => {
   assert.equal(result.totalGoals + result.totalAssists + result.totalMinutes, 0)
   assert.equal(result.totalYellows + result.totalReds, 0)
   assert.equal(result.assistsPerMatch, '0.00')
+})
+
+test('nullable scores preserve all previous comparison results in totals and match cards', async () => {
+  for (const teamScore of [null, 0, 1, 2]) {
+    for (const opponentScore of [null, 0, 1, 2]) {
+      const rows = [statistic('nullable-score', {}, { team_score: teamScore, opponent_score: opponentScore })]
+      // Reproduce the original JavaScript comparisons, including null coercion.
+      const isWin = teamScore > opponentScore
+      const isLoss = teamScore < opponentScore
+      const result = summarizeSeasonStats(rows, season)
+      const label = `${teamScore} against ${opponentScore}`
+      assert.equal(result.totalWins, isWin ? 1 : 0, label)
+      for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page.tsx']) {
+        const { html, cards } = await renderServerPage(page, { statistics: rows })
+        assert.equal(cards.find(card => card.title === 'Ratio Victoires').value, `${isWin ? 100 : 0}%`, `${page}: ${label}`)
+        const colors = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+          : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
+        assert.ok(html.includes(colors), `${page}: ${label}`)
+      }
+    }
+  }
+})
+
+test('FormGuide retains its original strict draw equality for nullable scores', () => {
+  const require = createRequire(import.meta.url)
+  const source = readFileSync(new URL('../src/app/dashboard/components/FormGuide.tsx', import.meta.url), 'utf8')
+  const compiled = ts.transpileModule(source, {
+    fileName: 'FormGuide.tsx',
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 },
+  }).outputText
+  const loadedModule = { exports: {} }
+  new vm.Script(compiled, { filename: 'FormGuide.tsx' }).runInContext(vm.createContext({
+    module: loadedModule, exports: loadedModule.exports,
+    require(name) {
+      assert.equal(name, 'react/jsx-runtime')
+      return require(name)
+    },
+  }))
+  const FormGuide = loadedModule.exports.default
+  for (const teamScore of [null, 0, 1, 2]) {
+    for (const opponentScore of [null, 0, 1, 2]) {
+      const html = renderToStaticMarkup(React.createElement(FormGuide, {
+        recentMatches: [{ team_score: teamScore, opponent_score: opponentScore }],
+      }))
+      const expected = teamScore > opponentScore ? 'V' : teamScore === opponentScore ? 'N' : 'D'
+      assert.ok(html.includes(`>${expected}</div>`), `${teamScore} against ${opponentScore}`)
+    }
+  }
 })
 
 test('positive goals never receive a zero-goals subtitle when the ratio rounds to zero', () => {

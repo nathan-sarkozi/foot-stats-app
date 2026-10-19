@@ -9,13 +9,8 @@ import { redirect } from 'next/navigation'
 import { getClubLogo } from '@/utils/getClubLogo'
 import TeamWidget from './components/TeamWidget'
 import { Suspense } from 'react'
-import { getCurrentSeason, summarizeSeasonStats, type MatchStatRecord } from '@/utils/playerStats'
+import { getCurrentSeason, summarizeSeasonStats } from '@/utils/playerStats'
 import { parseCompetitionParams } from '@/utils/competitionFilters'
-
-interface PlayerProfile {
-  display_name: string
-  rbfa_team_id: string | null // TYPAGE STRICT CORRIGÉ
-}
 
 export default async function DashboardPage(props: { searchParams: Promise<{ comps?: string | string[] }> }) {
   const searchParams = await props.searchParams
@@ -42,11 +37,10 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
     .eq('player_id', user.id)
     .gte('matches.match_date', season.startDate)
     .lt('matches.match_date', season.endDate)
-    .returns<MatchStatRecord[]>()
 
   if (statsError || !statsData) return <div className="text-red-500">Failed to load statistics.</div>
 
-  const profile = playerProfile as PlayerProfile
+  const profile = playerProfile
   const activeComps = parseCompetitionParams(searchParams.comps)
   
   const {
@@ -118,8 +112,8 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
             {displayStats.map((stat) => {
               const match = stat.matches
               const dateStr = new Date(match.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-              const isWin = match.team_score > match.opponent_score
-              const isLoss = match.team_score < match.opponent_score
+              const isWin = Number(match.team_score) > Number(match.opponent_score)
+              const isLoss = Number(match.team_score) < Number(match.opponent_score)
               const resultColor = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
               const opponentLogo = getClubLogo(match.opponent)
 

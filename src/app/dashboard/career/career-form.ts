@@ -1,22 +1,12 @@
 import { z } from 'zod'
 import { getCurrentSeason } from '@/utils/playerStats'
+import type { Tables } from '@/types/supabase'
 
-export interface CareerEntry {
-  id: string
-  player_id: string
-  season_start: number
-  season_end: number
-  is_free_agent: boolean | null
-  club: string | null
-  category: string | null
-  is_youth: boolean | null
-  has_stats: boolean | null
-  matches_played: number | null
-  goals: number | null
-  assists: number | null
-  yellow_cards: number | null
-  red_cards: number | null
-}
+export type CareerEntry = Pick<Tables<'career_entries'>,
+  | 'id' | 'player_id' | 'season_start' | 'season_end' | 'is_free_agent'
+  | 'club' | 'category' | 'is_youth' | 'has_stats' | 'matches_played'
+  | 'goals' | 'assists' | 'yellow_cards' | 'red_cards'
+>
 
 export const careerEntryIdSchema = z.uuid().transform(id => id.toLowerCase())
 

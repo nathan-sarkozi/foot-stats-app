@@ -7,19 +7,6 @@ import ActionForm from '@/components/ActionForm'
 import AvatarInput from '@/components/AvatarInput'
 import { AVATAR_SIZE_LABEL } from '@/utils/avatar'
 
-interface UserProfile {
-  display_name: string
-  avatar_url: string | null
-  club: string | null
-  category: string | null
-  preferred_position: string | null
-  foot_preference: string | null
-  jersey_number: number | null
-  height: number | null
-  weight: number | null
-  rbfa_team_id: string | null // NOUVEAU CHAMP
-}
-
 export default async function SettingsPage(props: { searchParams: Promise<{ success?: string }> }) {
   const searchParams = await props.searchParams
   const supabase = await createClient()
@@ -38,7 +25,7 @@ export default async function SettingsPage(props: { searchParams: Promise<{ succ
     return <div className="text-red-500">Erreur lors du chargement du profil.</div>
   }
 
-  const userProfile = profile as UserProfile
+  const userProfile = profile
   const inputBaseClasses = "mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
 
   return (

@@ -2,24 +2,15 @@ import { createClient } from '@/utils/supabase/server'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import { getClubLogo } from '@/utils/getClubLogo'
-import { getCurrentSeason, summarizeSeasonStats, type MatchStatRecord } from '@/utils/playerStats'
+import { getCurrentSeason, summarizeSeasonStats } from '@/utils/playerStats'
 import { checkReadError, resourceIdSchema } from '@/utils/readErrors'
+import type { Tables } from '@/types/supabase'
 
-interface CareerEntry {
-  id: string
-  season_start: number
-  season_end: number
-  is_free_agent: boolean
-  club: string | null
-  category: string | null
-  is_youth: boolean
-  is_verified: boolean
-  has_stats: boolean
-  matches_played: number
-  goals: number
-  assists: number
-  yellow_cards: number
-  red_cards: number
+type CareerEntry = Pick<Tables<'career_entries'>,
+  | 'id' | 'season_start' | 'season_end' | 'is_free_agent' | 'club'
+  | 'category' | 'is_youth' | 'is_verified' | 'has_stats' | 'matches_played'
+  | 'goals' | 'assists' | 'yellow_cards' | 'red_cards'
+> & {
   is_current?: boolean
 }
 
@@ -38,7 +29,6 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
     .select('*')
     .eq('player_id', targetUserId)
     .order('season_end', { ascending: false })
-    .returns<CareerEntry[]>()
 
   checkReadError(error, 'Lecture de la carrière publique')
   const careerEntries = careerData ?? []
@@ -50,7 +40,6 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
     .eq('player_id', targetUserId)
     .gte('matches.match_date', season.startDate)
     .lt('matches.match_date', season.endDate)
-    .returns<MatchStatRecord[]>()
 
   if (statsError) {
     console.error('Lecture des statistiques de carrière', {

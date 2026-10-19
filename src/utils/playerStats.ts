@@ -1,20 +1,13 @@
-export interface MatchStatRecord {
-  has_played: boolean | null
-  minutes_played: number | null
-  goals: number | null
-  assists: number | null
-  yellow_cards: number | null
-  red_cards: number | null
-  is_motm: boolean | null
-  position_played: string | null
-  matches: {
-    id: string
-    match_date: string
-    opponent: string
-    team_score: number
-    opponent_score: number
-    competition_type: 'LEAGUE' | 'CUP' | 'FRIENDLY'
-  }
+import type { Tables } from '@/types/supabase'
+
+export type MatchStatRecord = Pick<Tables<'statistics'>,
+  | 'has_played' | 'minutes_played' | 'goals' | 'assists'
+  | 'yellow_cards' | 'red_cards' | 'is_motm' | 'position_played'
+> & {
+  matches: Pick<Tables<'matches'>,
+    | 'id' | 'match_date' | 'opponent' | 'team_score'
+    | 'opponent_score' | 'competition_type'
+  >
 }
 
 export interface Season {
@@ -77,7 +70,7 @@ export function summarizeSeasonStats(
       totalAssists += stat.assists ?? 0
       totalMinutes += stat.minutes_played ?? 0
       if (stat.is_motm) totalMotm++
-      if (stat.matches.team_score > stat.matches.opponent_score) totalWins++
+      if (Number(stat.matches.team_score) > Number(stat.matches.opponent_score)) totalWins++
       if (stat.position_played) {
         positionCounts[stat.position_played] = (positionCounts[stat.position_played] ?? 0) + 1
       }

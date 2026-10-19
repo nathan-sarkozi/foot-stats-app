@@ -8,7 +8,7 @@ import { cn } from '@/utils/cn'
 import { logout } from './logoutAction'
 import Image from 'next/image'
 
-export default function Navbar({ initials = "FS", avatarUrl = null }: { initials?: string, avatarUrl?: string | null }) {
+export default function Navbar({ initials = "FS", avatarUrl = null }: { initials?: string | null, avatarUrl?: string | null }) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 

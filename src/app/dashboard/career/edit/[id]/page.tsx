@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import CareerForm from '../../components/CareerForm'
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
-import { careerEntryIdSchema, type CareerEntry } from '../../career-form'
+import { careerEntryIdSchema } from '../../career-form'
 
 export default async function EditCareerPage(props: { params: Promise<{ id: string }> }) {
   const resolvedParams = await props.params
@@ -17,7 +17,7 @@ export default async function EditCareerPage(props: { params: Promise<{ id: stri
     .select('*')
     .eq('id', entryId.data)
     .eq('player_id', user.id)
-    .maybeSingle<CareerEntry>()
+    .maybeSingle()
 
   if (error) {
     console.error('Carrière : chargement de la saison', { code: error.code, message: error.message })

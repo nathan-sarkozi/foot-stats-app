@@ -14,8 +14,8 @@ export default async function ProfileLayout(props: { children: React.ReactNode, 
 
   const { data: { user: authUser } } = await supabase.auth.getUser()
   
-  let visitorInitials = null
-  let visitorAvatarUrl = null
+  let visitorInitials: string | null = null
+  let visitorAvatarUrl: string | null = null
 
   if (authUser) {
     const { data: visitorProfile, error: visitorProfileError } = await supabase.from('profiles').select('display_name, avatar_url').eq('id', authUser.id).maybeSingle()

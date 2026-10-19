@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { synchronizeRbfa, RbfaSyncError, type RbfaCacheRow, type RbfaSyncStore } from '@/services/rbfa-sync'
+import { synchronizeRbfa, RbfaSyncError, type RbfaSyncStore } from '@/services/rbfa-sync'
+import type { Database, Json } from '@/types/supabase'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -21,25 +22,28 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    const supabase = createClient<Database>(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
     const store: RbfaSyncStore = {
       async loadTeamIds(signal) {
         const { data, error } = await supabase.from('profiles').select('rbfa_team_id')
-          .returns<{ rbfa_team_id: string | null }[]>().abortSignal(signal)
+          .abortSignal(signal)
         if (error || !data) throw new RbfaSyncError('DATABASE_READ_ERROR')
         return data.map(row => row.rbfa_team_id)
       },
       async loadCache(teamIds, signal) {
         const { data, error } = await supabase.from('rbfa_cache')
           .select('team_id, upcoming_match, rankings, updated_at').in('team_id', teamIds)
-          .returns<RbfaCacheRow[]>().abortSignal(signal)
+          .abortSignal(signal)
         if (error || !data) throw new RbfaSyncError('DATABASE_READ_ERROR')
         return data
       },
       async upsert(row, signal) {
-        const { data, error } = await supabase.from('rbfa_cache').upsert(row, { onConflict: 'team_id' })
+        // The validators preserve extra fields from response.json(). Their Zod
+        // index signature is unknown, but the source is already JSON data.
+        const payload = { ...row, upcoming_match: row.upcoming_match as Json, rankings: row.rankings as Json }
+        const { data, error } = await supabase.from('rbfa_cache').upsert(payload, { onConflict: 'team_id' })
           .select('team_id').abortSignal(signal).single()
         if (error || data?.team_id !== row.team_id) throw new RbfaSyncError('DATABASE_WRITE_ERROR')
       },

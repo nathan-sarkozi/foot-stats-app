@@ -5,7 +5,6 @@ import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import DeleteButton from './DeleteButton'
 import Link from 'next/link'
 import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
-import type { Tables } from '@/types/supabase'
 import { matchIdSchema } from '../../match-form'
 import ActionForm from '@/components/ActionForm'
 import { checkReadError } from '@/utils/readErrors'
@@ -35,13 +34,13 @@ export default async function EditMatchPage(props: EditMatchProps) {
       .select('*')
       .eq('id', matchId)
       .eq('player_id', user.id)
-      .maybeSingle<Tables<'matches'>>(),
+      .maybeSingle(),
     supabase
       .from('statistics')
       .select('*')
       .eq('match_id', matchId)
       .eq('player_id', user.id)
-      .maybeSingle<Tables<'statistics'>>(),
+      .maybeSingle(),
   ])
   const { data: match, error: matchError } = matchResponse
   const { data: stat, error: statisticsError } = statisticsResponse
