@@ -6,6 +6,8 @@ import { registerUser } from './actions'
 import type { RegisterState } from './actions'
 import { EMPTY_FORM_STATE } from '@/utils/formState'
 import { FormFeedback } from '@/components/ActionForm'
+import AvatarInput from '@/components/AvatarInput'
+import { AVATAR_SIZE_LABEL } from '@/utils/avatar'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import Link from 'next/link'
 import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
@@ -188,11 +190,9 @@ export default function RegisterWizard() {
                     
                     <div className="space-y-4 mt-6">
                       <div>
-                        <label className="text-sm font-bold text-slate-700">Photo de profil (Optionnelle, Max 5MB)</label>
-                        <input 
-                          type="file" 
-                          name="avatar" 
-                          accept="image/png, image/jpeg, image/webp"
+                        <label htmlFor="register-avatar" className="text-sm font-bold text-slate-700">Photo de profil (Optionnelle, Max {AVATAR_SIZE_LABEL})</label>
+                        <AvatarInput
+                          id="register-avatar"
                           className="mt-2 block w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all cursor-pointer border border-slate-200 p-2 rounded-xl bg-white"
                         />
                       </div>

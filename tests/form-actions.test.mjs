@@ -10,6 +10,7 @@ import * as matchForm from '../src/app/dashboard/match-form.ts'
 import * as profileForm from '../src/utils/profile-form.ts'
 import { EMPTY_FORM_STATE } from '../src/utils/formState.ts'
 import * as readErrors from '../src/utils/readErrors.ts'
+import * as avatar from '../src/utils/avatar.ts'
 
 // Offline action/component regression tests. Only synthetic data is used;
 // Supabase, navigation and storage transports never reach the network.
@@ -112,6 +113,7 @@ function actions(options = {}) {
   const mocks = {
     '@/utils/supabase/server': { createClient: async () => client },
     '@/utils/profile-form': profileForm,
+    '@/utils/avatar': avatar,
     '../match-form': matchForm, '../../match-form': matchForm,
     'next/cache': { revalidatePath(...args) { calls.revalidation.push(args) } },
     'next/navigation': { redirect(path) { calls.redirects.push(path); throw new Error(`REDIRECT:${path}`) } },
@@ -277,11 +279,28 @@ test('profile database failures and missing rows remain visible form errors', as
 test('avatar validation rejects missing, non-file, empty, oversized and unsupported uploads', async () => {
   for (const value of [null, 'not-a-file', new File([], 'empty.png', { type: 'image/png' }),
     new File(['x'], 'image.svg', { type: 'image/svg+xml' }),
-    new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'large.png', { type: 'image/png' })]) {
+    new File([new Uint8Array(avatar.MAX_AVATAR_SIZE_BYTES + 1)], 'large.png', { type: 'image/png' })]) {
     const harness = actions()
     expectError(await harness.updateAvatar(EMPTY_FORM_STATE, avatarData(value)), harness.calls)
     assert.equal(harness.calls.uploads.length + harness.calls.queries.length, 0)
   }
+})
+
+test('avatar writes accept the 4 MiB boundary and reject one extra byte before Storage', async () => {
+  for (const size of [avatar.MAX_AVATAR_SIZE_BYTES - 1, avatar.MAX_AVATAR_SIZE_BYTES]) {
+    const harness = actions()
+    await assert.rejects(harness.updateAvatar(EMPTY_FORM_STATE,
+      avatarData(new File([new Uint8Array(size)], 'boundary.webp', { type: 'image/webp' }))),
+    { message: 'REDIRECT:/dashboard/settings?success=avatar' })
+    assert.equal(harness.calls.uploads.length, 1)
+    assert.equal(harness.calls.uploads[0].file.size, size)
+  }
+  const harness = actions()
+  const result = await harness.updateAvatar(EMPTY_FORM_STATE,
+    avatarData(new File([new Uint8Array(avatar.MAX_AVATAR_SIZE_BYTES + 1)], 'oversized.png', { type: 'image/png' })))
+  expectError(result, harness.calls)
+  assert.match(result.message, /4 Mio/)
+  assert.equal(harness.calls.uploads.length + harness.calls.queries.length, 0)
 })
 
 test('a failed avatar upload does not attempt to link a nonexistent image', async () => {

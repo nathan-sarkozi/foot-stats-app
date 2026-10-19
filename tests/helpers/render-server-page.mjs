@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import ts from 'typescript'
 import * as playerStats from '../../src/utils/playerStats.ts'
 import * as readErrors from '../../src/utils/readErrors.ts'
+import * as competitionFilters from '../../src/utils/competitionFilters.ts'
 
 const require = createRequire(import.meta.url)
 export const PUBLIC_USER_ID = '00000000-0000-4000-8000-000000000001'
@@ -61,6 +62,7 @@ export async function renderServerPage(relativePath, options = {}) {
       getCurrentSeason: () => playerStats.getCurrentSeason(new Date(2026, 9, 19)),
     },
     '@/utils/readErrors': readErrors,
+    '@/utils/competitionFilters': competitionFilters,
     '@/utils/getClubLogo': { getClubLogo: () => undefined },
     'next/navigation': {
       notFound() { throw new Error('NOT_FOUND') },

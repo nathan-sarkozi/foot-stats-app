@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { parseProfileFormData } from '@/utils/profile-form'
 import type { FormState } from '@/utils/formState'
+import { getAvatarExtension, getAvatarFileError } from '@/utils/avatar'
 
 export async function updateProfile(_previousState: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient()
@@ -41,11 +42,6 @@ export async function updateProfile(_previousState: FormState, formData: FormDat
   redirect('/dashboard/settings?success=profile')
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024
-const IMAGE_EXTENSIONS: Record<string, string> = {
-  'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
-}
-
 export async function updateAvatar(_previousState: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -56,10 +52,10 @@ export async function updateAvatar(_previousState: FormState, formData: FormData
   if (!user) return { status: 'error', message: 'Ta session a expiré. Reconnecte-toi avant de modifier ta photo.' }
 
   const file = formData.get('avatar')
-  if (!(file instanceof File) || file.size === 0) return { status: 'error', message: 'Sélectionne une image.' }
-  if (file.size > MAX_FILE_SIZE) return { status: 'error', message: 'L’image doit peser au maximum 5 Mio.' }
-  const extension = IMAGE_EXTENSIONS[file.type]
-  if (!extension) return { status: 'error', message: 'Choisis une image JPG, PNG ou WEBP.' }
+  const fileError = getAvatarFileError(file)
+  if (fileError) return { status: 'error', message: fileError }
+  if (!(file instanceof File)) return { status: 'error', message: 'Sélectionne une image.' }
+  const extension = getAvatarExtension(file.type)
 
   const filePath = `${user.id}/${crypto.randomUUID()}.${extension}`
   const avatars = supabase.storage.from('avatars')

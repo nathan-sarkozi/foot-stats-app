@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { parseProfileFormData } from '@/utils/profile-form'
 import type { FormState } from '@/utils/formState'
+import { getAvatarExtension, getAvatarFileError } from '@/utils/avatar'
 
 export interface RegisterState extends FormState {
   accountCreated?: boolean
@@ -16,14 +17,6 @@ const CredentialsSchema = z.object({
   email: z.string({ error: 'Saisis une adresse e-mail valide.' }).trim().email('Saisis une adresse e-mail valide.'),
   password: z.string({ error: 'Saisis un mot de passe valide.' }).min(6, 'Le mot de passe doit contenir au moins 6 caractères.'),
 })
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024
-const IMAGE_EXTENSIONS: Readonly<Record<string, string>> = {
-  'image/jpeg': 'jpg',
-  'image/jpg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-}
 
 function logRegistrationError(stage: string, error: unknown) {
   // Database/Auth messages can contain an e-mail, profile value or JWT. Log
@@ -59,13 +52,7 @@ export async function registerUser(previousState: RegisterState, formData: FormD
     password: formData.get('password'),
   })
   const avatar = formData.get('avatar')
-  const avatarError = avatar !== null && !(avatar instanceof File)
-    ? 'Sélectionne une image JPG, PNG ou WebP.'
-    : avatar instanceof File && avatar.size > MAX_FILE_SIZE
-      ? 'La photo ne doit pas dépasser 5 Mo.'
-      : avatar instanceof File && avatar.size > 0 && !IMAGE_EXTENSIONS[avatar.type]
-        ? 'La photo doit être au format JPG, PNG ou WebP.'
-        : null
+  const avatarError = getAvatarFileError(avatar, true)
 
   // Validate every input before creating an Auth user or writing to Storage.
   if (!profile.success || !credentials.success || avatarError) {
@@ -106,7 +93,7 @@ export async function registerUser(previousState: RegisterState, formData: FormD
     const userId = authData.user.id
     let avatarUrl: string | undefined
     if (avatar instanceof File && avatar.size > 0) {
-      const filePath = `${userId}/${crypto.randomUUID()}.${IMAGE_EXTENSIONS[avatar.type]}`
+      const filePath = `${userId}/${crypto.randomUUID()}.${getAvatarExtension(avatar.type)}`
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, avatar, { upsert: true })

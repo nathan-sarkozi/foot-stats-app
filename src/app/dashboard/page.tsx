@@ -10,13 +10,14 @@ import { getClubLogo } from '@/utils/getClubLogo'
 import TeamWidget from './components/TeamWidget'
 import { Suspense } from 'react'
 import { getCurrentSeason, summarizeSeasonStats, type MatchStatRecord } from '@/utils/playerStats'
+import { parseCompetitionParams } from '@/utils/competitionFilters'
 
 interface PlayerProfile {
   display_name: string
   rbfa_team_id: string | null // TYPAGE STRICT CORRIGÉ
 }
 
-export default async function DashboardPage(props: { searchParams: Promise<{ comps?: string }> }) {
+export default async function DashboardPage(props: { searchParams: Promise<{ comps?: string | string[] }> }) {
   const searchParams = await props.searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -46,7 +47,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
   if (statsError || !statsData) return <div className="text-red-500">Failed to load statistics.</div>
 
   const profile = playerProfile as PlayerProfile
-  const activeComps = searchParams.comps ? searchParams.comps.split(',') : ['LEAGUE', 'CUP', 'FRIENDLY']
+  const activeComps = parseCompetitionParams(searchParams.comps)
   
   const {
     matchesPlayed, totalGoals, totalAssists, totalMinutes, totalYellows,

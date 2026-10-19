@@ -4,6 +4,8 @@ import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import Image from 'next/image'
 import clubsData from '@/data/belgian_clubs.json'
 import ActionForm from '@/components/ActionForm'
+import AvatarInput from '@/components/AvatarInput'
+import { AVATAR_SIZE_LABEL } from '@/utils/avatar'
 
 interface UserProfile {
   display_name: string
@@ -64,12 +66,9 @@ export default async function SettingsPage(props: { searchParams: Promise<{ succ
           )}
         </div>
         <div className="flex-1 space-y-3 w-full">
-          <label htmlFor="avatar" className="block text-sm font-bold text-slate-700">Photo de profil (Max 5MB)</label>
-          <input 
-            type="file" 
+          <label htmlFor="avatar" className="block text-sm font-bold text-slate-700">Photo de profil (Max {AVATAR_SIZE_LABEL})</label>
+          <AvatarInput
             id="avatar" 
-            name="avatar" 
-            accept="image/png, image/jpeg, image/webp" 
             required 
             className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all cursor-pointer"
           />

@@ -7,6 +7,7 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import ts from 'typescript'
 import { parseProfileFormData } from '../src/utils/profile-form.ts'
+import * as avatar from '../src/utils/avatar.ts'
 
 const require = createRequire(import.meta.url)
 const ID = '00000000-0000-4000-8000-000000000001'
@@ -85,6 +86,7 @@ function fixture(options = {}) {
   const actions = load('src/app/register/actions.ts', {
     '@/utils/supabase/server': { async createClient() { calls.push({ operation: 'createClient' }); return client } },
     '@/utils/profile-form': { parseProfileFormData },
+    '@/utils/avatar': avatar,
     'next/navigation': { redirect(path) { throw new Error(`REDIRECT:${path}`) } },
     'next/cache': { revalidatePath(...args) { calls.push({ operation: 'revalidatePath', args }) } },
   }, { console: { error(...args) { logs.push(args) } } })
@@ -102,7 +104,7 @@ test('registration rejects invalid inputs before Auth, profile or Storage writes
     ['email', 'invalid'], ['password', 'short'],
     ['avatar', 'not-a-file'],
     ['avatar', new File(['image'], 'image.svg', { type: 'image/svg+xml' })],
-    ['avatar', new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'image.png', { type: 'image/png' })],
+    ['avatar', new File([new Uint8Array(avatar.MAX_AVATAR_SIZE_BYTES + 1)], 'image.png', { type: 'image/png' })],
     ['display_name', new File(['value'], 'name.txt')],
   ]
   for (const [key, value] of invalid) {
@@ -157,6 +159,24 @@ test('valid avatar uses the validated MIME extension and current user folder', a
   assert.match(upload.path, new RegExp(`^${ID}/[a-f0-9-]+\\.png$`))
   assert.equal(upload.bucket, 'avatars')
   assert.match(f.calls.find(call => call.operation === 'update').payload.avatar_url, /\.png$/)
+})
+
+test('registration accepts a 4 MiB avatar and rejects an extra byte before creating an account', async () => {
+  for (const size of [avatar.MAX_AVATAR_SIZE_BYTES - 1, avatar.MAX_AVATAR_SIZE_BYTES]) {
+    const f = fixture()
+    await assert.rejects(f.registerUser(INITIAL, form({
+      avatar: new File([new Uint8Array(size)], 'boundary.jpg', { type: 'image/jpeg' }),
+    })), /REDIRECT:\/dashboard/)
+    assert.equal(f.calls.filter(call => call.operation === 'signUp').length, 1)
+    assert.equal(f.calls.find(call => call.operation === 'upload').file.size, size)
+  }
+  const f = fixture()
+  const state = await f.registerUser(INITIAL, form({
+    avatar: new File([new Uint8Array(avatar.MAX_AVATAR_SIZE_BYTES + 1)], 'oversized.png', { type: 'image/png' }),
+  }))
+  assert.equal(state.status, 'error')
+  assert.match(state.fieldErrors.avatar[0], /4 Mio/)
+  assert.equal(f.calls.length, 0)
 })
 
 test('Auth errors become actionable messages without exposing raw technical errors', async t => {
@@ -262,6 +282,7 @@ function renderWizard(state = INITIAL, step = 4) {
     react: fakeReact,
     '@/utils/formState': { EMPTY_FORM_STATE: INITIAL },
   }).FormFeedback
+  const avatarInput = load('src/components/AvatarInput.tsx', { '@/utils/avatar': avatar }).default
   const page = load('src/app/register/page.tsx', {
     react: fakeReact,
     'react/jsx-runtime': { ...jsxRuntime, jsx: wrapJsx(jsxRuntime.jsx), jsxs: wrapJsx(jsxRuntime.jsxs) },
@@ -269,6 +290,8 @@ function renderWizard(state = INITIAL, step = 4) {
     './actions': { registerUser() {} },
     '@/utils/formState': { EMPTY_FORM_STATE: INITIAL },
     '@/components/ActionForm': { FormFeedback: feedback },
+    '@/components/AvatarInput': moduleComponent(avatarInput),
+    '@/utils/avatar': avatar,
     '@/app/dashboard/components/SubmitButton': moduleComponent(() => React.createElement('button', { type: 'submit' }, 'Créer le profil')),
     'next/link': moduleComponent(({ children, ...props }) => React.createElement('a', props, children)),
     '@/data/belgian_clubs.json': [],
@@ -283,6 +306,8 @@ test('wizard displays validation/Auth feedback and prevents React from resetting
   assert.match(html, /La taille doit être entière/)
   assert.match(html, /name="email"/)
   assert.match(html, /name="password"/)
+  assert.match(html, /4 Mio/)
+  assert.match(html, /id="register-avatar"/)
   let prevented = false
   forms[0].onReset({ preventDefault() { prevented = true } })
   assert.equal(prevented, true)

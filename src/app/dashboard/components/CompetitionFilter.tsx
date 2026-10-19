@@ -2,13 +2,14 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo } from 'react'
+import { parseCompetitionParams, type Competition } from '@/utils/competitionFilters'
 
 // Defined OUTSIDE the main component to prevent memory leaks and infinite re-mounts
 interface FilterButtonProps {
-  value: string
+  value: Competition
   label: string
   isActive: boolean
-  onClick: (value: string) => void
+  onClick: (value: Competition) => void
 }
 
 const FilterButton = ({ value, label, isActive, onClick }: FilterButtonProps) => (
@@ -28,17 +29,13 @@ export default function CompetitionFilter() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  // Extracting the raw parameter string to use as a stable dependency
-  const compsParam = searchParams.get('comps')
+  const currentComps = useMemo(
+    () => parseCompetitionParams(searchParams.getAll('comps')),
+    [searchParams],
+  )
 
-  // useMemo ensures the array reference remains identical between renders 
-  // unless the actual URL parameter changes, fixing the exhaustive-deps warning.
-  const currentComps = useMemo(() => {
-    return compsParam ? compsParam.split(',') : ['LEAGUE', 'CUP', 'FRIENDLY']
-  }, [compsParam])
-
-  const toggleCompetition = useCallback((comp: string) => {
-    let newComps: string[]
+  const toggleCompetition = useCallback((comp: Competition) => {
+    let newComps: Competition[]
     
     if (currentComps.includes(comp)) {
       newComps = currentComps.length > 1 ? currentComps.filter(c => c !== comp) : currentComps
