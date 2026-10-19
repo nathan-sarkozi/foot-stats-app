@@ -20,6 +20,10 @@ const root = fileURLToPath(new URL('../', import.meta.url))
 const migration = name => readFileSync(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8')
 const m1 = migration('20261015140000_atomic_match_writes.sql')
 const m2 = migration('20261015140100_enforce_match_statistic_ownership.sql')
+const rlsCorrection = migration('20261019120000_remove_permissive_match_writes.sql')
+const unsafePolicyNames = [
+  'Auth users delete matches', 'Auth users insert matches', 'Auth users update matches',
+]
 const player = i => `10000000-0000-4000-8000-${String(i).padStart(12, '0')}`
 const match = i => `20000000-0000-4000-8000-${String(i).padStart(12, '0')}`
 const stat = i => `30000000-0000-4000-8000-${String(i).padStart(12, '0')}`
@@ -181,17 +185,60 @@ test('isolated PostgreSQL and PostgREST match writes', { timeout: 240_000 }, asy
         GRANT ALL ON FUNCTIONS TO anon,authenticated,service_role;`)
     sql(migration('20261001123849_remote_schema.sql'))
     sql(migration('20261014132248_secure_player_season_aggregates.sql'))
-    await t.test('both new migrations replay on an empty reconstructed database', () => {
+    await t.test('all corrective migrations replay on an empty reconstructed database', () => {
       sql('CREATE DATABASE footstats_empty TEMPLATE footstats_test;')
       const emptyArgs = [...psqlArgs]
       emptyArgs[emptyArgs.length - 1] = 'footstats_empty'
       docker(emptyArgs, m1)
       docker(emptyArgs, m2)
+      docker(emptyArgs, rlsCorrection)
       assert.equal(docker(emptyArgs, 'SELECT count(*) FROM public.statistics;'), '0')
+      assert.equal(docker(emptyArgs, `SELECT count(*) FROM pg_policies
+        WHERE schemaname='public' AND tablename='matches'
+        AND policyname IN (${unsafePolicyNames.map(quote).join(',')});`), '0')
+      assert.equal(docker(emptyArgs, `SELECT count(*) FROM pg_policies
+        WHERE schemaname='public' AND tablename IN ('matches','statistics')
+        AND policyname IN ('Écriture privée des matchs','Écriture privée des stats');`), '2')
+      assert.equal(docker(emptyArgs, `SELECT reloptions::text FROM pg_class
+        WHERE oid='public.player_season_aggregates'::regclass;`), '{security_invoker=true}')
+      assert.match(docker(emptyArgs, `SELECT pg_get_constraintdef(oid) FROM pg_constraint
+        WHERE conname='statistics_match_id_fkey';`), /FOREIGN KEY \(match_id, player_id\)/)
+      assert.equal(docker(emptyArgs, `SELECT has_function_privilege('authenticated',p.oid,'EXECUTE')||':'||
+        has_function_privilege('anon',p.oid,'EXECUTE')||':'||has_function_privilege('service_role',p.oid,'EXECUTE')
+        FROM pg_proc p WHERE p.proname='save_match_with_statistics';`), 'true:false:false')
       sql('DROP DATABASE footstats_empty;')
     })
     sql(readFileSync(new URL('../supabase/tests/match_writes.sql', import.meta.url), 'utf8'))
     const initial = snapshot()
+    await t.test('historical permissive match policies really allow cross-owner writes', () => {
+      assert.equal(asPlayer(`UPDATE public.matches SET opponent='Historical unsafe update'
+        WHERE id=${quote(match(9))}; SELECT opponent FROM public.matches WHERE id=${quote(match(9))}`),
+      'Historical unsafe update')
+      assert.equal(asPlayer(`DELETE FROM public.matches WHERE id=${quote(match(9))};
+        SELECT count(*) FROM public.statistics WHERE match_id=${quote(match(9))}`), '0')
+      assert.equal(asPlayer(`INSERT INTO public.matches(id,player_id,match_date,opponent,competition_type)
+        VALUES(${quote(match(91))},${quote(player(2))},'2026-10-15','Historical unsafe insert','LEAGUE');
+        SELECT player_id FROM public.matches WHERE id=${quote(match(91))}`), player(2))
+      assert.deepEqual(snapshot(), initial)
+    })
+    await t.test('RLS correction removes only unsafe policies and preserves data, ACL and RLS', () => {
+      const before = security()
+      assert.equal(before.policies.filter(policy => policy.tablename === 'matches'
+        && unsafePolicyNames.includes(policy.policyname)).length, 3)
+      sql(rlsCorrection)
+      assert.deepEqual(snapshot(), initial)
+      assert.deepEqual(security(), {
+        ...before,
+        policies: before.policies.filter(policy => policy.tablename !== 'matches'
+          || !unsafePolicyNames.includes(policy.policyname)),
+      })
+      // Production already omits these policies. Reapplying the correction
+      // proves the same safe policy state does not require recreating them.
+      const corrected = security()
+      sql(rlsCorrection)
+      assert.deepEqual(security(), corrected)
+      assert.deepEqual(snapshot(), initial)
+    })
     const initialSecurity = security()
     assert.equal(initial.statistics.length, 23)
     sql(m1)
@@ -225,6 +272,34 @@ test('isolated PostgreSQL and PostgREST match writes', { timeout: 240_000 }, asy
       assert.deepEqual((await request('player_season_aggregates', { role: 'anon' })).data, [])
       assert.equal((await request('player_season_aggregates')).data.length, 3)
       assert.equal(sql("SELECT reloptions::text FROM pg_class WHERE oid='public.player_season_aggregates'::regclass;"), '{security_invoker=true}')
+    })
+
+    await t.test('corrected policies reject spoofed owners and preserve authenticated public reads', async () => {
+      assert.equal((await request('matches?select=id')).data.length, 23)
+      assert.deepEqual((await request('matches?select=id', { role: 'anon' })).data, [])
+      const spoof = await request('matches', { body: {
+        player_id: player(2), match_date: '2026-10-15', opponent: 'Forbidden owner', competition_type: 'LEAGUE',
+      } })
+      assert.equal(spoof.data.code, '42501')
+      const transfer = await request(`matches?id=eq.${match(1)}`, {
+        method: 'PATCH', body: { player_id: player(2) },
+      })
+      assert.equal(transfer.data.code, '42501')
+      const statTransfer = await request(`statistics?id=eq.${stat(1)}`, {
+        method: 'PATCH', body: { player_id: player(2) },
+      })
+      assert.equal(statTransfer.data.code, '42501')
+      for (const table of ['matches', 'statistics']) {
+        const insert = await request(table, { role: 'anon', body: table === 'matches'
+          ? { player_id: player(1), match_date: '2026-10-15', opponent: 'Anonymous write', competition_type: 'LEAGUE' }
+          : { player_id: player(1), match_id: match(1) } })
+        assert.equal(insert.data.code, '42501')
+        const id = table === 'matches' ? match(1) : stat(1)
+        assert.equal((await request(`${table}?id=eq.${id}`, { role: 'anon', method: 'PATCH',
+          body: table === 'matches' ? { opponent: 'Anonymous change' } : { goals: 9 } })).status, 204)
+        assert.equal((await request(`${table}?id=eq.${id}`, { role: 'anon', method: 'DELETE' })).status, 204)
+      }
+      assert.deepEqual(snapshot(), initial)
     })
 
     for (const phase of ['before composite FK', 'after composite FK']) {
@@ -402,6 +477,25 @@ test('isolated PostgreSQL and PostgREST match writes', { timeout: 240_000 }, asy
       assert.deepEqual((await request('player_season_aggregates', { role: 'anon' })).data, [])
       assert.deepEqual(security(), initialSecurity)
       assert.deepEqual(snapshot(), initial)
+    })
+
+    await t.test('RLS correction also preserves a fully hardened production-shaped schema', () => {
+      const hardening = () => json(`SELECT jsonb_build_object(
+        'constraints', (SELECT jsonb_agg(jsonb_build_object('name',conname,'definition',pg_get_constraintdef(oid))
+          ORDER BY conname) FROM pg_constraint WHERE conrelid IN ('public.matches'::regclass,'public.statistics'::regclass)),
+        'rpc', (SELECT jsonb_build_object('definition',pg_get_functiondef(oid),'acl',proacl::text)
+          FROM pg_proc WHERE proname='save_match_with_statistics' AND pronamespace='public'::regnamespace),
+        'view', (SELECT jsonb_build_object('options',reloptions,'acl',relacl::text)
+          FROM pg_class WHERE oid='public.player_season_aggregates'::regclass));`)
+      // This additional safe owner policy exists in the supplied production
+      // export, but is absent from the historical migration. It must survive.
+      sql(`CREATE POLICY "Strict Match Owner Control" ON public.matches FOR ALL TO authenticated
+        USING (player_id=auth.uid()) WITH CHECK (player_id=auth.uid());`)
+      const before = { security: security(), hardening: hardening(), data: snapshot() }
+      sql(rlsCorrection)
+      assert.deepEqual({ security: security(), hardening: hardening(), data: snapshot() }, before)
+      sql('DROP POLICY "Strict Match Owner Control" ON public.matches;')
+      assert.deepEqual(security(), initialSecurity)
     })
   } catch (error) {
     if (apiStarted) console.error('Local PostgREST logs:', docker(['logs', api]))

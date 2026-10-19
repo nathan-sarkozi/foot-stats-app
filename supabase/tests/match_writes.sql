@@ -1,22 +1,12 @@
 -- Test fixture only. Execute against a disposable local PostgreSQL database
--- after the historical migration and SEC-003, before the two new migrations.
+-- after the historical migration and SEC-003, before the corrective migrations.
 -- Never execute this file in production.
 -- The runner supplies auth.users, auth.uid(), auth.role() and the API roles.
 
 BEGIN;
 
--- Reproduce the current production policies supplied for the audit. The
--- historical migration still contains SEC-001's three permissive match write
--- policies; replacing them here keeps that separate migration drift visible
--- without changing any production migration or policy.
-DROP POLICY "Auth users delete matches" ON public.matches;
-DROP POLICY "Auth users insert matches" ON public.matches;
-DROP POLICY "Auth users update matches" ON public.matches;
-
-CREATE POLICY "Strict Match Owner Control" ON public.matches
-  FOR ALL TO authenticated
-  USING (player_id = auth.uid())
-  WITH CHECK (player_id = auth.uid());
+-- Do not repair RLS in this fixture. The runner demonstrates the historical
+-- defect, then applies the real correction before owner-isolation assertions.
 
 -- Production already grants SELECT to anon. Preserve that grant in the test
 -- so SEC-003 is checked through underlying RLS, rather than a missing grant.

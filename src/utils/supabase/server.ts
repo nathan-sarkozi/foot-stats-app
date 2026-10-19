@@ -18,7 +18,8 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             })
           } catch {
-            // Ignored: Next.js prevents setting cookies in Server Components
+            // Server Components cannot write cookies. The session proxy handles
+            // refreshes before rendering; Server Actions can still write here.
           }
         },
       },
