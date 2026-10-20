@@ -14,8 +14,8 @@ import s from '../stade.module.css'
 
 interface ChartData {
   date: string
-  goals: number
-  assists: number
+  goals: number | null
+  assists: number | null
   opponent: string
 }
 
@@ -103,7 +103,7 @@ export default function StatsChart({ data, variant = 'default' }: StatsChartProp
       </ResponsiveContainer>
       {stade && <details className={s.chartTable}>
         <summary>Lire les données du graphique</summary>
-        <div className={s.tableScroll}><table><caption>Cumul des buts et des passes décisives, dans l’ordre des rencontres</caption><thead><tr><th scope="col">Date</th><th scope="col">Adversaire</th><th scope="col">Buts cumulés</th><th scope="col">Passes décisives cumulées</th></tr></thead><tbody>{data.map((point, index) => <tr key={index}><td>{point.date}</td><th scope="row">{point.opponent}</th><td>{point.goals}</td><td>{point.assists}</td></tr>)}</tbody></table></div>
+        <div className={s.tableScroll}><table><caption>Cumul des buts et des passes décisives, dans l’ordre des rencontres</caption><thead><tr><th scope="col">Date</th><th scope="col">Adversaire</th><th scope="col">Buts cumulés</th><th scope="col">Passes décisives cumulées</th></tr></thead><tbody>{data.map((point, index) => <tr key={index}><td>{point.date}</td><th scope="row">{point.opponent}</th><td>{point.goals ?? '—'}</td><td>{point.assists ?? '—'}</td></tr>)}</tbody></table></div>
       </details>}
     </div>
   )

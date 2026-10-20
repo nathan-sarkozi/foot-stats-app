@@ -147,7 +147,7 @@ test('dashboard repeated and historical filters produce identical cards, charts 
   assert.doesNotMatch(repeated.html, /Synthetic opponent friendly/)
 })
 
-test('dashboard empty URLs preserve all rows while invalid values render the empty state', async () => {
+test('dashboard reconciles unavailable competition URLs explicitly for the selected season', async () => {
   for (const comps of [undefined, '', []]) {
     const { cards } = await renderServerPage('src/app/dashboard/page.tsx', {
       searchParams: { comps }, statistics: [statistic('cup', 'CUP')],
@@ -157,8 +157,8 @@ test('dashboard empty URLs preserve all rows while invalid values render the emp
   const { html, cards } = await renderServerPage('src/app/dashboard/page.tsx', {
     searchParams: { comps: ['UNKNOWN', 'INVALID'] }, statistics: [statistic('cup', 'CUP')],
   })
-  assert.equal(cards.find(card => card.title === 'Matchs Joués').value, 0)
-  assert.match(html, /Aucun match enregistré avec ces filtres/)
+  assert.equal(cards.find(card => card.title === 'Matchs Joués').value, 1)
+  assert.match(html, /compétitions demandées ne sont pas disponibles/)
 })
 
 

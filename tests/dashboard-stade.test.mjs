@@ -42,7 +42,7 @@ test('all eight existing metrics and subtitles match the unchanged season summar
   for (const [title, value, subtitle] of expected) assert.deepEqual(cards.find(c => c.title === title), { title, value, subtitle })
   assert.equal(cards.length, 9, 'minutes are additionally promoted without removing any original metric')
   assert.deepEqual(charts[0], totals.chartData)
-  assert.deepEqual(queries.map(q => q.table), ['profiles', 'statistics'], 'no extra dashboard query')
+  assert.deepEqual(queries.map(q => q.table), ['profiles', 'matches', 'career_entries', 'statistics'], 'season options load owner-scoped matches and manual career metadata')
 })
 
 test('long history remains complete and latest recorded match can be a non-participation', async () => {
@@ -88,7 +88,7 @@ test('empty, missing identity and read failures have useful states instead of in
   const { html } = await renderServerPage('src/app/dashboard/page.tsx', { profile })
   assert.match(html, /Sans club renseigné/)
   assert.match(html, /Profil à compléter/)
-  assert.match(html, /Aucun match enregistré avec ces filtres/)
+  assert.match(html, /Aucun match enregistré dans FootStats/)
   assert.match(html, /SAISON 2026–27/)
   assert.doesNotMatch(html, /Alex Martin|Union des Prés|900|undefined|NaN/)
   const error = await renderServerPage('src/app/dashboard/page.tsx', { statisticsError: { code: 'FAILURE', message: 'Synthetic failure' } })

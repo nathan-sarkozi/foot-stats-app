@@ -8,6 +8,8 @@ import * as playerStats from '../../src/utils/playerStats.ts'
 import * as readErrors from '../../src/utils/readErrors.ts'
 import { cssModuleMock, loadUiModule } from './load-ui-module.mjs'
 import * as competitionFilters from '../../src/utils/competitionFilters.ts'
+import * as seasonPresentation from '../../src/utils/seasonPresentation.ts'
+import { loadSeasonContext } from '../../src/utils/loadSeasonContext.ts'
 
 const require = createRequire(import.meta.url)
 export const PUBLIC_USER_ID = '00000000-0000-4000-8000-000000000001'
@@ -18,6 +20,7 @@ export async function renderServerPage(relativePath, options = {}) {
   const queries = options.queries ?? []
   const cards = []
   const charts = []
+  const widgets = []
   const profile = options.profile === undefined ? {
     id: PUBLIC_USER_ID, display_name: 'Synthetic player', club: 'Synthetic club',
     category: 'Senior', rbfa_team_id: null,
@@ -37,7 +40,8 @@ export async function renderServerPage(relativePath, options = {}) {
           }
         }
         if (table === 'statistics') return { data: options.statistics ?? [], error: options.statisticsError ?? null }
-        if (table === 'career_entries') return { data: options.careerEntries ?? [], error: options.careerError ?? null }
+        if (table === 'matches') return { data: (options.matches ?? (options.statistics ?? []).map(stat => stat.matches)).slice(...(query.range ?? [0])), error: options.matchesError ?? null }
+        if (table === 'career_entries') return { data: (options.careerEntries ?? []).slice(...(query.range ?? [0])), error: options.careerError ?? null }
         throw new Error(`Unexpected mocked table: ${table}`)
       }
       const builder = {
@@ -46,6 +50,7 @@ export async function renderServerPage(relativePath, options = {}) {
         gte(...args) { query.filters.push({ method: 'gte', args }); return builder },
         lt(...args) { query.filters.push({ method: 'lt', args }); return builder },
         order(...args) { query.filters.push({ method: 'order', args }); return builder },
+        range(start, end) { query.range = [start, end + 1]; return builder },
         returns() { return builder },
         single() { return Promise.resolve(result()) },
         maybeSingle() { query.singleRow = 'maybeSingle'; return Promise.resolve(result()) },
@@ -64,6 +69,9 @@ export async function renderServerPage(relativePath, options = {}) {
     },
     '@/utils/readErrors': readErrors,
     '@/utils/competitionFilters': competitionFilters,
+    '@/utils/seasonNavigation': loadUiModule('src/utils/seasonNavigation.ts', { './competitionFilters': competitionFilters }),
+    '@/utils/loadSeasonContext': { loadSeasonContext },
+    '@/utils/seasonPresentation': seasonPresentation,
     '@/utils/getClubLogo': { getClubLogo: () => undefined },
     'next/navigation': {
       notFound() { throw new Error('NOT_FOUND') },
@@ -102,8 +110,11 @@ export async function renderServerPage(relativePath, options = {}) {
       if (name.endsWith('/PublicMatchCard')) return loadUiModule('src/app/profile/[userId]/components/PublicMatchCard.tsx', mocks)
       if (name.endsWith('/StatCard')) return component(statCard)
       if (name.endsWith('/StatsChart')) return component(statsChart)
+      if (name.endsWith('/SeasonSelector')) return component(props => { widgets.push({ name: 'SeasonSelector', props }); return null })
+      if (name.endsWith('/SeasonCareerContext')) return loadUiModule('src/components/SeasonCareerContext.tsx', mocks)
+      if (name.endsWith('/SeasonStatCards')) return loadUiModule('src/components/SeasonStatCards.tsx', { '@/app/dashboard/components/StatCard': component(statCard) })
       if (name.endsWith('/TeamWidget') || name.endsWith('/CompetitionFilter') || name.endsWith('/FormGuide')) {
-        return component(() => null)
+        return component(props => { widgets.push({ name: name.split('/').at(-1), props }); return null })
       }
       if (name.endsWith('/Navbar') || name.endsWith('/ProfileTabs')) return component(() => null)
       if (name === 'react' || name === 'react/jsx-runtime') return require(name)
@@ -116,5 +127,5 @@ export async function renderServerPage(relativePath, options = {}) {
     params: Promise.resolve({ userId: options.userId ?? PUBLIC_USER_ID }),
     searchParams: Promise.resolve(options.searchParams ?? {}),
   })
-  return { html: renderToStaticMarkup(tree), queries, cards, charts }
+  return { html: renderToStaticMarkup(tree), queries, cards, charts, widgets }
 }

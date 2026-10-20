@@ -157,7 +157,7 @@ test('nullable scores preserve statistical totals while both presentations ident
       assert.equal(result.totalWins, isWin ? 1 : 0, label)
       for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page.tsx']) {
         const { html, cards } = await renderServerPage(page, { statistics: rows })
-        assert.equal(cards.find(card => card.title === 'Ratio Victoires').value, `${isWin ? 100 : 0}%`, `${page}: ${label}`)
+        assert.equal(cards.find(card => card.title === 'Ratio Victoires').value, teamScore === null || opponentScore === null ? '—' : `${isWin ? 100 : 0}%`, `${page}: ${label}`)
         assert.ok(html.includes(`data-outcome="${teamScore === null || opponentScore === null ? 'unknown' : isWin ? 'win' : isLoss ? 'loss' : 'draw'}"`), `${page}: ${label}`)
       }
     }
@@ -256,21 +256,21 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
   test(`${page}: a genuinely empty history still has its empty state`, async () => {
     const { html, cards, charts } = await renderServerPage(page)
     assert.match(html, /Aucun match enregistré/)
-    assert.equal(cards.find(c => c.title === 'Matchs Joués').value, 0)
-    assert.equal(cards.find(c => c.title === 'Passes décisives').subtitle, '0 par match')
+    assert.equal(cards.find(c => c.title === 'Matchs Joués').value, '—')
+    assert.equal(cards.find(c => c.title === 'Passes décisives').subtitle, 'Non communiqué')
     assert.deepEqual(charts, [[]])
     assert.doesNotMatch(html, /NaN|Infinity/)
   })
 
-  test(`${page}: nullable legacy statistics render zeroes without hiding the match`, async () => {
+  test(`${page}: nullable legacy statistics stay unknown without hiding the match`, async () => {
     const { html, cards } = await renderServerPage(page, {
       statistics: [statistic('legacy', {
         goals: null, assists: null, minutes_played: null,
         yellow_cards: null, red_cards: null, is_motm: null,
       })],
     })
-    assert.equal(cards.find(c => c.title === 'Total Buts').value, 0)
-    assert.equal(cards.find(c => c.title === 'Discipline').value, 0)
+    assert.equal(cards.find(c => c.title === 'Total Buts').value, '—')
+    assert.equal(cards.find(c => c.title === 'Discipline').value, '—')
     assert.match(html, /Synthetic opponent legacy/)
     if (page.includes('/profile/')) assert.match(html, /—′<\/b> minutes/)
     else assert.match(html, /—.*minutes/)

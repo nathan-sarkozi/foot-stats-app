@@ -3,7 +3,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import StatsChart from './components/StatsChart'
 import CompetitionFilter from './components/CompetitionFilter'
-import StatCard from './components/StatCard'
 import FormGuide from './components/FormGuide'
 import { redirect } from 'next/navigation'
 import { getClubLogo } from '@/utils/getClubLogo'
@@ -12,9 +11,14 @@ import { Suspense } from 'react'
 import MatchSummary from './components/MatchSummary'
 import s from './stade.module.css'
 import { getCurrentSeason, summarizeSeasonStats } from '@/utils/playerStats'
-import { parseCompetitionParams } from '@/utils/competitionFilters'
+import { includeUnreportedMatches, selectSeason } from '@/utils/seasonNavigation'
+import { loadSeasonContext } from '@/utils/loadSeasonContext'
+import { seasonPresentation } from '@/utils/seasonPresentation'
+import SeasonSelector from '@/components/SeasonSelector'
+import SeasonCareerContext from '@/components/SeasonCareerContext'
+import SeasonStatCards from '@/components/SeasonStatCards'
 
-export default async function DashboardPage(props: { searchParams: Promise<{ comps?: string | string[] }> }) {
+export default async function DashboardPage(props: { searchParams: Promise<{ comps?: string | string[], season?: string | string[] }> }) {
   const searchParams = await props.searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -32,7 +36,10 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
     return <div className={s.dashboard}><div className={s.error} role="alert">Impossible de charger ton profil. Réessaie dans quelques instants.</div></div>
   }
 
-  const season = getCurrentSeason()
+  const currentSeason = getCurrentSeason()
+  const context = await loadSeasonContext(supabase, user.id)
+  const selection = selectSeason(context.matches, context.career, currentSeason, searchParams.season, searchParams.comps)
+  const { season, activeComps } = selection
   const { data: statsData, error: statsError } = await supabase
     .from('statistics')
     .select(`
@@ -49,13 +56,10 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
   }
 
   const profile = playerProfile
-  const activeComps = parseCompetitionParams(searchParams.comps)
-  
-  const {
-    matchesPlayed, totalGoals, totalAssists, totalMinutes, totalYellows,
-    totalReds, totalMotm, totalWins, favPosition, maxPosCount, totalGA,
-    winRate, goalSubtitle, assistsPerMatch, chartData, displayStats,
-  } = summarizeSeasonStats(statsData, season, activeComps)
+  const summary = summarizeSeasonStats(includeUnreportedMatches(selection.seasonMatches, statsData), season, activeComps)
+  const { matchesPlayed, totalMinutes, displayStats } = summary
+  const selectedMatches = selection.seasonMatches.filter(match => activeComps.some(comp => comp === match.competition_type))
+  const presentation = seasonPresentation(summary, selectedMatches.length)
 
   const latest = displayStats[0]
   const clubLogo = getClubLogo(profile.club)
@@ -91,53 +95,46 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
         </div>
       </header>
 
+      <SeasonSelector seasons={selection.seasons} selected={season} currentYear={currentSeason.startYear} />
+      {selection.invalidSeason && <p className={s.unknownNote} role="status">Saison indisponible : la saison actuelle est affichée.</p>}
+      {selection.resetCompetitions && <p className={s.unknownNote} role="status">Les compétitions demandées ne sont pas disponibles : toutes celles de cette saison sont affichées.</p>}
+      <SeasonCareerContext entries={selection.careerEntries} href="/dashboard/career" />
       <section aria-labelledby="season-stats-title">
         <div className={s.sectionToolbar}>
           <div className={s.sectionHeading}><span className={s.sectionIndex}>01</span><h2 id="season-stats-title">La saison en chiffres</h2></div>
           <Link href="/dashboard/add-match" className={s.primaryButton}><span aria-hidden="true">＋</span> Ajouter un match</Link>
         </div>
-        <div className={s.filtersRow}><CompetitionFilter variant="stade" /><span className={s.filterHint}>Compétitions combinables · Saison {seasonLabel}</span></div>
-        <div className={s.primaryStats}>
-          <StatCard title="Minutes jouées" value={totalMinutes} subtitle="Du temps sur le terrain." variant="stade" highlight />
-          <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} variant="stade" />
-          <StatCard title="Total Buts" value={totalGoals} subtitle={goalSubtitle} variant="stade" />
-          <StatCard title="Passes décisives" value={totalAssists} subtitle={`${assistsPerMatch} par match`} variant="stade" />
-        </div>
-        <div className={s.secondaryStats}>
-          <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} ${totalGoals === 1 ? 'but' : 'buts'} | ${totalAssists} ${totalAssists === 1 ? 'passe décisive' : 'passes décisives'}`} variant="stade" />
-          <StatCard title="Ratio Victoires" value={`${winRate}%`} subtitle={`${totalWins} V en ${matchesPlayed} M`} variant="stade" />
-          <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" variant="stade" />
-          <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} apparitions`} variant="stade" />
-          <StatCard title="Discipline" value={totalYellows + totalReds} subtitle={`${totalYellows} 🟨 | ${totalReds} 🟥`} variant="stade" />
-        </div>
+        <div className={s.filtersRow}><CompetitionFilter variant="stade" available={selection.availableComps} selected={activeComps} /><span className={s.filterHint}>Compétitions combinables · Saison {seasonLabel}</span></div>
+        <SeasonStatCards summary={summary} known={presentation.known} />
+        <p className={s.unknownNote}>Statistiques calculées uniquement à partir des matchs enregistrés dans FootStats.{presentation.incomplete && ' Certaines données sont non communiquées : les totaux concernés restent inconnus.'}</p>
       </section>
 
       <div className={s.mainGrid}>
-        {latest ? <MatchSummary stat={latest} featured /> : <section className={`${s.panel} ${s.emptyMatch}`}><span className={s.eyebrow}>LE PREMIER CHAPITRE</span><h2>Ta saison commence ici.</h2><p>Aucun match enregistré avec ces filtres.</p><Link href="/dashboard/add-match" className={s.textLink}>Renseigner un match <span aria-hidden="true">↗</span></Link></section>}
+        {latest ? <MatchSummary stat={latest} featured /> : <section className={`${s.panel} ${s.emptyMatch}`}><span className={s.eyebrow}>LE PREMIER CHAPITRE</span><h2>{selection.isCurrent ? 'Ta saison commence ici.' : 'Cette saison a une histoire.'}</h2><p>{selection.seasonMatches.length ? 'Aucun match enregistré avec ces filtres.' : 'Aucun match enregistré dans FootStats pour cette saison. Cela ne signifie pas qu’aucun match n’a été joué.'}</p><Link href={selection.isCurrent ? '/dashboard/add-match' : '/dashboard/career'} className={s.textLink}>{selection.isCurrent ? 'Renseigner un match' : 'Consulter la carrière'} <span aria-hidden="true">↗</span></Link></section>}
         <section className={`${s.panel} ${s.chartPanel}`} aria-labelledby="progression-title">
           <div className={s.panelTitle}><div><span className={s.eyebrow}>MATCH APRÈS MATCH</span><h2 id="progression-title">Cumul des buts et des passes décisives</h2></div><span className={s.chartSeason}>{seasonLabel}</span></div>
           <p className={s.sectionDescription}>Impact offensif de la saison · Valeurs cumulées</p>
-          <StatsChart data={chartData} variant="stade" />
+          <StatsChart data={presentation.chartData} variant="stade" />
           <p className={s.chartNote}>Chaque point représente une rencontre renseignée, avec ou sans participation.</p>
         </section>
       </div>
 
       <section className={s.seasonStory} aria-labelledby="season-story-title">
-        <div className={s.storyMark} aria-hidden="true">↗</div><div><span className={s.eyebrow}>À RETENIR · SÉLECTION ACTUELLE</span><h2 id="season-story-title">Le fil de ta saison.</h2><p><strong>{matchesPlayed} {matchesPlayed === 1 ? 'participation' : 'participations'}</strong> et <strong>{totalMinutes} minutes</strong> sur le terrain. Retrouve chaque rencontre dans ton historique.</p></div>
+        <div className={s.storyMark} aria-hidden="true">↗</div><div><span className={s.eyebrow}>À RETENIR · SÉLECTION ACTUELLE</span><h2 id="season-story-title">Le fil de ta saison.</h2><p><strong>{presentation.known.participation ? matchesPlayed : '—'} participations enregistrées</strong> et <strong>{presentation.known.minutes ? totalMinutes : '—'} minutes renseignées</strong> sur le terrain. Retrouve chaque rencontre dans ton historique.</p></div>
         <div className={s.recentForm}><FormGuide recentMatches={displayStats.filter(stat => stat.has_played).map(stat => stat.matches)} variant="stade" /><a href="#match-history" className={s.textLink}>Parcourir mes matchs <span aria-hidden="true">↓</span></a></div>
       </section>
 
-      <section className={s.teamSection} aria-label="Mon équipe et les informations RBFA">
-        <div className={s.sectionHeading}><span className={s.sectionIndex}>02</span><h2>Le collectif</h2><span className={s.sectionAside}>DONNÉES RBFA EN CACHE</span></div>
+      {selection.isCurrent && <section className={s.teamSection} aria-label="Mon équipe et les informations RBFA">
+        <div className={s.sectionHeading}><span className={s.sectionIndex}>02</span><h2>Le collectif</h2><span className={s.sectionAside}>SAISON ACTUELLE · DONNÉES RBFA EN CACHE</span></div>
         <Suspense fallback={<div className={`${s.panel} ${s.loading}`} role="status">Chargement des informations de ton équipe…</div>}>
           <TeamWidget teamId={profile.rbfa_team_id} isDashboard variant="stade" />
         </Suspense>
-      </section>
+      </section>}
 
       <section id="match-history" className={s.history} aria-labelledby="match-history-title">
         <div className={s.sectionToolbar}><div className={s.sectionHeading}><span className={s.sectionIndex}>03</span><h2 id="match-history-title">Historique des matchs ({displayStats.length})</h2></div><a href="#season-stats-title" className={s.textLink}>Revenir aux statistiques ↑</a></div>
         <p className={s.sectionDescription}>Toutes les rencontres de la sélection. Ouvre une feuille pour consulter ou modifier le match.</p>
-        {displayStats.length === 0 ? <div className={s.emptyState}>Aucun match enregistré avec ces filtres.</div> : <div className={s.matchList}>{displayStats.map(stat => <MatchSummary key={stat.matches.id} stat={stat} />)}</div>}
+        {displayStats.length === 0 ? <div className={s.emptyState}>Aucun match enregistré dans FootStats avec cette sélection.</div> : <div className={s.matchList}>{displayStats.map(stat => <MatchSummary key={stat.matches.id} stat={stat} />)}</div>}
         <p className={s.unknownNote}>0 est une valeur connue. « — » signale une information non renseignée. Les cartons restent affichés même sans participation.</p>
       </section>
       <footer className={s.footer}><strong>footstats<span>.</span></strong><span>Le football que tu vis. La progression que tu suis.</span><span>SAISON {seasonLabel}</span></footer>

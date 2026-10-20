@@ -19,8 +19,10 @@ export interface Season {
 
 // Football seasons follow the July boundary already used by the career page.
 export function getCurrentSeason(now = new Date()): Season {
-  const year = now.getFullYear()
-  const startYear = now.getMonth() >= 6 ? year : year - 1
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Brussels', year: 'numeric', month: 'numeric' }).formatToParts(now)
+  const year = Number(parts.find(part => part.type === 'year')!.value)
+  const month = Number(parts.find(part => part.type === 'month')!.value)
+  const startYear = month >= 7 ? year : year - 1
 
   return {
     startYear,
@@ -78,7 +80,7 @@ export function summarizeSeasonStats(
 
     chartData.push({
       date: new Date(stat.matches.match_date).toLocaleDateString('fr-FR', {
-        day: '2-digit', month: 'short',
+        day: '2-digit', month: 'short', timeZone: 'Europe/Brussels',
       }),
       goals: totalGoals,
       assists: totalAssists,

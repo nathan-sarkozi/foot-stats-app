@@ -8,7 +8,7 @@ export default function ProfileTabs({ userId }: { userId: string }) {
   const pathname = usePathname()
   
   const tabs = [
-    { name: 'Saison Actuelle', href: `/profile/${userId}` },
+    { name: 'Saisons', href: `/profile/${userId}` },
     { name: 'Carrière', href: `/profile/${userId}/career` }
   ]
 
