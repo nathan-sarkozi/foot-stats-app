@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { StadiumLaunch } from "@/components/StadiumMotion";
@@ -16,13 +16,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FootStats",
   description: "Mon application de stats",
-  manifest: "/manifest.json", // <-- AJOUT ICI
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "FootStats",
   },
 };
+
+export const viewport: Viewport = { themeColor: "#111820" };
 
 export default function RootLayout({
   children,

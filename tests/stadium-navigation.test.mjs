@@ -10,7 +10,8 @@ const next = {
   'next/link': component(({children,...props})=>React.createElement('a',props,children)),
   'next/image': component(({src,alt})=>React.createElement('img',{src,alt})),
 }
-const brand = loadUiModule('src/components/FootStatsBrand.tsx',next).default
+const mark = loadUiModule('src/components/FootStatsMark.tsx').default
+const brand = loadUiModule('src/components/FootStatsBrand.tsx',{...next,'./FootStatsMark':component(mark)}).default
 const frame = loadUiModule('src/components/AuthFrame.tsx',{'@/components/FootStatsBrand':component(brand),'./FootStatsBrand':component(brand)}).default
 function nav(path='/dashboard', props={}) {
   const logout=async()=>{}
