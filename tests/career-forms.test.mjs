@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { cssModuleMock } from './helpers/load-ui-module.mjs'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import vm from 'node:vm'
@@ -31,6 +32,7 @@ function loadModule(path, mocks = {}, logs = []) {
     console: { error: (...args) => logs.push(args) },
     require(name) {
       if (name in mocks) return mocks[name]
+      if (name.endsWith('.module.css')) return cssModuleMock
       if (['zod', 'react', 'react/jsx-runtime'].includes(name)) return require(name)
       throw new Error(`Unexpected import: ${name}`)
     },
@@ -257,6 +259,7 @@ function formComponent({ initialData = null, result = idle } = {}) {
   let references = 0
   const mockedReact = {
     ...React,
+    useEffect() {},
     useState(initial) { return [initial, value => setters.push(value)] },
     useRef(initial) { return { current: references++ === 0 ? fakeForm : initial } },
     useActionState(action) { invoke = action; return [result, action, false] },

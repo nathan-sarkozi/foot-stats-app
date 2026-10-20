@@ -3,6 +3,7 @@ import CareerForm from '../../components/CareerForm'
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
 import { careerEntryIdSchema } from '../../career-form'
+import s from '../../../personal.module.css'
 
 export default async function EditCareerPage(props: { params: Promise<{ id: string }> }) {
   const resolvedParams = await props.params
@@ -25,19 +26,9 @@ export default async function EditCareerPage(props: { params: Promise<{ id: stri
   }
   if (!entry) notFound()
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12 pt-6 px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Modifier la saison</h2>
-          <p className="text-slate-500 mt-2 text-sm">Met à jour les informations de cette période.</p>
-        </div>
-        <Link href="/dashboard/career" className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors shrink-0">
-          Annuler et retourner
-        </Link>
-      </div>
-
-      <CareerForm initialData={entry} />
-    </div>
-  )
+  return <div className={`${s.page} ${s.editCareer}`}>
+    <Link href="/dashboard/career" className={s.back}><span aria-hidden="true">←</span> Annuler et retourner à ma carrière</Link>
+    <header className={s.hero}><div><span className={s.eyebrow}>UN CHAPITRE DE TON PARCOURS</span><h1>Modifier la saison<span>.</span></h1><p>Saison {entry.season_start}–{entry.season_end} · Met à jour les informations de cette période.</p></div></header>
+    <CareerForm initialData={entry} />
+  </div>
 }

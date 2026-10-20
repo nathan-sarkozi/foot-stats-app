@@ -51,7 +51,7 @@ test('public career retains the current club without any participation', async (
 test('public career names assists accessibly for known zero, singular and plural totals', async () => {
   for (const assists of [0, 1, 2]) {
     const { html } = await renderCareer({ statistics: [statistic({ assists })] })
-    assert.match(html, /title="Passes décisives"><span aria-hidden="true">👟<\/span><span class="sr-only">Passes décisives<\/span>/)
+    assert.match(html, /<abbr title="Passes décisives" aria-label="Passes décisives">Passes déc\.<\/abbr>/)
     const label = assists === 1 ? 'passe décisive' : 'passes décisives'
     assert.ok(html.includes(`title="Passes décisives">${assists}<span class="sr-only"> ${label}</span>`))
     assert.doesNotMatch(html, /title="Passes"/)

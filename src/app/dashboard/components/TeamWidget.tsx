@@ -34,7 +34,7 @@ export default async function TeamWidget({ teamId, isDashboard = false, variant 
   }
 
   const rbfaData = await getTeamRbfaData(teamId!)
-  if (variant === 'stade') return <StadeTeamWidget teamId={teamId!} data={rbfaData} />
+  if (variant === 'stade') return <StadeTeamWidget teamId={teamId!} data={rbfaData} isDashboard={isDashboard} />
   const { upcoming, rankings: rankingData } = rbfaData
   const nextMatchData = upcoming.match
 
@@ -167,7 +167,7 @@ export default async function TeamWidget({ teamId, isDashboard = false, variant 
 
 // Presentation only: the same asynchronous cache read and date contracts serve
 // both variants. Public profiles retain the original default rendering above.
-function StadeTeamWidget({ teamId, data }: { teamId?: string; data?: TeamRbfaData }) {
+function StadeTeamWidget({ teamId, data, isDashboard = false }: { teamId?: string; data?: TeamRbfaData; isDashboard?: boolean }) {
   if (!teamId || !data) return <div className={`${s.panel} ${s.connectTeam}`}>
     <div><span className={s.eyebrow}>TON CLUB, DANS TON ESPACE</span><h3>Connecte ton équipe RBFA.</h3><p>Retrouve le classement et les informations de rencontre disponibles dans le cache RBFA.</p></div>
     <Link href="/dashboard/settings" className={s.primaryButton}>Lier mon équipe <span aria-hidden="true">↗</span></Link>
@@ -205,7 +205,7 @@ function StadeTeamWidget({ teamId, data }: { teamId?: string; data?: TeamRbfaDat
         <summary>Voir le classement complet <span>{rankings.teams.length} équipes <span aria-hidden="true">⌄</span></span></summary>
         <div className={s.rankingScroll} tabIndex={0} role="region" aria-label="Tableau complet du classement RBFA, défilement horizontal et vertical possible">
           <table><caption>Classement général · Source : RBFA Datalake</caption><thead><tr><th scope="col">#</th><th scope="col">Équipe</th><th scope="col">Pts</th><th scope="col">J</th><th scope="col">Diff</th></tr></thead><tbody>{rankings.teams.map(team => <tr key={team.teamId} className={String(team.teamId) === teamId ? s.ownTeam : undefined}>
-            <td>{team.position ?? '—'}</td><th scope="row"><span className={s.rankingTeam}>{team.logo && <Image src={team.logo} alt="" width={24} height={24} />}<span>{team.name}</span>{String(team.teamId) === teamId && <small>TON ÉQUIPE</small>}</span></th><td>{team.points ?? '—'}</td><td>{team.matchesPlayed ?? '—'}</td><td>{team.goalDifference === null ? '—' : Number(team.goalDifference) > 0 ? `+${team.goalDifference}` : team.goalDifference}</td>
+            <td>{team.position ?? '—'}</td><th scope="row"><span className={s.rankingTeam}>{team.logo && <Image src={team.logo} alt="" width={24} height={24} />}<span>{team.name}</span>{String(team.teamId) === teamId && <small>{isDashboard ? 'TON ÉQUIPE' : 'ÉQUIPE DU JOUEUR'}</small>}</span></th><td>{team.points ?? '—'}</td><td>{team.matchesPlayed ?? '—'}</td><td>{team.goalDifference === null ? '—' : Number(team.goalDifference) > 0 ? `+${team.goalDifference}` : team.goalDifference}</td>
           </tr>)}</tbody></table>
           {rankings.teams.length === 0 && <p className={s.rbfaState}>Aucune équipe dans ce classement.</p>}
         </div>

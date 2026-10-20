@@ -3,6 +3,8 @@ import CareerForm from './components/CareerForm'
 import DeleteCareerButton from './components/DeleteCareerButton'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import s from '../personal.module.css'
+import ui from '@/components/stadium.module.css'
 
 export default async function ManageCareerPage() {
   const supabase = await createClient()
@@ -20,46 +22,18 @@ export default async function ManageCareerPage() {
     throw new Error('Impossible de charger les saisons de carrière.')
   }
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12 pt-6 px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Historique de Carrière</h2>
-          <p className="text-slate-500 mt-2 text-sm">Ajoute et gère tes anciennes saisons sportives.</p>
-        </div>
-        <Link href="/dashboard" className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors shrink-0">
-          Retour au Dashboard
-        </Link>
-      </div>
-
-      <CareerForm />
-
-      {entries && entries.length > 0 && (
-        <div className="mt-12">
-          <h3 className="text-xl font-extrabold text-slate-900 mb-6">Saisons enregistrées</h3>
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden divide-y divide-slate-100">
-            {entries.map(entry => (
-              <div key={entry.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-slate-700">{entry.season_start}-{entry.season_end}</span>
-                    <span className={`px-2 py-0.5 text-xs font-bold rounded-md ${entry.is_youth ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
-                      {entry.is_youth ? 'Jeune' : 'Senior'}
-                    </span>
-                  </div>
-                  <p className="font-bold text-slate-900 mt-1">{entry.is_free_agent ? <span className="italic text-slate-400">Sans club</span> : entry.club}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Link href={`/dashboard/career/edit/${entry.id}`} className="text-sm font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-2 rounded-lg transition-colors">
-                    Éditer
-                  </Link>
-                  <DeleteCareerButton entryId={entry.id} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+  return <div className={s.page}>
+    <Link href="/dashboard" className={s.back}><span aria-hidden="true">←</span> Retour au Dashboard</Link>
+    <header className={s.hero}><div><span className={s.eyebrow}>LES CLUBS. LES SAISONS. TON HISTOIRE.</span><h1>Ma carrière<span>.</span></h1><p>Ajoute et gère tes anciennes saisons sportives. Les premiers terrains comptent autant que les derniers.</p></div><a href="#career-form" className={ui.primaryButton}><span aria-hidden="true">＋</span> Ajouter une saison</a></header>
+    <div className={s.careerLayout}>
+      <section aria-labelledby="saved-seasons-title"><div className={s.listHeading}><h2 id="saved-seasons-title">Saisons enregistrées</h2><span>{entries?.length ?? 0} saisons</span></div>
+        {entries && entries.length > 0 ? <ol className={s.seasonList}>{entries.map(entry => <li key={entry.id} className={s.savedSeason}>
+          <div className={s.savedStamp}><span>SAISON</span><strong>{entry.season_start}<small>— {entry.season_end}</small></strong></div>
+          <div className={s.savedDetails}><span className={s.category}>{entry.is_youth ? 'Jeune' : 'Senior'}</span><h3>{entry.is_free_agent ? 'Sans club' : entry.club || 'Club non renseigné'}</h3>{!entry.is_free_agent && entry.category && <p>{entry.category}</p>}<small>{entry.has_stats ? 'Statistiques renseignées' : 'Statistiques non communiquées'}</small></div>
+          <div className={s.savedActions}><Link href={`/dashboard/career/edit/${entry.id}`} className={s.editLink}>Éditer <span aria-hidden="true">↗</span></Link><DeleteCareerButton entryId={entry.id} /></div>
+        </li>)}</ol> : <div className={s.empty}><strong>Le parcours commence quelque part.</strong><p>Aucune saison historique enregistrée. Ajoute la première lorsque tu le souhaites.</p></div>}
+      </section>
+      <aside id="career-form" className={s.careerAside}><CareerForm /></aside>
     </div>
-  )
+  </div>
 }

@@ -1,0 +1,82 @@
+.shell { composes: page from '../../../components/stadium.module.css'; min-height: 100svh; }
+.shell * { box-sizing: border-box; }
+.shell :where(h1, h2, h3, p, dl, dd) { margin: 0; }
+.main { width: 100%; max-width: 1280px; margin: 0 auto; padding: 31px 32px 20px; }
+.back { display: inline-flex; align-items: center; gap: 10px; color: var(--stadium-muted); font-size: 12px; text-decoration: none; }
+.back > span { color: var(--stadium-accent); font-size: 18px; }
+.back:hover { color: var(--stadium-text); }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 50px; margin: 35px 0 30px; border-bottom: 1px solid var(--stadium-line); padding-bottom: 34px; }
+.eyebrow { display: block; color: var(--stadium-muted); font-size: 9px; font-weight: 550; letter-spacing: 1.9px; line-height: 1.8; }
+.identityRow { display: flex; align-items: center; gap: 25px; margin-top: 28px; }
+.avatar { position: relative; display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 112px; height: 112px; background: #243931; border: 1px solid #6c8460; border-radius: 50%; color: var(--stadium-accent); font-size: 34px; font-weight: 600; letter-spacing: -1px; overflow: hidden; }
+.avatarImage { object-fit: cover; }
+.nameBlock { min-width: 0; }
+.nameBlock h1 { font-size: clamp(34px, 4.5vw, 57px); letter-spacing: -2px; font-weight: 650; line-height: 1.1; overflow-wrap: anywhere; }
+.position { display: inline-flex; color: var(--stadium-accent); border: 1px solid #d5ea5844; background: #d5ea5808; font-size: 10px; font-weight: 600; padding: 5px 9px; border-radius: 5px; margin-top: 14px; }
+.clubLine { display: flex; align-items: center; gap: 13px; margin-top: 29px; }
+.crest { display: flex; align-items: center; justify-content: center; position: relative; width: 48px; height: 48px; flex-shrink: 0; background: #23352e; border-radius: 8px; border: 1px solid #3a5142; color: #b2c5ad; font-size: 23px; }
+.crestImage { object-fit: contain; padding: 6px; }
+.clubLine strong { display: block; font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
+.clubLine div > span { display: block; color: var(--stadium-muted); font-size: 11px; margin-top: 5px; }
+.attributes { display: flex; flex-wrap: wrap; gap: 25px; margin-top: 25px !important; }
+.attributes > div { padding-right: 25px; border-right: 1px solid var(--stadium-line); }
+.attributes > div:last-child { border: 0; }
+.attributes dt { font-size: 10px; color: var(--stadium-muted); }
+.attributes dd { font-size: 13px; color: var(--stadium-text); margin-top: 6px; }
+.playerNumber { position: relative; display: flex; flex-direction: column; overflow: hidden; padding: 20px 25px; border: 1px solid #4a6351; border-radius: 11px; background: #1b2f2b; }
+.playerNumber::before { content: ''; position: absolute; width: 240px; height: 240px; border: 1px solid #49624c55; border-radius: 50%; right: -100px; top: 35px; pointer-events: none; }
+.playerNumber::after { content: ''; position: absolute; width: 1px; height: 400px; background: #49624c55; right: 70px; top: -40px; transform: rotate(32deg); }
+.numberHeading, .numberFooter { display: flex; justify-content: space-between; gap: 10px; font: 9px var(--font-geist-mono), monospace; color: #b0c2ac; letter-spacing: 1px; position: relative; z-index: 1; }
+.numberHeading > span:last-child { color: var(--stadium-accent); font-size: 20px; line-height: 1; }
+.number { position: relative; z-index: 1; font-size: 122px; line-height: 1.1; font-weight: 600; letter-spacing: -8px; color: var(--stadium-accent); margin-top: 10px; }
+.numberLabel { color: #b3c6ad; font: 8px var(--font-geist-mono), monospace; letter-spacing: 1.5px; margin-top: 3px; position: relative; z-index: 1; }
+.numberFooter { border-top: 1px solid #49624c; padding-top: 17px; margin-top: auto; line-height: 1.7; font-size: 8px; }
+.numberFooter > span:last-child { align-self: flex-end; }
+.tabs { display: flex; gap: 28px; border-bottom: 1px solid var(--stadium-line); margin-bottom: 33px; }
+.tab { position: relative; color: var(--stadium-muted); font-size: 13px; font-weight: 550; padding: 0 2px 17px; text-decoration: none; }
+.tab[aria-current] { color: var(--stadium-accent); }
+.tab[aria-current]::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--stadium-accent); }
+.tab:hover { color: var(--stadium-text); }
+.sectionHeading { display: flex; align-items: center; gap: 13px; margin-bottom: 22px; }
+.sectionHeading h2 { font-size: 23px; font-weight: 550; letter-spacing: -.5px; margin-top: 5px; }
+.sectionIndex { font: 10px var(--font-geist-mono), monospace; color: var(--stadium-muted); border: 1px solid var(--stadium-line); border-radius: 4px; padding: 4px 5px; }
+.contextBadge { margin-left: auto; color: var(--stadium-muted); font-size: 10px; text-align: right; }
+.secondaryMetrics { margin-top: 13px; }
+.progression { background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 12px; padding: 28px 27px 20px; margin-top: 27px; }
+.chartIntro { margin-bottom: 28px; }
+.chartIntro h2 { font-size: 23px; font-weight: 550; letter-spacing: -.5px; margin-top: 9px; }
+.chartIntro p { color: var(--stadium-muted); font-size: 12px; line-height: 1.8; margin-top: 9px; }
+.matchHistory, .team { margin-top: 34px; }
+.matchGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.matchCard { min-width: 0; background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 11px; padding: 20px; }
+.matchMeta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--stadium-muted); font-size: 9px; }
+.matchMeta > span { border: 1px solid var(--stadium-line); padding: 3px 5px; border-radius: 4px; }
+.matchIdentity { display: flex; align-items: center; gap: 10px; margin-top: 19px; }
+.matchCrest { position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid #3a5142; background: #23352e; border-radius: 9px; color: #b2c5ad; flex-shrink: 0; font-size: 20px; }
+.matchIdentity > div { min-width: 0; }
+.matchIdentity > div > span { color: var(--stadium-muted); font-size: 8px; letter-spacing: 1px; }
+.matchIdentity h3 { font-size: 14px; font-weight: 550; line-height: 1.4; margin-top: 4px; overflow-wrap: anywhere; }
+.matchResult { margin-left: auto; font-size: 9px; padding: 4px 6px; border: 1px solid var(--stadium-line); border-radius: 4px; white-space: nowrap; color: var(--stadium-muted); }
+.matchResult[data-outcome='win'] { color: #b0dfb7; border-color: #5f926055; background: #5f926011; }
+.matchResult[data-outcome='loss'] { color: #efb8b2; border-color: #b57f7055; background: #b57f7011; }
+.matchScore { display: flex; align-items: center; justify-content: center; gap: 17px; text-align: center; padding: 22px 0; border-bottom: 1px solid var(--stadium-line); }
+.matchScore > span { max-width: 65px; font-size: 9px; color: var(--stadium-muted); line-height: 1.7; }
+.matchScore > strong { font-size: 36px; font-weight: 550; letter-spacing: -1px; white-space: nowrap; }
+.matchScore i { font-style: normal; color: #7a8d83; font-weight: 400; padding: 0 9px; }
+.matchPerformance { display: flex; flex-wrap: wrap; gap: 11px 14px; padding: 16px 0; }
+.matchPerformance > span { color: var(--stadium-muted); font-size: 10px; }
+.matchPerformance b { color: var(--stadium-text); font-weight: 500; }
+.participation { color: var(--stadium-muted); font-size: 11px; padding: 17px 0; }
+.matchDiscipline { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; color: var(--stadium-muted); font-size: 9px; padding-top: 12px; border-top: 1px solid var(--stadium-line); }
+.empty { background: var(--stadium-surface); border: 1px dashed var(--stadium-line); padding: 28px; color: var(--stadium-muted); border-radius: 10px; font-size: 13px; line-height: 1.8; }
+.note { color: var(--stadium-muted); font-size: 10px; line-height: 1.8; margin-top: 17px !important; }
+.srOnly { composes: srOnly from '../../../components/stadium.module.css'; }
+.footer { display: flex; align-items: center; gap: 23px; padding: 26px 0 8px; margin-top: 36px; border-top: 1px solid var(--stadium-line); }
+.footer > strong { font-size: 21px; letter-spacing: -.8px; }
+.footer > strong > span { color: var(--stadium-accent); }
+.footer p { font-size: 11px; color: var(--stadium-muted); }
+.footer > span { margin-left: auto; color: var(--stadium-muted); font-size: 9px; letter-spacing: 1px; }
+@media (max-width: 1050px) { .hero { grid-template-columns: minmax(0, 1fr) 235px; gap: 30px; } .matchGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .number { font-size: 108px; } }
+@media (max-width: 760px) { .main { padding: 27px 24px 18px; } .hero { grid-template-columns: minmax(0, 1fr) 155px; gap: 23px; } .identityRow { gap: 17px; } .avatar { width: 80px; height: 80px; font-size: 26px; } .nameBlock h1 { font-size: 37px; letter-spacing: -1.3px; } .playerNumber { padding: 17px; } .number { font-size: 87px; letter-spacing: -5px; } .numberFooter { flex-direction: column; font-size: 7px; } .numberFooter > span:last-child { align-self: flex-start; } .attributes { gap: 15px; } .attributes > div { padding-right: 15px; } .progression { padding: 23px 20px 18px; } .chartIntro h2 { font-size: 21px; } }
+@media (max-width: 600px) { .main { padding: 25px 16px 16px; } .hero { grid-template-columns: minmax(0, 1fr); gap: 25px; margin-top: 28px; padding-bottom: 27px; } .identityRow { margin-top: 21px; } .nameBlock h1 { font-size: 35px; } .playerNumber { min-height: 0; display: grid; grid-template-columns: 1fr auto; gap: 6px 15px; padding: 16px 20px; } .numberHeading { grid-column: 1; align-items: center; } .numberHeading > span:last-child { display: none; } .number { grid-column: 2; grid-row: 1 / 4; font-size: 64px; margin: 0; align-self: center; line-height: 1; } .numberLabel { grid-column: 1; font-size: 8px; margin: 0; } .numberFooter { border: 0; padding: 0; margin-top: 9px; font-size: 8px; } .numberFooter br { display: none; } .numberFooter > span:last-child { display: none; } .attributes { justify-content: flex-start; gap: 19px; } .clubLine { margin-top: 25px; } .sectionHeading h2 { font-size: 20px; } .sectionHeading .eyebrow { font-size: 8px; letter-spacing: 1px; } .contextBadge { font-size: 9px; max-width: 95px; line-height: 1.7; } .matchGrid { grid-template-columns: minmax(0, 1fr); gap: 13px; } .matchCard { padding: 19px; } .footer { flex-wrap: wrap; gap: 12px; } .footer > span { display: none; } .chartIntro h2 { font-size: 20px; line-height: 1.4; } }
+@media (max-width: 360px) { .avatar { width: 67px; height: 67px; font-size: 23px; } .identityRow { gap: 13px; } .nameBlock h1 { font-size: 30px; } .attributes { gap: 14px; } .attributes > div { padding-right: 14px; } .attributes dd { font-size: 12px; } .progression { padding-inline: 17px; } }

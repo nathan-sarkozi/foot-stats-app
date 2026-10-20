@@ -1,0 +1,84 @@
+.page { composes: page from '../../components/stadium.module.css'; max-width: 1180px; margin: 0 auto; padding: 7px 0 25px; }
+.page *, .page *::before, .page *::after { box-sizing: border-box; }
+.page h1, .page h2, .page h3, .page p { margin: 0; }
+.back { display: inline-flex; align-items: center; gap: 10px; color: var(--stadium-muted); font-size: 12px; text-decoration: none; padding: 5px 0; }
+.back > span { color: var(--stadium-accent); font-size: 18px; }
+.back:hover { color: var(--stadium-text); }
+.hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 25px; margin: 29px 0 33px; padding-bottom: 30px; border-bottom: 1px solid var(--stadium-line); }
+.eyebrow { display: block; color: var(--stadium-muted); font: 9px var(--font-geist-mono), monospace; letter-spacing: 1.6px; line-height: 1.8; }
+.hero h1 { font-size: clamp(35px, 4.5vw, 54px); font-weight: 600; line-height: 1.1; letter-spacing: -2px; margin-top: 16px; }
+.hero h1 > span { color: var(--stadium-accent); }
+.hero p { margin-top: 15px; color: var(--stadium-muted); font-size: 13px; line-height: 1.8; max-width: 590px; }
+.hero > a { white-space: nowrap; font-size: 12px; }
+.careerLayout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.listHeading { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin: 3px 0 20px; }
+.listHeading h2 { font-size: 19px; font-weight: 550; letter-spacing: -.5px; }
+.listHeading > span { color: var(--stadium-muted); font-size: 10px; white-space: nowrap; }
+.seasonList { display: flex; flex-direction: column; gap: 14px; list-style: none; margin: 0; padding: 0; }
+.savedSeason { display: grid; grid-template-columns: 77px minmax(0, 1fr); gap: 15px; padding: 23px; background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 10px; }
+.savedStamp { padding-right: 14px; border-right: 1px solid #4c5f45; }
+.savedStamp > span { font: 7px var(--font-geist-mono), monospace; letter-spacing: 1.2px; color: var(--stadium-muted); }
+.savedStamp strong { display: block; color: #d7dfc3; font-size: 24px; font-weight: 500; letter-spacing: -.7px; margin-top: 9px; line-height: 1.1; }
+.savedStamp small { display: block; color: var(--stadium-muted); font-size: 11px; font-weight: 400; letter-spacing: 0; margin-top: 8px; }
+.savedDetails { min-width: 0; }
+.category { display: inline-flex; padding: 3px 6px; border: 1px solid #536247; border-radius: 3px; color: #b8c5ab; font-size: 8px; letter-spacing: .5px; }
+.savedDetails h3 { font-size: 18px; line-height: 1.3; font-weight: 550; letter-spacing: -.4px; margin-top: 9px; overflow-wrap: anywhere; }
+.savedDetails p { color: var(--stadium-muted); font-size: 11px; margin-top: 6px; }
+.savedDetails > small { display: block; color: var(--stadium-muted); font-size: 9px; margin-top: 10px; }
+.savedActions { display: flex; align-items: flex-start; gap: 13px; justify-content: flex-end; grid-column: 1 / -1; border-top: 1px solid var(--stadium-line); padding-top: 13px; margin-top: 2px; }
+.savedActions form { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; min-width: 0; max-width: 70%; }
+.savedActions form > button { font-size: 10px; min-height: 33px; padding: 6px 10px; }
+.editLink { color: var(--stadium-text); text-decoration: none; font-size: 10px; padding: 8px 3px; white-space: nowrap; }
+.editLink > span { color: var(--stadium-accent); margin-left: 7px; }
+.editLink:hover { color: var(--stadium-accent); }
+.careerAside { scroll-margin-top: 100px; }
+.careerForm { min-width: 0; border: 1px solid #526540; background: var(--stadium-surface); padding: 25px; border-radius: 11px; }
+.sectionHeading { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 24px; }
+.sectionHeading > span { color: var(--stadium-accent); font: 10px var(--font-geist-mono), monospace; padding-top: 4px; }
+.sectionHeading h2 { font-size: 21px; font-weight: 550; letter-spacing: -.6px; line-height: 1.3; margin: 0; }
+.sectionHeading p { color: var(--stadium-muted); font-size: 11px; line-height: 1.7; margin: 7px 0 0; }
+.twoColumns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 17px; }
+.twoColumns > div { min-width: 0; }
+.fullWidth { grid-column: 1 / -1; }
+.toggle { display: flex; align-items: center; gap: 11px; padding: 14px; border: 1px solid #4e6145; border-radius: 7px; background: #b2c58307; }
+.checkbox { width: 18px; height: 18px; accent-color: var(--stadium-accent); flex-shrink: 0; cursor: pointer; margin: 0; }
+.toggleLabel { color: #d4ded2; font-size: 11px; line-height: 1.7; cursor: pointer; }
+.careerStats { border-top: 1px solid var(--stadium-line); padding-top: 22px; margin-top: 24px; }
+.statsHeading { display: flex; align-items: flex-start; gap: 15px; flex-direction: column; margin-bottom: 21px; }
+.formTitle { font-size: 18px; font-weight: 550; letter-spacing: -.4px; margin: 0; }
+.statsToggle { display: flex; align-items: center; gap: 10px; }
+.careerStatsFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px; }
+.careerStatsFields label { min-height: 32px; line-height: 1.5; }
+.careerStatsFields[data-disabled] { opacity: .65; }
+.careerStatsFields input:disabled, .careerForm input:disabled { background: #14212a; color: #9caaa8; cursor: not-allowed; }
+.hint { color: var(--stadium-muted); font-size: 10px; line-height: 1.8; margin-top: 15px !important; }
+.formActions { display: flex; justify-content: flex-end; border-top: 1px solid var(--stadium-line); margin-top: 23px; padding-top: 22px; }
+.careerForm .formActions > button { width: 100%; font-size: 13px; }
+.editCareer { max-width: 850px; }
+.editCareer .careerStatsFields { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 15px; }
+.editCareer .careerStatsFields label { font-size: 10px; line-height: 1.6; min-height: 32px; }
+.empty { background: var(--stadium-surface); border: 1px dashed var(--stadium-line); border-radius: 10px; padding: 28px; }
+.empty strong { display: block; font-size: 22px; line-height: 1.4; font-weight: 500; letter-spacing: -.7px; }
+.empty p { color: var(--stadium-muted); font-size: 12px; line-height: 1.8; margin-top: 13px; }
+.settingsLayout { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.8fr); gap: 26px; align-items: start; }
+.avatarForm, .profileForm { padding: 27px; border: 1px solid var(--stadium-line); background: var(--stadium-surface); border-radius: 11px; min-width: 0; }
+.avatarForm .sectionHeading { margin-bottom: 26px; }
+.avatarForm > [role='alert'], .avatarForm > [role='status'] { grid-column: 1 / -1; }
+.avatarForm .sectionHeading h2 { font-size: 19px; }
+.profileAvatar { display: flex; align-items: center; justify-content: center; position: relative; width: 112px; height: 112px; overflow: hidden; border: 1px solid #6c8460; border-radius: 50%; color: var(--stadium-accent); background: #243931; font-size: 35px; font-weight: 600; margin: 0 auto; }
+.avatarImage { object-fit: cover; }
+.avatarName { display: block; text-align: center; font-size: 18px; font-weight: 500; letter-spacing: -.5px; margin: 17px 0 28px; overflow-wrap: anywhere; }
+.avatarInput { display: block; width: 100%; min-width: 0; margin-top: 11px; border: 1px solid #40515e; border-radius: 7px; padding: 8px; color: var(--stadium-muted); background: #11182099; font-size: 10px; }
+.avatarInput::file-selector-button { color: var(--stadium-text); background: var(--stadium-raised); border: 1px solid #52616c; border-radius: 5px; padding: 8px; margin-right: 7px; font-size: 10px; cursor: pointer; }
+.avatarForm > button { width: 100%; margin-top: 22px; font-size: 12px; }
+.avatarNote { color: var(--stadium-muted); padding: 19px 7px 0; font-size: 11px; line-height: 1.9; }
+.formSection + .formSection { padding-top: 24px; border-top: 1px solid var(--stadium-line); margin-top: 25px; }
+.rbfaSection { padding: 21px; margin: 27px 0; border: 1px solid #58704466; border-radius: 8px; background: #c2d97105; }
+.rbfaHeading { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.rbfaHeading > span { color: #becb9b; font: 8px var(--font-geist-mono), monospace; padding: 4px 5px; border: 1px solid #62774c; border-radius: 3px; }
+.rbfaHeading h2 { font-size: 16px; font-weight: 550; letter-spacing: -.3px; }
+.physicalFields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+.physicalFields > div { min-width: 0; }
+@media (max-width: 1050px) { .careerLayout { gap: 20px; } .careerForm { padding: 22px; } .savedSeason { padding: 20px; } .settingsLayout { gap: 20px; grid-template-columns: minmax(0, .9fr) minmax(0, 1.7fr); } .avatarForm, .profileForm { padding: 23px; } }
+@media (max-width: 800px) { .careerLayout { grid-template-columns: minmax(0, 1fr); gap: 28px; } .careerForm .careerStatsFields { grid-template-columns: repeat(3, minmax(0, 1fr)); } .settingsLayout { grid-template-columns: minmax(0, 1fr); gap: 25px; } .avatarForm { display: grid; grid-template-columns: 110px minmax(0, 1fr); column-gap: 25px; align-items: start; } .avatarForm .sectionHeading { grid-column: 1 / -1; } .profileAvatar { grid-column: 1; grid-row: span 4; width: 100px; height: 100px; } .avatarName { text-align: left; font-size: 21px; margin: 0 0 15px; } .avatarForm > label, .avatarInput, .avatarForm .hint, .avatarForm > button { grid-column: 2; } .avatarForm > button { justify-self: start; width: auto; margin-top: 17px; } .avatarNote { padding-top: 12px; } }
+@media (max-width: 600px) { .hero { flex-direction: column; align-items: flex-start; gap: 22px; margin-top: 23px; padding-bottom: 25px; } .hero h1 { font-size: 36px; letter-spacing: -1.4px; } .hero p { font-size: 12px; } .eyebrow { font-size: 8px; letter-spacing: 1.1px; } .hero > a { font-size: 12px; padding: 10px 14px; } .careerForm, .profileForm { padding: 22px 20px; } .careerForm .careerStatsFields { grid-template-columns: repeat(2, minmax(0, 1fr)); } .twoColumns { grid-template-columns: minmax(0, 1fr); gap: 20px; } .savedSeason { padding: 19px; grid-template-columns: 73px minmax(0, 1fr); gap: 15px; } .savedDetails h3 { font-size: 17px; } .sectionHeading h2 { font-size: 20px; } .listHeading h2 { font-size: 18px; } .avatarForm { display: block; padding: 22px 20px; } .profileAvatar { width: 96px; height: 96px; } .avatarName { text-align: center; margin: 17px 0 23px; } .avatarForm > button { width: 100%; } .rbfaSection { padding: 17px; } .rbfaHeading { align-items: flex-start; } .rbfaHeading h2 { font-size: 15px; line-height: 1.4; } .physicalFields { grid-template-columns: minmax(0, 1fr); gap: 19px; } .profileForm .formActions > button { width: 100%; font-size: 12px; } }

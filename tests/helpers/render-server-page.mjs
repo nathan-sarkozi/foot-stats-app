@@ -99,6 +99,7 @@ export async function renderServerPage(relativePath, options = {}) {
       if (name in mocks) return mocks[name]
       if (name.endsWith('.module.css')) return cssModuleMock
       if (name.endsWith('/MatchSummary')) return loadUiModule('src/app/dashboard/components/MatchSummary.tsx', mocks)
+      if (name.endsWith('/PublicMatchCard')) return loadUiModule('src/app/profile/[userId]/components/PublicMatchCard.tsx', mocks)
       if (name.endsWith('/StatCard')) return component(statCard)
       if (name.endsWith('/StatsChart')) return component(statsChart)
       if (name.endsWith('/TeamWidget') || name.endsWith('/CompetitionFilter') || name.endsWith('/FormGuide')) {

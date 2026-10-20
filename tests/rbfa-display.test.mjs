@@ -374,3 +374,13 @@ test('Stade differentiates confirmed, unresolved, stale and unavailable fixtures
     if (status === 'unavailable') assert.match(html, /Service RBFA temporairement indisponible/)
   }
 })
+
+test('public Stade labels the player team without changing the dashboard label or cache read', async () => {
+  const data = { upcoming: { status: 'none', match: null }, rankings: rankings() }
+  for (const isDashboard of [true, false]) {
+    const result = await widget(data, { teamId: '368465', isDashboard, variant: 'stade' })
+    assert.equal(result.calls.length, 1)
+    assert.ok(result.html.includes(isDashboard ? 'TON ÉQUIPE' : 'ÉQUIPE DU JOUEUR'))
+    assert.doesNotMatch(result.html, /href="\/dashboard\/settings"/)
+  }
+})

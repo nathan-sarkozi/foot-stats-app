@@ -145,7 +145,7 @@ test('nullable legacy numeric values do not produce NaN', () => {
   assert.equal(result.assistsPerMatch, '0.00')
 })
 
-test('nullable scores preserve all previous comparison results in totals and match cards', async () => {
+test('nullable scores preserve statistical totals while both presentations identify an incomplete score', async () => {
   for (const teamScore of [null, 0, 1, 2]) {
     for (const opponentScore of [null, 0, 1, 2]) {
       const rows = [statistic('nullable-score', {}, { team_score: teamScore, opponent_score: opponentScore })]
@@ -158,10 +158,7 @@ test('nullable scores preserve all previous comparison results in totals and mat
       for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page.tsx']) {
         const { html, cards } = await renderServerPage(page, { statistics: rows })
         assert.equal(cards.find(card => card.title === 'Ratio Victoires').value, `${isWin ? 100 : 0}%`, `${page}: ${label}`)
-        const colors = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-          : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
-        if (page.includes('/profile/')) assert.ok(html.includes(colors), `${page}: ${label}`)
-        else assert.ok(html.includes(`data-outcome="${teamScore === null || opponentScore === null ? 'unknown' : isWin ? 'win' : isLoss ? 'loss' : 'draw'}"`), `${page}: ${label}`)
+        assert.ok(html.includes(`data-outcome="${teamScore === null || opponentScore === null ? 'unknown' : isWin ? 'win' : isLoss ? 'loss' : 'draw'}"`), `${page}: ${label}`)
       }
     }
   }
@@ -211,7 +208,7 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
       assert.equal(cards.find(card => card.title === 'Passes décisives').value, assists)
       assert.equal(cards.find(card => card.title === 'G/A (Impliqué)').subtitle, `1 but | ${assists} ${label}`)
       assert.match(html, /Cumul des buts et des passes décisives/)
-      if (page.includes('/profile/') && assists > 0) assert.ok(html.includes(`👟 ${assists} ${label}`))
+      if (page.includes('/profile/') && assists > 0) assert.ok(html.replace(/<[^>]*>/g, '').includes(`${assists} ${label}`))
       assert.doesNotMatch(html, /Total Passes/)
     }
   })
@@ -275,7 +272,7 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
     assert.equal(cards.find(c => c.title === 'Total Buts').value, 0)
     assert.equal(cards.find(c => c.title === 'Discipline').value, 0)
     assert.match(html, /Synthetic opponent legacy/)
-    if (page.includes('/profile/')) assert.match(html, />0&#x27;<\/span>/)
+    if (page.includes('/profile/')) assert.match(html, /—′<\/b> minutes/)
     else assert.match(html, /—.*minutes/)
     assert.doesNotMatch(html, /NaN|Infinity/)
   })
