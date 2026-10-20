@@ -1,5 +1,5 @@
 .career { color: var(--stadium-text); }
-.intro { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 0 0 30px; border-bottom: 1px solid var(--stadium-line); margin-bottom: 30px; }
+.intro { composes: hero from '../../../../components/stadium-motion.module.css'; display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 0 0 30px; border-bottom: 1px solid var(--stadium-line); margin-bottom: 30px; }
 .intro div > span { color: #bdc7ac; font-size: 9px; letter-spacing: 2px; }
 .intro h2 { font-size: 35px; line-height: 1.2; font-weight: 550; letter-spacing: -1.1px; margin-top: 13px; }
 .intro p { color: var(--stadium-muted); font-size: 12px; line-height: 1.9; margin-top: 13px; max-width: 580px; }
@@ -9,7 +9,7 @@
 .chapterHeading > span { color: var(--stadium-muted); border: 1px solid var(--stadium-line); padding: 3px 5px; border-radius: 4px; font: 10px var(--font-geist-mono), monospace; }
 .chapterHeading h3 { font-size: 20px; font-weight: 550; letter-spacing: -.5px; }
 .chapterHeading small { color: var(--stadium-muted); font-size: 11px; margin-left: auto; }
-.timeline { list-style: none; padding: 0; margin: 0; }
+.timeline { composes: stagger from '../../../../components/stadium-motion.module.css'; list-style: none; padding: 0; margin: 0; }
 .timelineRow { position: relative; display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 36px; padding-bottom: 23px; }
 .timelineRow::before { content: ''; position: absolute; left: 150px; top: 19px; bottom: -20px; width: 1px; background: #425443; }
 .timelineRow::after { content: ''; position: absolute; left: 146px; top: 19px; width: 9px; height: 9px; border: 1px solid #8a9d6f; background: var(--stadium-bg); border-radius: 50%; }
@@ -20,7 +20,7 @@
 .seasonStamp strong { display: block; font-size: 31px; font-weight: 500; letter-spacing: -1.5px; margin-top: 10px; color: #d7ddc8; line-height: 1.1; }
 .seasonStamp small { display: block; color: var(--stadium-muted); font-size: 10px; margin-top: 9px; }
 .current { display: inline-block; color: var(--stadium-accent); font-size: 9px; margin-top: 15px; padding: 4px 7px; border: 1px solid #d5ea5844; border-radius: 4px; }
-.seasonCard { min-width: 0; background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 10px; padding: 22px 24px; }
+.seasonCard { composes: surface from '../../../../components/stadium-motion.module.css'; min-width: 0; background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 10px; padding: 22px 24px; }
 .timelineRow[data-current] .seasonCard { border-color: #6d7f43; }
 .clubHeading { display: flex; align-items: center; gap: 15px; }
 .clubHeading > div { min-width: 0; }

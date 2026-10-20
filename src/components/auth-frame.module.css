@@ -2,7 +2,7 @@
 .frame * { box-sizing: border-box; }
 .shell { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); max-width: 1120px; width: 100%; border: 1px solid var(--stadium-line); border-radius: 18px; overflow: hidden; background: #15202a; }
 .identity { padding: 42px; display: flex; flex-direction: column; border-right: 1px solid var(--stadium-line); background: #101a23; }
-.editorial { margin-top: 76px; position: relative; z-index: 1; }
+.editorial { composes: hero from './stadium-motion.module.css'; margin-top: 76px; position: relative; z-index: 1; }
 .eyebrow { display: block; font-size: 10px; letter-spacing: 1.8px; color: var(--stadium-muted); font-weight: 600; }
 .editorial h1 { font-size: clamp(38px, 4vw, 53px); letter-spacing: -2.7px; line-height: 1.08; font-weight: 600; margin: 20px 0 0; }
 .editorial h1 > span { color: var(--stadium-accent); }
@@ -13,7 +13,7 @@
 .pitch .playDot { fill: var(--stadium-accent); stroke: var(--stadium-accent); }
 .pitch > span { display: block; color: var(--stadium-muted); text-align: center; font: 10px var(--font-geist-mono), monospace; letter-spacing: 2px; margin-top: 18px; }
 .signature { display: flex; justify-content: space-between; gap: 15px; margin-top: auto; padding-top: 48px; color: var(--stadium-muted); font: 10px var(--font-geist-mono), monospace; letter-spacing: 1px; }
-.formColumn { padding: 43px 44px; display: flex; flex-direction: column; justify-content: center; min-width: 0; background: var(--stadium-surface); }
+.formColumn { composes: enter from './stadium-motion.module.css'; padding: 43px 44px; display: flex; flex-direction: column; justify-content: center; min-width: 0; background: var(--stadium-surface); }
 @media (max-width: 900px) {
   .frame { padding: 32px 24px; }
   .identity { padding: 32px; }

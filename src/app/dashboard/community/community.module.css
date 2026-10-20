@@ -1,7 +1,7 @@
 .page { composes: page from '../../../components/stadium.module.css'; padding: 15px 0 0; }
 .page * { box-sizing: border-box; }
 .page h1, .page h2, .page h3, .page p { margin: 0; }
-.hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 35px; padding: 20px 0 35px; border-bottom: 1px solid var(--stadium-line); margin-bottom: 29px; }
+.hero { composes: hero from '../../../components/stadium-motion.module.css'; display: flex; justify-content: space-between; align-items: flex-end; gap: 35px; padding: 20px 0 35px; border-bottom: 1px solid var(--stadium-line); margin-bottom: 29px; }
 .eyebrow { display: block; color: var(--stadium-muted); font-size: 10px; font-weight: 600; letter-spacing: 1.7px; }
 .hero h1 { font-size: clamp(42px, 4.5vw, 60px); font-weight: 650; letter-spacing: -2.8px; line-height: 1.06; margin-top: 20px; }
 .hero h1 > span { color: var(--stadium-accent); }
@@ -15,7 +15,7 @@
 .sectionHeading > span { color: var(--stadium-muted); font: 10px var(--font-geist-mono), monospace; border: 1px solid var(--stadium-line); border-radius: 4px; padding: 2px 4px; }
 .sectionHeading h2 { font-size: 17px; font-weight: 550; letter-spacing: -.3px; }
 .sectionHeading small { color: var(--stadium-muted); font-size: 11px; margin-left: auto; }
-.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 19px; }
+.grid { composes: stagger from '../../../components/stadium-motion.module.css'; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 19px; }
 .playerCard { display: flex; flex-direction: column; position: relative; min-width: 0; padding: 25px; border: 1px solid var(--stadium-line); border-radius: 11px; background: var(--stadium-surface); color: var(--stadium-text); text-decoration: none; transition: transform .18s ease, border-color .18s ease, background .18s ease; }
 .playerCard:hover { transform: translateY(-3px); border-color: #d5ea5866; background: #1d2b36; }
 .cardTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }

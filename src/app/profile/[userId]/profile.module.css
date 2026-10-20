@@ -5,7 +5,7 @@
 .back { display: inline-flex; align-items: center; gap: 10px; color: var(--stadium-muted); font-size: 12px; text-decoration: none; }
 .back > span { color: var(--stadium-accent); font-size: 18px; }
 .back:hover { color: var(--stadium-text); }
-.hero { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 50px; margin: 35px 0 30px; border-bottom: 1px solid var(--stadium-line); padding-bottom: 34px; }
+.hero { composes: hero from '../../../components/stadium-motion.module.css'; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 50px; margin: 35px 0 30px; border-bottom: 1px solid var(--stadium-line); padding-bottom: 34px; }
 .eyebrow { display: block; color: var(--stadium-muted); font-size: 9px; font-weight: 550; letter-spacing: 1.9px; line-height: 1.8; }
 .identityRow { display: flex; align-items: center; gap: 25px; margin-top: 28px; }
 .avatar { position: relative; display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 112px; height: 112px; background: #243931; border: 1px solid #6c8460; border-radius: 50%; color: var(--stadium-accent); font-size: 34px; font-weight: 600; letter-spacing: -1px; overflow: hidden; }
@@ -37,18 +37,20 @@
 .tab[aria-current] { color: var(--stadium-accent); }
 .tab[aria-current]::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--stadium-accent); }
 .tab:hover { color: var(--stadium-text); }
+.tab { transition: color 160ms ease; }
+.tab::after { transform-origin: left; }
 .sectionHeading { display: flex; align-items: center; gap: 13px; margin-bottom: 22px; }
 .sectionHeading h2 { font-size: 23px; font-weight: 550; letter-spacing: -.5px; margin-top: 5px; }
 .sectionIndex { font: 10px var(--font-geist-mono), monospace; color: var(--stadium-muted); border: 1px solid var(--stadium-line); border-radius: 4px; padding: 4px 5px; }
 .contextBadge { margin-left: auto; color: var(--stadium-muted); font-size: 10px; text-align: right; }
 .secondaryMetrics { margin-top: 13px; }
-.progression { background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 12px; padding: 28px 27px 20px; margin-top: 27px; }
+.progression { composes: enter from '../../../components/stadium-motion.module.css'; background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 12px; padding: 28px 27px 20px; margin-top: 27px; }
 .chartIntro { margin-bottom: 28px; }
 .chartIntro h2 { font-size: 23px; font-weight: 550; letter-spacing: -.5px; margin-top: 9px; }
 .chartIntro p { color: var(--stadium-muted); font-size: 12px; line-height: 1.8; margin-top: 9px; }
 .matchHistory, .team { margin-top: 34px; }
-.matchGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.matchCard { min-width: 0; background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 11px; padding: 20px; }
+.matchGrid { composes: stagger from '../../../components/stadium-motion.module.css'; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.matchCard { composes: surface from '../../../components/stadium-motion.module.css'; min-width: 0; background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 11px; padding: 20px; }
 .matchMeta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--stadium-muted); font-size: 9px; }
 .matchMeta > span { border: 1px solid var(--stadium-line); padding: 3px 5px; border-radius: 4px; }
 .matchIdentity { display: flex; align-items: center; gap: 10px; margin-top: 19px; }

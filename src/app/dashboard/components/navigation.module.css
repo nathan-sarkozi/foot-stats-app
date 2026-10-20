@@ -15,6 +15,16 @@
 .logoutButton { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 6px; color: var(--stadium-muted); cursor: pointer; background: transparent; }
 .logoutButton:hover { color: #ffc2bc; background: #f4b3af0a; }
 .mobileMenu { display: none; }
+.navLink, .addMatch, .avatar, .logoutButton, .menuToggle, .mobileLink, .mobileAdd, .mobileSettings, .mobileLogout button { transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease; }
+.navLink[aria-current]::after { transform-origin: left; }
+@keyframes underlineIn { from { transform: scaleX(.4); opacity: .4; } to { transform: scaleX(1); opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  .navLink[aria-current]::after { animation: underlineIn 220ms ease-out; }
+  @supports (transition-behavior: allow-discrete) {
+    .mobileMenu::details-content { opacity: 0; transition: opacity 160ms ease, content-visibility 160ms allow-discrete; }
+    .mobileMenu[open]::details-content { opacity: 1; }
+  }
+}
 .menuToggle { min-width: 64px; min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 8px; list-style: none; border: 1px solid var(--stadium-line); border-radius: 7px; cursor: pointer; font-size: 12px; color: var(--stadium-text); user-select: none; }
 .menuToggle::-webkit-details-marker { display: none; }
 .menuIcon { width: 15px; height: 14px; position: relative; }

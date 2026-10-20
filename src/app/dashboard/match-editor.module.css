@@ -4,7 +4,7 @@
 .back { display: inline-flex; align-items: center; gap: 9px; color: var(--stadium-muted); font-size: 12px; text-decoration: none; padding: 5px 0; }
 .back:hover { color: var(--stadium-text); }
 .back > span { color: var(--stadium-accent); font-size: 18px; }
-.hero { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin: 28px 0 34px; }
+.hero { composes: hero from '../../components/stadium-motion.module.css'; display: flex; align-items: center; justify-content: space-between; gap: 28px; margin: 28px 0 34px; }
 .eyebrow { display: block; color: var(--stadium-muted); font: 10px var(--font-geist-mono), monospace; letter-spacing: 1.7px; }
 .hero h1 { font-size: clamp(35px, 4.5vw, 54px); font-weight: 600; line-height: 1.1; letter-spacing: -2px; margin-top: 16px; }
 .hero h1 > span { color: var(--stadium-accent); }
@@ -14,7 +14,7 @@
 .heroMark::after { content: ''; width: 1px; height: 132px; background: var(--stadium-line); position: absolute; transform: rotate(35deg); }
 .heroMark > span { position: relative; z-index: 1; background: var(--stadium-bg); font-size: 28px; padding: 0 7px; }
 .form { display: flex; flex-direction: column; gap: 20px; }
-.fields { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.fields { composes: stagger from '../../components/stadium-motion.module.css'; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px; align-items: start; }
 .historicalNotice { grid-column: 1 / -1; color: #d8e4c0; font-size: 12px; line-height: 1.8; padding: 16px 20px; background: #d5ea5809; border: 1px solid #8b9e4555; border-radius: 8px; }
 .panel { min-width: 0; padding: 27px; background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 12px; }
 .sectionHeading { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 27px; }

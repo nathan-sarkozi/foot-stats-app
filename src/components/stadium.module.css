@@ -11,7 +11,7 @@
   color: var(--stadium-text);
   color-scheme: dark;
 }
-.page { composes: theme; position: relative; isolation: isolate; background: var(--stadium-bg); min-height: calc(100svh - 128px); }
+.page { composes: atmosphere from './stadium-motion.module.css'; composes: theme; position: relative; isolation: isolate; background: var(--stadium-bg); min-height: calc(100svh - 128px); }
 .page::before { content: ''; position: fixed; inset: 0; z-index: -1; background: var(--stadium-bg); pointer-events: none; }
 .theme :is(a, button, input, select, summary):focus-visible { outline: 2px solid var(--stadium-accent); outline-offset: 4px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--stadium-text); text-decoration: none; font-size: 26px; line-height: 1; letter-spacing: -1.2px; font-weight: 750; flex-shrink: 0; }
@@ -31,6 +31,13 @@
 .label { display: block; font-size: 12px; font-weight: 550; color: #c3ced4; }
 .textLink { color: var(--stadium-accent); text-underline-offset: 4px; font-weight: 550; }
 .textLink:hover { text-decoration: underline; }
+.primaryButton { composes: action from './stadium-motion.module.css'; }
+.secondaryButton { composes: action from './stadium-motion.module.css'; }
+.textLink { composes: action from './stadium-motion.module.css'; }
+.theme :is(button, a, input, select, summary) { -webkit-tap-highlight-color: #d5ea5820; }
+.theme :is(input, select):focus-visible { border-color: #9cba66; }
+.theme :is(a, button, summary) { touch-action: manipulation; }
+.theme :is(button, a):focus-visible { text-decoration-thickness: 2px; }
 .feedback { border-radius: 8px; border: 1px solid; padding: 14px; font-size: 13px; line-height: 1.7; margin-bottom: 20px; scroll-margin-block: 100px 120px; }
 .feedback:focus { outline: 2px solid #f4b3af; outline-offset: 4px; }
 .feedback p { margin: 0; }

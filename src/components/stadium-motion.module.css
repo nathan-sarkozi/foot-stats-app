@@ -1,0 +1,83 @@
+/* Opt-in primitives. Content stays readable without JS or animation support.
+   No forward fill: transforms/layers are released when entrances finish. */
+.hero, .enter, .stagger { --motion-ease: cubic-bezier(.2, .7, .2, 1); }
+
+@keyframes arrive { from { opacity: .45; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+@keyframes settle { from { opacity: .7; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+@keyframes lightBreathe { 0%, 100% { opacity: .45; } 50% { opacity: .85; } }
+
+.atmosphere::after {
+  content: ''; position: fixed; inset: 0 0 auto; height: min(65svh, 600px); z-index: -1;
+  pointer-events: none; opacity: .45;
+  background: radial-gradient(ellipse at 78% 0%, #d5ea5810 0%, transparent 58%), radial-gradient(ellipse at 10% 8%, #709b8a14 0%, transparent 56%);
+}
+.surface { transition: border-color 180ms ease, background-color 180ms ease; }
+.surface:hover { border-color: #526652; }
+.action { transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease; }
+.action:active:not(:disabled) { transform: translateY(1px); }
+.disclosure > summary { transition: color 160ms ease, background-color 160ms ease; }
+.disclosure > summary:hover { color: var(--stadium-accent); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero { animation: arrive 520ms var(--motion-ease) backwards; }
+  .enter { animation: settle 400ms var(--motion-ease) backwards; }
+  .stagger > :nth-child(-n + 8) { animation: arrive 420ms var(--motion-ease) backwards; }
+  .stagger > :nth-child(2) { animation-delay: 40ms; }
+  .stagger > :nth-child(3) { animation-delay: 80ms; }
+  .stagger > :nth-child(4) { animation-delay: 120ms; }
+  .stagger > :nth-child(n + 5):nth-child(-n + 8) { animation-delay: 160ms; }
+  /* One quiet cycle, then a still background: no perpetual motion. */
+  .atmosphere::after { animation: lightBreathe 4s ease-in-out; }
+  @supports (interpolate-size: allow-keywords) and (transition-behavior: allow-discrete) {
+    .disclosure::details-content { interpolate-size: allow-keywords; block-size: 0; opacity: 0; overflow: clip; transition: block-size 220ms ease, opacity 180ms ease, content-visibility 220ms allow-discrete; }
+    .disclosure[open]::details-content { block-size: auto; opacity: 1; }
+  }
+}
+
+/* A document-level visual signature, not a fake data-loading delay. No JS,
+   storage, focus trap, pointer interception or waiting for network completion. */
+.launch { display: none; }
+.launchLights { position: absolute; inset: 0; background: radial-gradient(ellipse at 25% -5%, #a8c68227, transparent 55%), radial-gradient(ellipse at 88% 15%, #d5ea5815, transparent 45%); }
+.launchContent { position: relative; display: flex; align-items: center; flex-direction: column; width: min(360px, calc(100% - 48px)); }
+.launchEyebrow, .launchCaption { font: 9px var(--font-geist-mono), monospace; color: #a0adb7; letter-spacing: 2.6px; }
+.launchBrand { display: flex; align-items: center; gap: 13px; margin-top: 25px; font: 750 clamp(38px, 8vw, 52px)/1 var(--font-geist-sans), Arial, sans-serif; letter-spacing: -2.5px; color: #f2f4f1; }
+.launchBrand svg { width: 39px; height: 39px; color: #d5ea58; }
+.launchBrand > span > span { color: #d5ea58; }
+.launchPitch { width: 220px; height: 80px; margin: 36px 0 30px; border: 1px solid #526652; position: relative; transform: perspective(300px) rotateX(40deg); }
+.launchPitch::before { content: ''; position: absolute; inset: 0 50%; border-left: 1px solid #526652; }
+.launchPitch::after { content: ''; position: absolute; left: calc(50% - 23px); top: calc(50% - 23px); width: 46px; height: 46px; border: 1px solid #6e8554; border-radius: 50%; }
+.launchPitch > span { position: absolute; left: calc(50% - 3px); top: calc(50% - 3px); width: 6px; height: 6px; background: #d5ea58; border-radius: 50%; }
+.launchCaption { font-size: 8px; letter-spacing: 1.8px; }
+.launchLine { height: 2px; width: 54px; background: #d5ea58; margin-top: 28px; transform-origin: left; }
+@keyframes launchAway { 0%, 55% { opacity: 1; visibility: visible; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes launchMark { from { opacity: .4; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes launchTrace { from { transform: scaleX(.1); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: no-preference) {
+  .launch { display: grid; place-items: center; position: fixed; inset: 0; z-index: 100; overflow: hidden; background: #111820; pointer-events: none; visibility: hidden; animation: launchAway 1s ease-in-out backwards; }
+  .launchContent { animation: launchMark 500ms ease-out; }
+  .launchLine { animation: launchTrace 650ms ease-out; }
+  /* Immediate reveal as soon as the user starts interacting, including by keyboard. */
+  .launch:has(~ :focus-within) { animation: none; }
+}
+
+.loading { padding: 26px 0 40px; }
+.loadingLabel { display: flex; align-items: center; gap: 10px; color: #bac6c5; font-size: 12px; line-height: 1.7; }
+.loadingLabel::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #d5ea58; }
+.skeleton { margin-top: 30px; }
+.skeletonHero { padding: 20px 0 35px; border-bottom: 1px solid #30404c; }
+.skeletonHero > span, .skeletonStats span { display: block; height: 12px; width: 110px; border-radius: 4px; background: #30404c; }
+.skeletonHero > span:nth-child(2) { width: min(420px, 85%); height: 48px; margin: 24px 0; }
+.skeletonHero > span:last-child { width: min(280px, 70%); }
+.skeletonStats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+.skeletonStats > div, .skeletonPanels > div { min-width: 0; padding: 22px; border: 1px solid #30404c; background: #1a2530; border-radius: 10px; }
+.skeletonStats span { width: 65%; height: 10px; }
+.skeletonStats span + span { width: 48%; height: 35px; margin-top: 21px; }
+.skeletonPanels { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; margin-top: 25px; }
+.skeletonPanels > div { height: 210px; }
+@keyframes loadingPulse { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: no-preference) { .skeleton { animation: loadingPulse 1.8s ease-in-out infinite; } }
+@media (max-width: 600px) { .skeletonStats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .skeletonPanels { grid-template-columns: 1fr; } .skeletonPanels > div { height: 170px; } }
+@media (prefers-reduced-motion: reduce) {
+  .hero, .enter, .stagger > *, .atmosphere::after, .skeleton { animation: none !important; }
+  .surface, .action, .disclosure::details-content { transition: none !important; }
+}

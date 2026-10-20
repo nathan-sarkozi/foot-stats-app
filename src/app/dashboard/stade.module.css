@@ -1,5 +1,5 @@
 /* Opt-in presentation for /dashboard only. No global selectors or theme mutation. */
-.dashboard {
+.dashboard { composes: atmosphere from '../../components/stadium-motion.module.css';
   composes: theme from '../../components/stadium.module.css';
   position: relative;
   isolation: isolate;
@@ -17,7 +17,7 @@
 .dashboard a { text-decoration: none; }
 .dashboard :is(a, button, summary, [tabindex]):focus-visible { outline: 2px solid var(--stadium-accent); outline-offset: 5px; }
 .dashboard :is(section, h2) { scroll-margin-top: 90px; }
-.hero { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 25px 0 34px; border-bottom: 1px solid var(--stadium-line); margin-bottom: 30px; overflow: hidden; }
+.hero { composes: hero from '../../components/stadium-motion.module.css'; display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 25px 0 34px; border-bottom: 1px solid var(--stadium-line); margin-bottom: 30px; overflow: hidden; }
 .heroCopy { position: relative; z-index: 1; }
 .heroEyebrow { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; color: var(--stadium-muted); font-size: 10px; font-weight: 600; letter-spacing: 1.4px; margin-bottom: 19px; }
 .seasonPill { display: inline-block; color: var(--stadium-accent); border: 1px solid var(--stadium-line); border-radius: 4px; padding: 5px 8px; font-family: var(--font-geist-mono), monospace; white-space: nowrap; }
@@ -47,6 +47,8 @@
 .primaryButton { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 11px 16px; min-height: 43px; border-radius: 7px; background: var(--stadium-accent); color: #172018; font-size: 13px; font-weight: 650; flex-shrink: 0; transition: background .18s ease, transform .18s ease; }
 .primaryButton:hover { background: #e3f27b; transform: translateY(-1px); }
 .primaryButton > span { font-size: 19px; line-height: 1; }
+.primaryButton { composes: action from '../../components/stadium-motion.module.css'; }
+.filterButton { composes: action from '../../components/stadium-motion.module.css'; }
 .filtersRow { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 19px; }
 .filterHint { color: var(--stadium-muted); font-size: 11px; }
 .competitionFilters { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -54,20 +56,21 @@
 .filterButton[aria-pressed='true'] { color: var(--stadium-accent); background: #d5ea5810; border-color: #d5ea5855; }
 .filterButton[aria-pressed='true']::before { content: '✓'; margin-right: 7px; font-size: 11px; }
 .filterButton:hover { background: var(--stadium-raised); color: var(--stadium-text); }
-.primaryStats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
-.statCard { position: relative; padding: 20px 21px; border: 1px solid var(--stadium-line); background: var(--stadium-surface); border-radius: 10px; min-width: 0; }
+.primaryStats { composes: stagger from '../../components/stadium-motion.module.css'; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
+.statCard { composes: surface from '../../components/stadium-motion.module.css'; position: relative; padding: 20px 21px; border: 1px solid var(--stadium-line); background: var(--stadium-surface); border-radius: 10px; min-width: 0; }
 .statCard h3 { color: var(--stadium-muted); font-size: 12px; font-weight: 500; }
 .statValue { font-size: 51px; line-height: 1.25; letter-spacing: -2.6px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 6px !important; }
 .statHighlight { border-color: #d5ea5860; }
+.statHighlight:hover { border-color: #a6bd52; }
 .statHighlight .statValue { color: var(--stadium-accent); }
 .statSubtitle { color: var(--stadium-muted); font-size: 11px; line-height: 1.6; margin-top: 7px !important; }
-.secondaryStats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 13px; border: 1px solid var(--stadium-line); border-radius: 10px; overflow: hidden; background: #16212b; }
+.secondaryStats { composes: stagger from '../../components/stadium-motion.module.css'; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 13px; border: 1px solid var(--stadium-line); border-radius: 10px; overflow: hidden; background: #16212b; }
 .secondaryStats .statCard { background: transparent; border: 0; border-right: 1px solid var(--stadium-line); border-radius: 0; padding: 17px 20px; }
 .secondaryStats .statCard:last-child { border-right: 0; }
 .secondaryStats .statValue { font-size: 28px; letter-spacing: -.9px; margin-top: 6px !important; }
 .secondaryStats .statSubtitle { font-size: 11px; }
 .mainGrid { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.4fr); gap: 19px; align-items: start; margin-top: 25px; }
-.panel { padding: 24px; border: 1px solid var(--stadium-line); border-radius: 11px; min-width: 0; background: var(--stadium-surface); }
+.panel { composes: enter surface from '../../components/stadium-motion.module.css'; padding: 24px; border: 1px solid var(--stadium-line); border-radius: 11px; min-width: 0; background: var(--stadium-surface); }
 .eyebrow { color: var(--stadium-muted); display: block; font-size: 10px; font-weight: 600; letter-spacing: 1.7px; }
 .panelTitle { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .panelTitle h2, .panelTitle h3 { font-size: 19px; font-weight: 550; letter-spacing: -.55px; line-height: 1.3; }
@@ -77,7 +80,7 @@
 .chartPanel { padding-bottom: 19px; }
 .chart { min-width: 0; width: 100%; margin-top: 8px; }
 .chartNote { font-size: 10px; line-height: 1.7; color: var(--stadium-muted); border-top: 1px solid var(--stadium-line); margin-top: 13px !important; padding-top: 12px; }
-.chartTable { margin-top: 15px; }
+.chartTable { composes: disclosure from '../../components/stadium-motion.module.css'; margin-top: 15px; }
 .chartTable summary { cursor: pointer; font-size: 11px; color: var(--stadium-text); padding: 7px 0; }
 .tableScroll { overflow-x: auto; }
 .tableScroll table { font-size: 11px; width: 100%; min-width: 350px; border-collapse: collapse; margin-top: 10px; }
@@ -123,7 +126,7 @@
 .matchLink:hover { color: var(--stadium-accent); }
 .lastMatch .matchFoot { margin-top: 14px; }
 .lastMatch .matchLink { width: 100%; margin-top: 3px; }
-.seasonStory { display: flex; align-items: center; gap: 22px; background: #d5ea5809; border: 1px solid #d5ea5824; border-radius: 11px; padding: 26px; margin-top: 20px; }
+.seasonStory { composes: enter from '../../components/stadium-motion.module.css'; display: flex; align-items: center; gap: 22px; background: #d5ea5809; border: 1px solid #d5ea5824; border-radius: 11px; padding: 26px; margin-top: 20px; }
 .storyMark { font-size: 37px; color: var(--stadium-accent); line-height: 1; }
 .seasonStory > div:nth-child(2) { flex: 1; }
 .seasonStory h2 { font-size: 22px; letter-spacing: -.65px; font-weight: 550; margin-top: 8px; }
@@ -164,7 +167,7 @@
 .teamSummary > strong { font-size: 14px; font-weight: 550; }
 .teamSummary > span { color: var(--stadium-muted); font-size: 11px; }
 .teamSummary b { color: var(--stadium-text); font-weight: 500; }
-.rankingDetails { border-top: 1px solid var(--stadium-line); }
+.rankingDetails { composes: disclosure from '../../components/stadium-motion.module.css'; border-top: 1px solid var(--stadium-line); }
 .rankingDetails summary { display: flex; justify-content: space-between; gap: 10px; cursor: pointer; padding: 16px 0; font-size: 12px; color: var(--stadium-text); list-style: none; }
 .rankingDetails summary::-webkit-details-marker { display: none; }
 .rankingDetails summary > span { color: var(--stadium-muted); font-size: 11px; }
@@ -181,7 +184,7 @@
 .rbfaState { padding: 27px 0; color: var(--stadium-muted); font-size: 13px; line-height: 1.8; }
 .history { margin-top: 34px; }
 .history > .sectionDescription { margin-bottom: 19px; }
-.matchList { display: flex; flex-direction: column; border-top: 1px solid var(--stadium-line); }
+.matchList { composes: stagger from '../../components/stadium-motion.module.css'; display: flex; flex-direction: column; border-top: 1px solid var(--stadium-line); }
 .matchRow { display: grid; grid-template-columns: minmax(140px, .8fr) minmax(250px, 2fr); gap: 13px 26px; padding: 22px 8px; border-bottom: 1px solid var(--stadium-line); }
 .matchRow:hover { background: #d5ea5804; }
 .matchRow .matchMeta { align-content: start; align-items: flex-start; flex-direction: column; justify-content: center; }
