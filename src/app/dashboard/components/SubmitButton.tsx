@@ -27,7 +27,7 @@ export default function SubmitButton({ defaultLabel, loadingLabel, variant = 'pr
     <button
       type="submit"
       disabled={pending}
-      className={cn(appearance === 'stade' ? s.primaryButton : cn(baseStyles, variants[variant]), className)}
+      className={cn(appearance === 'stade' ? (variant === 'danger' ? s.dangerButton : s.primaryButton) : cn(baseStyles, variants[variant]), className)}
       aria-busy={pending}
     >
       {pending ? (

@@ -1,0 +1,125 @@
+.page { composes: page from '../../components/stadium.module.css'; max-width: 1120px; margin: 0 auto; padding: 7px 0 25px; }
+.page *, .page *::before, .page *::after { box-sizing: border-box; }
+.page h1, .page h2, .page h3, .page p { margin: 0; }
+.back { display: inline-flex; align-items: center; gap: 9px; color: var(--stadium-muted); font-size: 12px; text-decoration: none; padding: 5px 0; }
+.back:hover { color: var(--stadium-text); }
+.back > span { color: var(--stadium-accent); font-size: 18px; }
+.hero { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin: 28px 0 34px; }
+.eyebrow { display: block; color: var(--stadium-muted); font: 10px var(--font-geist-mono), monospace; letter-spacing: 1.7px; }
+.hero h1 { font-size: clamp(35px, 4.5vw, 54px); font-weight: 600; line-height: 1.1; letter-spacing: -2px; margin-top: 16px; }
+.hero h1 > span { color: var(--stadium-accent); }
+.hero p { margin-top: 15px; color: var(--stadium-muted); font-size: 13px; line-height: 1.8; max-width: 560px; overflow-wrap: anywhere; }
+.heroMark { position: relative; display: grid; place-items: center; flex-shrink: 0; width: 108px; height: 108px; border: 1px solid var(--stadium-line); border-radius: 50%; color: var(--stadium-accent); }
+.heroMark::before { content: ''; position: absolute; width: 70px; height: 70px; border: 1px dashed #526653; border-radius: 50%; }
+.heroMark::after { content: ''; width: 1px; height: 132px; background: var(--stadium-line); position: absolute; transform: rotate(35deg); }
+.heroMark > span { position: relative; z-index: 1; background: var(--stadium-bg); font-size: 28px; padding: 0 7px; }
+.form { display: flex; flex-direction: column; gap: 20px; }
+.fields { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.historicalNotice { grid-column: 1 / -1; color: #d8e4c0; font-size: 12px; line-height: 1.8; padding: 16px 20px; background: #d5ea5809; border: 1px solid #8b9e4555; border-radius: 8px; }
+.panel { min-width: 0; padding: 27px; background: var(--stadium-surface); border: 1px solid var(--stadium-line); border-radius: 12px; }
+.sectionHeading { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 27px; }
+.sectionNumber { color: var(--stadium-accent); font: 11px var(--font-geist-mono), monospace; padding-top: 4px; }
+.sectionHeading h2 { font-size: 21px; font-weight: 550; line-height: 1.2; letter-spacing: -.5px; }
+.sectionHeading p { color: var(--stadium-muted); font-size: 11px; margin-top: 8px; line-height: 1.6; }
+.sectionMark { margin-left: auto; color: #89a69c; font-size: 25px; line-height: 1; }
+.encounterFields, .playingFields, .disciplineFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 17px; }
+.encounterFields > div, .playingFields > div, .disciplineFields > div { min-width: 0; }
+.required { color: var(--stadium-accent); }
+.opponentField { grid-column: 1 / -1; }
+.hint { color: var(--stadium-muted); font-size: 10px; line-height: 1.7; margin-top: 8px !important; }
+.scoreboard { min-width: 0; margin: 28px 0 0; padding: 22px 19px 15px; border: 1px solid #486048; border-radius: 10px; background: #111c22; }
+.scoreboard legend { padding: 0 9px; color: #c4d6b2; font-size: 11px; font-weight: 550; }
+.scoreInputs { display: grid; grid-template-columns: minmax(0, 1fr) 26px minmax(0, 1fr); gap: 9px; align-items: start; text-align: center; }
+.scoreInputs label { font-size: 11px; font-weight: 500; color: var(--stadium-muted); display: block; }
+.scoreInput { display: block; width: 100%; min-width: 0; border: 1px solid #405446; border-radius: 8px; background: #18282b; color: var(--stadium-accent); padding: 9px 8px; margin-top: 10px; font: 550 43px/1.25 var(--font-geist-sans), Arial, sans-serif; text-align: center; appearance: textfield; }
+.scoreInput::-webkit-inner-spin-button, .scoreInput::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.scoreInput::placeholder { color: #82928c; opacity: 1; }
+.scoreSeparator { color: #81928a; font-size: 34px; line-height: 1; padding-top: 47px; }
+.scoreCaption { display: block; text-align: center; margin-top: 17px; font: 8px var(--font-geist-mono), monospace; letter-spacing: 1.6px; color: #9aa9a2; }
+.performance { grid-column: 2; grid-row: span 2; }
+.participation { display: flex; gap: 12px; padding: 17px 15px; border: 1px solid #77945377; border-radius: 8px; background: #d5ea5807; align-items: center; }
+.participation input, .motm input { accent-color: var(--stadium-accent); width: 19px; height: 19px; flex-shrink: 0; cursor: pointer; margin: 0; }
+.participation label { cursor: pointer; }
+.unknownBoolean { display: block; }
+.participation strong { display: block; font-size: 12px; font-weight: 600; }
+.participation label > span { display: block; font-size: 10px; color: var(--stadium-muted); margin-top: 5px; line-height: 1.6; }
+.participationHelp { font-size: 11px; line-height: 1.8; color: var(--stadium-muted); margin-top: 12px !important; padding-left: 2px; }
+.form:has(input[name='has_played']:not(:checked)) .participation { border-color: #67798b; background: #22313e; }
+.form:has(input[name='has_played']:not(:checked)) .participationHelp { color: #d8e4c0; padding: 12px; background: #d5ea5809; border-left: 2px solid #8b9e45; border-radius: 0 5px 5px 0; }
+.form:has(select[name='has_played'] option[value='false']:checked) .participationHelp { color: #d8e4c0; padding: 12px; background: #d5ea5809; border-left: 2px solid #8b9e45; border-radius: 0 5px 5px 0; }
+.playingFields { margin-top: 25px; gap: 23px 17px; }
+.inputWithUnit { position: relative; }
+.inputWithUnit > input { padding-right: 43px; }
+.inputWithUnit > span { position: absolute; top: 16px; right: 14px; color: var(--stadium-muted); font-size: 11px; pointer-events: none; }
+.motm { display: flex; gap: 12px; align-items: center; margin-top: 25px; padding: 16px 14px; border: 1px solid #8b815e66; border-radius: 8px; background: #b8a47a08; }
+.motm label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; }
+.trophy { color: #d5c49a; font-size: 24px; }
+.motm small { display: block; color: var(--stadium-muted); margin-top: 4px; font: 9px var(--font-geist-mono), monospace; }
+.discipline { grid-column: 1; }
+.discipline .sectionHeading { margin-bottom: 18px; }
+.cardsMark { display: flex; gap: 5px; margin-left: auto; padding-top: 2px; }
+.cardsMark > i { width: 11px; height: 17px; background: #d2bc59; border-radius: 2px; transform: rotate(-12deg); }
+.cardsMark > i:last-child { background: #c37970; transform: rotate(9deg); }
+.actions { position: sticky; bottom: 14px; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 18px 22px; background: #15212afa; border: 1px solid #455642; border-radius: 11px; box-shadow: 0 8px 26px #0004; }
+.actions > div:first-child > strong { display: block; font-size: 12px; font-weight: 500; }
+.actions p { font-size: 10px; color: var(--stadium-muted); margin-top: 5px; line-height: 1.7; }
+.actionButtons { display: flex; align-items: center; gap: 21px; }
+.cancel { color: var(--stadium-muted); font-size: 12px; text-decoration: none; }
+.cancel:hover { color: var(--stadium-text); }
+.deleteZone { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 32px; border-top: 1px solid var(--stadium-line); padding-top: 25px; }
+.deleteZone h2 { font-size: 14px; font-weight: 500; }
+.deleteZone p { color: var(--stadium-muted); font-size: 11px; line-height: 1.8; margin-top: 7px; }
+.deleteZone form { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0; max-width: 100%; }
+.unavailable { padding: 27px; border: 1px solid #f4b3af55; border-radius: 11px; background: var(--stadium-surface); }
+.unavailable > p { color: #ffc2bc; font-size: 14px; line-height: 1.9; }
+.unavailable > a { display: inline-block; margin-top: 22px; font-size: 13px; }
+.footnote { font-size: 10px; color: var(--stadium-muted); margin-top: 20px !important; line-height: 1.8; }
+@media (max-width: 950px) {
+  .panel { padding: 23px; }
+  .fields { gap: 18px; }
+  .encounterFields { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .playingFields { gap: 20px 13px; }
+}
+@media (max-width: 760px) {
+  .hero { margin: 22px 0 28px; }
+  .hero h1 { font-size: 40px; letter-spacing: -1.7px; }
+  .hero p { font-size: 12px; }
+  .heroMark { width: 82px; height: 82px; margin-right: 8px; }
+  .heroMark::before { width: 53px; height: 53px; }
+  .heroMark::after { height: 95px; }
+  .fields { grid-template-columns: minmax(0, 1fr); gap: 17px; }
+  .performance, .discipline { grid-column: auto; grid-row: auto; }
+  .encounterFields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .actions { bottom: 10px; padding: 14px 17px; gap: 15px; }
+  .actions > div:first-child { display: none; }
+  .actionButtons { width: 100%; justify-content: space-between; }
+}
+@media (max-width: 480px) {
+  .page { padding-top: 0; }
+  .hero { margin-top: 21px; }
+  .hero h1 { font-size: 35px; }
+  .heroMark { display: none; }
+  .hero p { max-width: 290px; }
+  .eyebrow { font-size: 9px; letter-spacing: 1.2px; }
+  .panel { padding: 21px 19px; border-radius: 10px; }
+  .sectionHeading { gap: 10px; margin-bottom: 23px; }
+  .sectionHeading h2 { font-size: 20px; }
+  .sectionHeading p { font-size: 10px; }
+  .encounterFields { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .scoreboard { padding-inline: 13px; margin-top: 25px; }
+  .scoreInputs { gap: 5px; grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr); }
+  .scoreInput { font-size: 36px; }
+  .scoreSeparator { font-size: 27px; padding-top: 47px; }
+  .scoreCaption { font-size: 7px; letter-spacing: 1px; }
+  .playingFields { grid-template-columns: minmax(0, 1fr); }
+  .participation { gap: 10px; padding: 14px 12px; }
+  .participation strong { font-size: 11px; }
+  .motm label { font-size: 11px; }
+  .disciplineFields { gap: 13px; }
+  .actions { padding: 12px; }
+  .actionButtons { gap: 10px; }
+  .actionButtons > button { padding: 12px; font-size: 12px; }
+  .cancel { font-size: 11px; }
+  .deleteZone { flex-direction: column; align-items: flex-start; gap: 17px; }
+  .deleteZone form { width: 100%; align-items: stretch; }
+}

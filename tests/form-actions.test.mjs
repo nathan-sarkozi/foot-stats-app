@@ -212,6 +212,50 @@ test('creation keeps bench sanctions while passing only validated atomic-write f
   expectRedirect(harness.calls, '/dashboard')
 })
 
+test('creation and editing normalize two yellows to a single expulsion, including non-participants', async () => {
+  for (const name of ['addMatch', 'updateMatch']) {
+    for (const participation of ['true', null]) {
+      const harness = actions()
+      await assert.rejects(harness[name](EMPTY_FORM_STATE, matchData({ has_played: participation, yellow_cards: '2', red_cards: '0' })), { message: 'REDIRECT:/dashboard' })
+      const payload = harness.calls.rpc[0].payload
+      assert.equal(payload.p_yellow_cards, 2)
+      assert.equal(payload.p_red_cards, 1)
+      if (participation === null) {
+        assert.equal(payload.p_has_played, false)
+        for (const field of ['p_minutes_played', 'p_goals', 'p_assists']) assert.equal(payload[field], 0)
+      }
+      expectRedirect(harness.calls, '/dashboard')
+    }
+  }
+})
+
+test('direct reds remain independent and invalid disciplinary inputs are never hidden by normalization', async () => {
+  for (const yellow of ['0', '1']) {
+    const harness = actions()
+    await assert.rejects(harness.addMatch(EMPTY_FORM_STATE, matchData({ yellow_cards: yellow, red_cards: '1' })), /REDIRECT/)
+    assert.equal(harness.calls.rpc[0].payload.p_red_cards, 1)
+    assert.equal(harness.calls.rpc[0].payload.p_yellow_cards, Number(yellow))
+  }
+  for (const values of [{ yellow_cards: '3', red_cards: '1' }, { yellow_cards: '2', red_cards: '2' }, { yellow_cards: '2.5', red_cards: '0' }]) {
+    const harness = actions()
+    expectError(await harness.updateMatch(EMPTY_FORM_STATE, matchData(values)), harness.calls)
+    assert.equal(harness.calls.rpc.length, 0)
+  }
+})
+
+test('blank historical values block editing before RPC instead of becoming zero or false', async () => {
+  for (const field of ['team_score', 'opponent_score', 'minutes_played', 'goals', 'assists', 'yellow_cards', 'red_cards', 'has_played', 'is_motm']) {
+    for (const participation of ['true', null]) {
+      const harness = actions()
+      expectError(await harness.updateMatch(EMPTY_FORM_STATE, matchData({ has_played: participation, [field]: '' })), harness.calls)
+      assert.equal(harness.calls.rpc.length, 0, `${field}: ${participation}`)
+    }
+  }
+  const knownZero = actions()
+  await assert.rejects(knownZero.updateMatch(EMPTY_FORM_STATE, matchData({ goals: '0', assists: '0', minutes_played: '0', yellow_cards: '0', red_cards: '0' })), /REDIRECT/)
+  assert.equal(knownZero.calls.rpc[0].payload.p_goals, 0)
+})
+
 test('editing sends its own match ID to the same RPC and redirects only on a matching result', async () => {
   const harness = actions()
   await assert.rejects(harness.updateMatch(EMPTY_FORM_STATE, matchData()), { message: 'REDIRECT:/dashboard' })
@@ -338,7 +382,7 @@ test('successful avatar writes use a generated owner path and MIME-derived exten
 function loadForm(state = EMPTY_FORM_STATE) {
   const dispatch = async () => undefined
   const formModule = loadModule('src/components/ActionForm.tsx', {
-    react: { ...React, useActionState: () => [state, dispatch, false] },
+    react: { ...React, useActionState: () => [state, dispatch, false], useRef: () => ({ current: null }), useEffect() {} },
     '@/utils/formState': { EMPTY_FORM_STATE },
   })
   return { ...formModule, dispatch }
@@ -429,6 +473,7 @@ function matchPage(options = {}) {
     './DeleteButton': component(() => null),
     'next/link': component(({ children }) => React.createElement('a', null, children)),
     '@/data/belgian_clubs.json': { __esModule: true, default: [] },
+    '@/app/dashboard/components/MatchFields': component(() => null),
     '../../match-form': matchForm,
     '@/components/ActionForm': component(({ children }) => React.createElement('form', null, children)),
     '@/utils/readErrors': readErrors,

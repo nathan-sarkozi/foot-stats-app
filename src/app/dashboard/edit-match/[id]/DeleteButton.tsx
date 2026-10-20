@@ -6,18 +6,18 @@ import ActionForm from '@/components/ActionForm'
 
 export default function DeleteButton({ matchId }: { matchId: string }) {
   return (
-    <ActionForm action={deleteMatch} onSubmit={(e) => {
+    <ActionForm action={deleteMatch} variant="stade" onSubmit={(e) => {
       if (!window.confirm('Supprimer définitivement ce match ?')) {
         e.preventDefault() 
       }
     }}>
       <input type="hidden" name="match_id" value={matchId} />
       
-      {/* Utilisation de notre nouveau composant avec la variante 'danger' (rouge) */}
       <SubmitButton 
         defaultLabel="Supprimer le match" 
         loadingLabel="Suppression en cours..." 
         variant="danger" 
+        appearance="stade"
       />
     </ActionForm>
   )

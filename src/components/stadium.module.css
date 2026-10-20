@@ -22,6 +22,8 @@
 .primaryButton:disabled, .secondaryButton:disabled { opacity: .45; cursor: not-allowed; }
 .secondaryButton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 12px 18px; border: 1px solid var(--stadium-line); border-radius: 8px; background: transparent; color: var(--stadium-text); font-size: 14px; font-weight: 550; cursor: pointer; text-decoration: none; transition: background .18s ease; }
 .secondaryButton:hover:not(:disabled) { background: var(--stadium-raised); }
+.dangerButton { composes: secondaryButton; color: #ffc2bc; border-color: #f4b3af55; }
+.dangerButton:hover:not(:disabled) { background: #f4b3af12; border-color: #f4b3af99; }
 .field { display: block; width: 100%; min-width: 0; min-height: 48px; margin-top: 9px; padding: 12px 14px; color: var(--stadium-text); background: #11182099; border: 1px solid #40515e; border-radius: 8px; font-family: inherit; font-size: 16px; line-height: 1.4; transition: border-color .18s ease, background .18s ease; }
 .field::placeholder { color: #8d9aa5; }
 .field:hover { border-color: #657780; }
@@ -29,7 +31,8 @@
 .label { display: block; font-size: 12px; font-weight: 550; color: #c3ced4; }
 .textLink { color: var(--stadium-accent); text-underline-offset: 4px; font-weight: 550; }
 .textLink:hover { text-decoration: underline; }
-.feedback { border-radius: 8px; border: 1px solid; padding: 14px; font-size: 13px; line-height: 1.7; margin-bottom: 20px; }
+.feedback { border-radius: 8px; border: 1px solid; padding: 14px; font-size: 13px; line-height: 1.7; margin-bottom: 20px; scroll-margin-block: 100px 120px; }
+.feedback:focus { outline: 2px solid #f4b3af; outline-offset: 4px; }
 .feedback p { margin: 0; }
 .feedbackError { color: #ffc2bc; background: #f4b3af0a; border-color: #f4b3af55; }
 .feedbackSuccess { color: #b0e0be; background: #a2d4b40a; border-color: #a2d4b455; }

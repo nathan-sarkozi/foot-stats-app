@@ -44,6 +44,16 @@ test('no statistics produces finite zero totals and empty history/chart', () => 
   assert.deepEqual(result.chartData, [])
 })
 
+test('two yellows plus their red count as two yellows and one expulsion, including on the bench', () => {
+  for (const has_played of [true, false]) {
+    const result = summarizeSeasonStats([statistic('cards', { has_played, yellow_cards: 2, red_cards: 1 })], season)
+    assert.equal(result.totalYellows, 2)
+    assert.equal(result.totalReds, 1)
+    assert.equal(result.totalYellows + result.totalReds, 3, 'the existing total counts cards, not distinct expulsions')
+    assert.equal(result.matchesPlayed, has_played ? 1 : 0)
+  }
+})
+
 test('assists per appearance does not depend on scoring any goals', () => {
   const result = summarizeSeasonStats([
     statistic('a', { goals: 0, assists: 3 }),
