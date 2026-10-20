@@ -5,6 +5,7 @@ import vm from 'node:vm'
 import { test } from 'node:test'
 import ts from 'typescript'
 import * as competitionFilters from '../src/utils/competitionFilters.ts'
+import { cssModuleMock } from './helpers/load-ui-module.mjs'
 import { renderServerPage } from './helpers/render-server-page.mjs'
 
 const { COMPETITIONS, parseCompetitionParams } = competitionFilters
@@ -12,7 +13,7 @@ const require = createRequire(import.meta.url)
 
 // Evaluate the actual client component with navigation/hooks replaced explicitly.
 // Tests never load .env, Supabase clients or a network service.
-function competitionFilter(query) {
+function competitionFilter(query, variant = 'default') {
   const params = new URLSearchParams(query)
   const pushes = []
   const source = readFileSync(new URL('../src/app/dashboard/components/CompetitionFilter.tsx', import.meta.url), 'utf8')
@@ -37,11 +38,12 @@ function competitionFilter(query) {
     URLSearchParams,
     require(name) {
       if (name in mocks) return mocks[name]
+      if (name.endsWith('.module.css')) return cssModuleMock
       if (name === 'react/jsx-runtime') return require(name)
       throw new Error(`Unexpected filter import: ${name}`)
     },
   }))
-  const tree = fileModule.exports.default()
+  const tree = fileModule.exports.default({ variant })
   const buttons = tree.props.children
   return {
     selected: Array.from(buttons).filter(button => button.props.isActive).map(button => button.props.value),
@@ -157,4 +159,12 @@ test('dashboard empty URLs preserve all rows while invalid values render the emp
   })
   assert.equal(cards.find(card => card.title === 'Matchs Joués').value, 0)
   assert.match(html, /Aucun match enregistré avec ces filtres/)
+})
+
+
+test('Stade variant preserves multiple selection, last selection and unrelated parameters', () => {
+  assert.deepEqual(competitionFilter('comps=LEAGUE&comps=CUP', 'stade').selected, ['LEAGUE', 'CUP'])
+  assert.equal(competitionFilter('comps=LEAGUE,CUP&tag=kept', 'stade').click('LEAGUE').get('tag'), 'kept')
+  assert.equal(competitionFilter('comps=LEAGUE,CUP', 'stade').click('LEAGUE').get('comps'), 'CUP')
+  assert.equal(competitionFilter('comps=CUP', 'stade').click('CUP').get('comps'), 'CUP')
 })

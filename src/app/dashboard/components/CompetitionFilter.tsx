@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo } from 'react'
 import { parseCompetitionParams, type Competition } from '@/utils/competitionFilters'
+import s from '../stade.module.css'
 
 // Defined OUTSIDE the main component to prevent memory leaks and infinite re-mounts
 interface FilterButtonProps {
@@ -10,12 +11,15 @@ interface FilterButtonProps {
   label: string
   isActive: boolean
   onClick: (value: Competition) => void
+  variant?: 'default' | 'stade'
 }
 
-const FilterButton = ({ value, label, isActive, onClick }: FilterButtonProps) => (
+const FilterButton = ({ value, label, isActive, onClick, variant }: FilterButtonProps) => (
   <button
+    type="button"
+    aria-pressed={isActive}
     onClick={() => onClick(value)}
-    className={`cursor-pointer px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+    className={variant === 'stade' ? s.filterButton : `cursor-pointer px-4 py-2 text-sm font-medium rounded-full transition-colors ${
       isActive 
         ? 'bg-indigo-600 text-white shadow-sm' 
         : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
@@ -25,7 +29,7 @@ const FilterButton = ({ value, label, isActive, onClick }: FilterButtonProps) =>
   </button>
 )
 
-export default function CompetitionFilter() {
+export default function CompetitionFilter({ variant = 'default' }: { variant?: 'default' | 'stade' } = {}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -54,20 +58,23 @@ export default function CompetitionFilter() {
   }, [currentComps, router, searchParams])
 
   return (
-    <div className="flex flex-wrap gap-2 mb-6">
+    <div className={variant === 'stade' ? s.competitionFilters : 'flex flex-wrap gap-2 mb-6'} role="group" aria-label="Compétitions incluses dans les statistiques">
       <FilterButton 
+        variant={variant}
         value="LEAGUE" 
         label="Championnat" 
         isActive={currentComps.includes('LEAGUE')} 
         onClick={toggleCompetition} 
       />
       <FilterButton 
+        variant={variant}
         value="CUP" 
         label="Coupe" 
         isActive={currentComps.includes('CUP')} 
         onClick={toggleCompetition} 
       />
       <FilterButton 
+        variant={variant}
         value="FRIENDLY" 
         label="Amical" 
         isActive={currentComps.includes('FRIENDLY')} 

@@ -7,6 +7,7 @@ import { test } from 'node:test'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import ts from 'typescript'
+import { cssModuleMock } from './helpers/load-ui-module.mjs'
 import * as rbfaDate from '../src/utils/rbfaDate.ts'
 
 // Every query is replaced explicitly. No environment, credentials, database,
@@ -39,6 +40,7 @@ function loadModule(path, mocks, globals = {}) {
     console: { error() {} }, AbortSignal, ...globals,
     require(name) {
       if (name in mocks) return mocks[name]
+      if (name.endsWith('.module.css')) return cssModuleMock
       if (name === 'zod' || name === 'react/jsx-runtime') return require(name)
       throw new Error(`Unexpected RBFA display dependency: ${name}`)
     },
@@ -340,4 +342,35 @@ test('an unavailable public widget stays absent while confirmed no-fixture data 
   assert.equal(unavailable.html, '')
   const none = await widget({ upcoming: { status: 'none', match: null }, rankings: null }, { teamId: '368465' })
   assert.match(none.html, /Aucun match planifié/)
+})
+
+
+test('Stade keeps the complete RBFA table, zeroes, unknown values and configuration link', async () => {
+  const rows = Array.from({ length: 18 }, (_, i) => ({ teamId: String(368465 + i), name: `Synthetic team ${i}`,
+    logo: null, position: i + 1, points: i === 17 ? null : 0, matchesPlayed: 0, goalDifference: 0 }))
+  const data = { upcoming: { status: 'none', match: null }, rankings: { teams: rows } }
+  const { html, calls } = await widget(data, { teamId: '368465', isDashboard: true, variant: 'stade' })
+  assert.equal(calls.length, 1)
+  assert.match(html, /Voir le classement complet/)
+  assert.match(html, /18 équipes/)
+  for (const team of rows) assert.ok(html.includes(team.name))
+  assert.match(html, /Aucun match planifié/)
+  assert.match(html, />0<\/td>/)
+  assert.match(html, /—/)
+  const notLinked = await widget(data, { isDashboard: true, variant: 'stade' })
+  assert.equal(notLinked.calls.length, 0)
+  assert.match(notLinked.html, /href="\/dashboard\/settings"/)
+})
+
+test('Stade differentiates confirmed, unresolved, stale and unavailable fixtures', async () => {
+  for (const status of ['scheduled', 'unresolved', 'none', 'stale', 'unavailable']) {
+    const match = status === 'scheduled' ? upcomingMatch()
+      : status === 'unresolved' ? upcomingMatch({ startTime: '2026-10-25T02:30:00' }) : null
+    const { html } = await widget({ upcoming: { status, match }, rankings: null }, { teamId: '368465', isDashboard: true, variant: 'stade' })
+    if (status === 'scheduled') { assert.match(html, /PROCHAIN MATCH/); assert.match(html, /15:00/); assert.doesNotMatch(html, /Statut futur non confirmé/) }
+    if (status === 'unresolved') { assert.match(html, /RENCONTRE ANNONCÉE/); assert.match(html, /Fuseau horaire à confirmer/); assert.match(html, /Statut futur non confirmé/); assert.doesNotMatch(html, /PROCHAIN MATCH/) }
+    if (status === 'none') assert.match(html, /Aucun match planifié/)
+    if (status === 'stale') { assert.match(html, /en cache est passée/); assert.doesNotMatch(html, /Synthetic home/) }
+    if (status === 'unavailable') assert.match(html, /Service RBFA temporairement indisponible/)
+  }
 })

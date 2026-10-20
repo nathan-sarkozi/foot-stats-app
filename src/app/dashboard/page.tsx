@@ -9,6 +9,8 @@ import { redirect } from 'next/navigation'
 import { getClubLogo } from '@/utils/getClubLogo'
 import TeamWidget from './components/TeamWidget'
 import { Suspense } from 'react'
+import MatchSummary from './components/MatchSummary'
+import s from './stade.module.css'
 import { getCurrentSeason, summarizeSeasonStats } from '@/utils/playerStats'
 import { parseCompetitionParams } from '@/utils/competitionFilters'
 
@@ -21,11 +23,14 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
 
   const { data: playerProfile, error: profileError } = await supabase
     .from('profiles')
-    .select('display_name, rbfa_team_id')
+    .select('display_name, rbfa_team_id, club, category, preferred_position, jersey_number, avatar_url')
     .eq('id', user.id)
     .single()
 
-  if (profileError) return <div className="text-red-500 p-4 font-bold bg-red-50 rounded-lg">Error: {profileError.message}</div>
+  if (profileError) {
+    console.error('Dashboard profile read failed', { code: profileError.code })
+    return <div className={s.dashboard}><div className={s.error} role="alert">Impossible de charger ton profil. Réessaie dans quelques instants.</div></div>
+  }
 
   const season = getCurrentSeason()
   const { data: statsData, error: statsError } = await supabase
@@ -38,7 +43,10 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
     .gte('matches.match_date', season.startDate)
     .lt('matches.match_date', season.endDate)
 
-  if (statsError || !statsData) return <div className="text-red-500">Failed to load statistics.</div>
+  if (statsError || !statsData) {
+    console.error('Dashboard statistics read failed', { code: statsError?.code ?? 'NO_DATA' })
+    return <div className={s.dashboard}><div className={s.error} role="alert">Impossible de charger les statistiques. Réessaie dans quelques instants.</div></div>
+  }
 
   const profile = playerProfile
   const activeComps = parseCompetitionParams(searchParams.comps)
@@ -49,148 +57,90 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
     winRate, goalSubtitle, assistsPerMatch, chartData, displayStats,
   } = summarizeSeasonStats(statsData, season, activeComps)
 
-  const getCompetitionLabel = (type: string) => {
-    const labels: Record<string, string> = { LEAGUE: 'Championnat', CUP: 'Coupe', FRIENDLY: 'Amical' }
-    return labels[type] || type
-  }
+  const latest = displayStats[0]
+  const clubLogo = getClubLogo(profile.club)
+  const seasonLabel = `${season.startYear}–${String(season.endYear).slice(-2)}`
 
   return (
-    <div className="space-y-8 pb-12">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between pt-6">
-        <div>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Vue d&apos;ensemble</h2>
-          <div className="mt-3 flex items-center gap-4">
-            <p className="text-slate-500 text-sm">Analyse des performances de {profile.display_name}.</p>
-            <FormGuide recentMatches={displayStats.filter(stat => stat.has_played).map(stat => stat.matches)} />
+    <div className={s.dashboard}>
+      <header className={s.hero}>
+        <div className={s.heroCopy}>
+          <div className={s.heroEyebrow}><span className={s.seasonPill}>SAISON {seasonLabel}</span><span>TON FOOTBALL. TA PROGRESSION.</span></div>
+          <h1>Ta saison,<br />sur le terrain<span>.</span></h1>
+          <p className={s.heroIntro}>Les performances de <strong>{profile.display_name}</strong>, match après match.</p>
+          <div className={s.playerIdentity}>
+            <span className={s.playerAvatar}>{profile.avatar_url
+              ? <Image src={profile.avatar_url} alt="" fill sizes="38px" className={s.avatarImage} />
+              : profile.display_name.slice(0, 2).toUpperCase()}</span>
+            <div><strong>{profile.club || 'Sans club renseigné'}</strong><span>{[profile.category, profile.preferred_position].filter(Boolean).join(' · ') || 'Profil à compléter'}</span></div>
           </div>
         </div>
-        <div className="mt-4 sm:mt-0">
-          <Link href="/dashboard/add-match" className="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-105 active:scale-95">
-            + Ajouter un match
-          </Link>
+        <div className={s.playerVisual} aria-hidden="true">
+          <span className={s.visualLabel}>{profile.club || 'FOOTSTATS'}</span>
+          <div className={s.pitchMark} />
+          <svg className={s.jersey} viewBox="0 0 210 225" fill="none">
+            <path d="m65 20-45 26-15 45 40 16 13-26v127h94V81l13 26 40-16-15-45-45-26-24 14H89Z" fill="#213d35" stroke="#547364" strokeWidth="1.4" />
+            <path d="m65 20 24 14h32l24-14-13 31H78Z" fill="#547364" />
+            <path d="M94 51h22v157H94Z" fill="#d5ea58" opacity=".85" />
+            <path d="m20 46 38 35M190 46l-38 35M58 191h94" stroke="#547364" strokeWidth="2" />
+            <rect x="70" y="81" width="70" height="66" rx="6" fill="#213d35" />
+            <text x="105" y="132" textAnchor="middle" fill="#eaf1d4" fontSize="54" fontWeight="800" letterSpacing="-3">{profile.jersey_number ?? 'FS'}</text>
+          </svg>
+          {clubLogo && <span className={s.heroCrest}><Image src={clubLogo} alt="" fill sizes="38px" className={s.clubImage} /></span>}
+          <span className={s.visualCaption}>CHAQUE MINUTE COMPTE.</span>
         </div>
-      </div>
+      </header>
 
-      <Suspense fallback={
-        <div className="h-62.5 bg-slate-50 border border-slate-200 rounded-3xl mb-8 flex items-center justify-center animate-pulse shadow-sm">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-6 h-6 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-            <span className="text-slate-400 font-bold text-sm">Connexion à la fédération en cours...</span>
-          </div>
+      <section aria-labelledby="season-stats-title">
+        <div className={s.sectionToolbar}>
+          <div className={s.sectionHeading}><span className={s.sectionIndex}>01</span><h2 id="season-stats-title">La saison en chiffres</h2></div>
+          <Link href="/dashboard/add-match" className={s.primaryButton}><span aria-hidden="true">＋</span> Ajouter un match</Link>
         </div>
-      }>
-        <TeamWidget teamId={profile.rbfa_team_id} isDashboard={true} />
-      </Suspense>
+        <div className={s.filtersRow}><CompetitionFilter variant="stade" /><span className={s.filterHint}>Compétitions combinables · Saison {seasonLabel}</span></div>
+        <div className={s.primaryStats}>
+          <StatCard title="Minutes jouées" value={totalMinutes} subtitle="Du temps sur le terrain." variant="stade" highlight />
+          <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} variant="stade" />
+          <StatCard title="Total Buts" value={totalGoals} subtitle={goalSubtitle} variant="stade" />
+          <StatCard title="Total Passes" value={totalAssists} subtitle={`${assistsPerMatch} par match`} variant="stade" />
+        </div>
+        <div className={s.secondaryStats}>
+          <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} variant="stade" />
+          <StatCard title="Ratio Victoires" value={`${winRate}%`} subtitle={`${totalWins} V en ${matchesPlayed} M`} variant="stade" />
+          <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" variant="stade" />
+          <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} apparitions`} variant="stade" />
+          <StatCard title="Discipline" value={totalYellows + totalReds} subtitle={`${totalYellows} 🟨 | ${totalReds} 🟥`} variant="stade" />
+        </div>
+      </section>
 
-      <CompetitionFilter />
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-        <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.1} highlight />
-        <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.2} highlight />
-        <StatCard title="Total Buts" value={totalGoals} subtitle={goalSubtitle} delay={0.3} />
-        <StatCard title="Total Passes" value={totalAssists} subtitle={`${assistsPerMatch} par match`} delay={0.4} />
-        
-        <StatCard title="Ratio Victoires" value={`${winRate}%`} subtitle={`${totalWins} V en ${matchesPlayed} M`} delay={0.5} />
-        <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.6} />
-        <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} apparitions`} delay={0.7} />
-        <StatCard title="Discipline" value={totalYellows + totalReds} subtitle={`${totalYellows} 🟨 | ${totalReds} 🟥`} delay={0.8} />
+      <div className={s.mainGrid}>
+        {latest ? <MatchSummary stat={latest} featured /> : <section className={`${s.panel} ${s.emptyMatch}`}><span className={s.eyebrow}>LE PREMIER CHAPITRE</span><h2>Ta saison commence ici.</h2><p>Aucun match enregistré avec ces filtres.</p><Link href="/dashboard/add-match" className={s.textLink}>Renseigner un match <span aria-hidden="true">↗</span></Link></section>}
+        <section className={`${s.panel} ${s.chartPanel}`} aria-labelledby="progression-title">
+          <div className={s.panelTitle}><div><span className={s.eyebrow}>MATCH APRÈS MATCH</span><h2 id="progression-title">Ta saison prend forme.</h2></div><span className={s.chartSeason}>{seasonLabel}</span></div>
+          <p className={s.sectionDescription}>Buts et passes décisives cumulés · Impact offensif de la saison</p>
+          <StatsChart data={chartData} variant="stade" />
+          <p className={s.chartNote}>Chaque point représente une rencontre renseignée, avec ou sans participation.</p>
+        </section>
       </div>
 
-      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
-        <h3 className="text-lg font-bold text-slate-800 mb-6 tracking-tight">Impact Offensif de la Saison</h3>
-        <StatsChart data={chartData} />
-      </div>
+      <section className={s.seasonStory} aria-labelledby="season-story-title">
+        <div className={s.storyMark} aria-hidden="true">↗</div><div><span className={s.eyebrow}>À RETENIR · SÉLECTION ACTUELLE</span><h2 id="season-story-title">Le fil de ta saison.</h2><p><strong>{matchesPlayed} {matchesPlayed === 1 ? 'participation' : 'participations'}</strong> et <strong>{totalMinutes} minutes</strong> sur le terrain. Retrouve chaque rencontre dans ton historique.</p></div>
+        <div className={s.recentForm}><FormGuide recentMatches={displayStats.filter(stat => stat.has_played).map(stat => stat.matches)} variant="stade" /><a href="#match-history" className={s.textLink}>Parcourir mes matchs <span aria-hidden="true">↓</span></a></div>
+      </section>
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">Historique des matchs ({displayStats.length})</h3>
-        {displayStats.length === 0 ? (
-           <div className="bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center text-slate-500">
-             Aucun match enregistré avec ces filtres.
-           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
-            {displayStats.map((stat) => {
-              const match = stat.matches
-              const dateStr = new Date(match.match_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-              const isWin = Number(match.team_score) > Number(match.opponent_score)
-              const isLoss = Number(match.team_score) < Number(match.opponent_score)
-              const resultColor = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
-              const opponentLogo = getClubLogo(match.opponent)
+      <section className={s.teamSection} aria-label="Mon équipe et les informations RBFA">
+        <div className={s.sectionHeading}><span className={s.sectionIndex}>02</span><h2>Le collectif</h2><span className={s.sectionAside}>DONNÉES RBFA EN CACHE</span></div>
+        <Suspense fallback={<div className={`${s.panel} ${s.loading}`} role="status">Chargement des informations de ton équipe…</div>}>
+          <TeamWidget teamId={profile.rbfa_team_id} isDashboard variant="stade" />
+        </Suspense>
+      </section>
 
-              return (
-                <Link 
-                  key={match.id} 
-                  href={`/dashboard/edit-match/${match.id}`}
-                  className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-indigo-300 hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all group flex flex-col focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <div className="hidden sm:flex justify-between items-center mb-4">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{dateStr}</span>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">{getCompetitionLabel(match.competition_type)}</span>
-                  </div>
-                  
-                  <div className="flex flex-row sm:flex-col items-center gap-3 sm:gap-0">
-                    <div className="sm:hidden flex flex-col items-center justify-center min-w-10 pr-3 border-r border-slate-100">
-                      <span className="text-sm font-black text-slate-700">{new Date(match.match_date).getDate()}</span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">{new Date(match.match_date).toLocaleDateString('fr-FR', {month: 'short'})}</span>
-                    </div>
-
-                    <div className="relative w-10 h-10 sm:w-16 sm:h-16 shrink-0 bg-slate-50 sm:bg-white rounded-full border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden sm:mb-3 group-hover:scale-105 transition-transform">
-                      {opponentLogo ? (
-                        <Image src={opponentLogo} alt={match.opponent} fill className="object-contain p-1.5 sm:p-2.5" sizes="(max-width: 640px) 40px, 64px" />
-                      ) : (
-                        <span className="text-slate-300 font-extrabold text-lg sm:text-2xl">{match.opponent.substring(0, 1).toUpperCase()}</span>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-col sm:items-center flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-900 sm:text-center sm:mb-3 group-hover:text-indigo-600 transition-colors truncate w-full" title={match.opponent}>
-                        {match.opponent}
-                      </p>
-                      <div className="sm:hidden flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] font-semibold text-slate-500">{getCompetitionLabel(match.competition_type)}</span>
-                        {stat.is_motm && <span className="text-[10px]" title="Homme du Match">🏆</span>}
-                      </div>
-                    </div>
-                    
-                    <div className="shrink-0 sm:w-full sm:flex sm:justify-center">
-                      <span className={`flex items-center justify-center px-2.5 py-1 sm:px-5 sm:py-1.5 rounded-lg sm:rounded-xl text-sm sm:text-xl font-black border ${resultColor}`}>
-                        {match.team_score} - {match.opponent_score}
-                      </span>
-                    </div>
-
-                    {stat.is_motm && (
-                      <div className="hidden sm:flex mt-3 text-[10px] font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 items-center gap-1.5 shadow-sm">
-                        <span className="text-sm">🏆</span> Homme du Match
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-3 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-100 flex items-center justify-between sm:justify-center flex-wrap gap-2">
-                    {stat.has_played ? (
-                      <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto justify-between sm:justify-center">
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                          {stat.position_played && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-slate-600 rounded text-[9px] sm:text-[10px] font-black uppercase border border-slate-200">{stat.position_played}</span>}
-                          {(stat.goals ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-50 text-emerald-700 rounded text-[9px] sm:text-[10px] font-bold border border-emerald-100">⚽ {stat.goals}</span>}
-                          {(stat.assists ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-indigo-50 text-indigo-700 rounded text-[9px] sm:text-[10px] font-bold border border-indigo-100">👟 {stat.assists}</span>}
-                          {(stat.yellow_cards ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-amber-50 text-amber-700 rounded text-[9px] sm:text-[10px] font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
-                          {(stat.red_cards ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-red-50 text-red-700 rounded text-[9px] sm:text-[10px] font-bold border border-red-100">🟥 {stat.red_cards}</span>}
-                        </div>
-                        <span className="text-slate-400 font-bold text-[10px] sm:text-xs ml-auto sm:ml-1">{stat.minutes_played ?? 0}&apos;</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center flex-wrap gap-1.5 sm:gap-2 mx-auto">
-                        <span className="text-[10px] sm:text-xs font-semibold text-slate-400 bg-slate-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-100">N&apos;a pas joué</span>
-                        {(stat.yellow_cards ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-amber-50 text-amber-700 rounded text-[9px] sm:text-[10px] font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
-                        {(stat.red_cards ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-red-50 text-red-700 rounded text-[9px] sm:text-[10px] font-bold border border-red-100">🟥 {stat.red_cards}</span>}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        )}
-      </div>
+      <section id="match-history" className={s.history} aria-labelledby="match-history-title">
+        <div className={s.sectionToolbar}><div className={s.sectionHeading}><span className={s.sectionIndex}>03</span><h2 id="match-history-title">Historique des matchs ({displayStats.length})</h2></div><a href="#season-stats-title" className={s.textLink}>Revenir aux statistiques ↑</a></div>
+        <p className={s.sectionDescription}>Toutes les rencontres de la sélection. Ouvre une feuille pour consulter ou modifier le match.</p>
+        {displayStats.length === 0 ? <div className={s.emptyState}>Aucun match enregistré avec ces filtres.</div> : <div className={s.matchList}>{displayStats.map(stat => <MatchSummary key={stat.matches.id} stat={stat} />)}</div>}
+        <p className={s.unknownNote}>0 est une valeur connue. « — » signale une information non renseignée. Les cartons restent affichés même sans participation.</p>
+      </section>
+      <footer className={s.footer}><strong>footstats<span>.</span></strong><span>Le football que tu vis. La progression que tu suis.</span><span>SAISON {seasonLabel}</span></footer>
     </div>
   )
 }

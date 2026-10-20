@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import ts from 'typescript'
 import * as playerStats from '../../src/utils/playerStats.ts'
 import * as readErrors from '../../src/utils/readErrors.ts'
+import { cssModuleMock, loadUiModule } from './load-ui-module.mjs'
 import * as competitionFilters from '../../src/utils/competitionFilters.ts'
 
 const require = createRequire(import.meta.url)
@@ -96,6 +97,8 @@ export async function renderServerPage(relativePath, options = {}) {
     console,
     require(name) {
       if (name in mocks) return mocks[name]
+      if (name.endsWith('.module.css')) return cssModuleMock
+      if (name.endsWith('/MatchSummary')) return loadUiModule('src/app/dashboard/components/MatchSummary.tsx', mocks)
       if (name.endsWith('/StatCard')) return component(statCard)
       if (name.endsWith('/StatsChart')) return component(statsChart)
       if (name.endsWith('/TeamWidget') || name.endsWith('/CompetitionFilter') || name.endsWith('/FormGuide')) {

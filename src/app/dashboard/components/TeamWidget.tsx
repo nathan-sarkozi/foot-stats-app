@@ -1,17 +1,20 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { getTeamRbfaData } from '@/services/rbfa'
+import { getTeamRbfaData, type TeamRbfaData } from '@/services/rbfa'
 import { formatRbfaKickoff } from '@/utils/rbfaDate'
+import s from '../stade.module.css'
 
 interface TeamWidgetProps {
   teamId?: string | null
   isDashboard?: boolean
+  variant?: 'default' | 'stade'
 }
 
-export default async function TeamWidget({ teamId, isDashboard = false }: TeamWidgetProps) {
+export default async function TeamWidget({ teamId, isDashboard = false, variant = 'default' }: TeamWidgetProps) {
   if (!teamId && !isDashboard) return null
 
   if (!teamId && isDashboard) {
+    if (variant === 'stade') return <StadeTeamWidget />
     return (
       <div className="bg-white border border-indigo-100 rounded-3xl p-8 mb-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/2 translate-x-1/3"></div>
@@ -30,7 +33,9 @@ export default async function TeamWidget({ teamId, isDashboard = false }: TeamWi
     )
   }
 
-  const { upcoming, rankings: rankingData } = await getTeamRbfaData(teamId!)
+  const rbfaData = await getTeamRbfaData(teamId!)
+  if (variant === 'stade') return <StadeTeamWidget teamId={teamId!} data={rbfaData} />
+  const { upcoming, rankings: rankingData } = rbfaData
   const nextMatchData = upcoming.match
 
   if (upcoming.status !== 'none' && !nextMatchData && !rankingData) {
@@ -157,4 +162,56 @@ export default async function TeamWidget({ teamId, isDashboard = false }: TeamWi
       
     </div>
   )
+}
+
+
+// Presentation only: the same asynchronous cache read and date contracts serve
+// both variants. Public profiles retain the original default rendering above.
+function StadeTeamWidget({ teamId, data }: { teamId?: string; data?: TeamRbfaData }) {
+  if (!teamId || !data) return <div className={`${s.panel} ${s.connectTeam}`}>
+    <div><span className={s.eyebrow}>TON CLUB, DANS TON ESPACE</span><h3>Connecte ton équipe RBFA.</h3><p>Retrouve le classement et les informations de rencontre disponibles dans le cache RBFA.</p></div>
+    <Link href="/dashboard/settings" className={s.primaryButton}>Lier mon équipe <span aria-hidden="true">↗</span></Link>
+  </div>
+
+  const { upcoming, rankings } = data
+  const match = upcoming.match
+  const kickoff = formatRbfaKickoff(match?.startTime)
+  const ownTeam = rankings?.teams.find(team => String(team.teamId) === teamId)
+  const unresolved = upcoming.status === 'unresolved' || Boolean(kickoff?.warning)
+  const fixtureMessage = upcoming.status === 'none' ? 'Aucun match planifié.'
+    : upcoming.status === 'stale' ? 'La rencontre en cache est passée. En attente d’une actualisation.'
+      : 'Prochain match temporairement indisponible.'
+
+  return <div className={s.teamGrid}>
+    <section className={`${s.panel} ${s.fixturePanel}`} aria-label="Rencontre RBFA">
+      <div className={s.panelTitle}><span className={s.eyebrow}>{unresolved ? 'RENCONTRE ANNONCÉE' : 'PROCHAIN MATCH'}</span><span className={s.sourceBadge}>RBFA</span></div>
+      {match ? <>
+        <p className={s.fixtureCompetition}>{match.series?.name || 'Compétition'}</p>
+        <div className={s.fixtureTeams}>{[match.homeTeam, match.awayTeam].map((team, index) => <div key={index}>
+          <span className={s.fixtureLogo}>{team.logo ? <Image src={team.logo} alt="" fill sizes="56px" className={s.clubImage} /> : <span aria-hidden="true">{team.name.slice(0, 1)}</span>}</span>
+          <strong>{team.name}</strong>
+        </div>)}<span className={s.fixtureVs} aria-hidden="true">VS</span></div>
+        <div className={s.kickoff}><span>{kickoff?.date ?? 'Date à déterminer'}</span><strong>{kickoff?.time ?? '—'}</strong>
+          {unresolved && <p className={s.warning} role="status">{kickoff?.warning} Statut futur non confirmé.</p>}
+          {!kickoff && <p className={s.muted}>Horaire non renseigné.</p>}
+        </div>
+      </> : <p className={s.rbfaState} role="status">{fixtureMessage}</p>}
+      <span className={s.cacheNote}>Informations issues du cache · Source : RBFA Datalake</span>
+    </section>
+    <section className={`${s.panel} ${s.rankingsPanel}`} aria-labelledby="dashboard-ranking-title">
+      <div className={s.panelTitle}><div><span className={s.eyebrow}>LE COLLECTIF, MATCH APRÈS MATCH</span><h3 id="dashboard-ranking-title">Classement général</h3></div>{ownTeam && <span className={s.rankNumber}>{ownTeam.position ?? '—'}<small>POSITION</small></span>}</div>
+      {ownTeam && <div className={s.teamSummary}><strong>{ownTeam.name}</strong><span><b>{ownTeam.points ?? '—'}</b> points · <b>{ownTeam.matchesPlayed ?? '—'}</b> matchs joués</span></div>}
+      {rankings ? <details className={s.rankingDetails}>
+        <summary>Voir le classement complet <span>{rankings.teams.length} équipes <span aria-hidden="true">⌄</span></span></summary>
+        <div className={s.rankingScroll} tabIndex={0} role="region" aria-label="Tableau complet du classement RBFA, défilement horizontal et vertical possible">
+          <table><caption>Classement général · Source : RBFA Datalake</caption><thead><tr><th scope="col">#</th><th scope="col">Équipe</th><th scope="col">Pts</th><th scope="col">J</th><th scope="col">Diff</th></tr></thead><tbody>{rankings.teams.map(team => <tr key={team.teamId} className={String(team.teamId) === teamId ? s.ownTeam : undefined}>
+            <td>{team.position ?? '—'}</td><th scope="row"><span className={s.rankingTeam}>{team.logo && <Image src={team.logo} alt="" width={24} height={24} />}<span>{team.name}</span>{String(team.teamId) === teamId && <small>TON ÉQUIPE</small>}</span></th><td>{team.points ?? '—'}</td><td>{team.matchesPlayed ?? '—'}</td><td>{team.goalDifference === null ? '—' : Number(team.goalDifference) > 0 ? `+${team.goalDifference}` : team.goalDifference}</td>
+          </tr>)}</tbody></table>
+          {rankings.teams.length === 0 && <p className={s.rbfaState}>Aucune équipe dans ce classement.</p>}
+        </div>
+      </details> : <p className={s.rbfaState}>Classement non disponible actuellement.</p>}
+      {upcoming.status === 'unavailable' && !rankings && <p className={s.warning} role="status">Service RBFA temporairement indisponible.</p>}
+      <p className={s.cacheNote}>Toutes les équipes du classement restent accessibles dans le tableau.</p>
+    </section>
+  </div>
 }

@@ -7,6 +7,7 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import ts from 'typescript'
 import { getCurrentSeason, summarizeSeasonStats } from '../src/utils/playerStats.ts'
+import { cssModuleMock } from './helpers/load-ui-module.mjs'
 import { PUBLIC_USER_ID, renderServerPage } from './helpers/render-server-page.mjs'
 
 // Run offline: node --test --test-isolation=none tests/player-stats.test.mjs
@@ -149,7 +150,8 @@ test('nullable scores preserve all previous comparison results in totals and mat
         assert.equal(cards.find(card => card.title === 'Ratio Victoires').value, `${isWin ? 100 : 0}%`, `${page}: ${label}`)
         const colors = isWin ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
           : isLoss ? 'bg-red-100 text-red-800 border-red-200' : 'bg-slate-100 text-slate-800 border-slate-200'
-        assert.ok(html.includes(colors), `${page}: ${label}`)
+        if (page.includes('/profile/')) assert.ok(html.includes(colors), `${page}: ${label}`)
+        else assert.ok(html.includes(`data-outcome="${teamScore === null || opponentScore === null ? 'unknown' : isWin ? 'win' : isLoss ? 'loss' : 'draw'}"`), `${page}: ${label}`)
       }
     }
   }
@@ -166,6 +168,7 @@ test('FormGuide retains its original strict draw equality for nullable scores', 
   new vm.Script(compiled, { filename: 'FormGuide.tsx' }).runInContext(vm.createContext({
     module: loadedModule, exports: loadedModule.exports,
     require(name) {
+      if (name.endsWith('.module.css')) return cssModuleMock
       assert.equal(name, 'react/jsx-runtime')
       return require(name)
     },
@@ -220,8 +223,8 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
     assert.equal(cards.find(c => c.title === 'Discipline').value, 2)
     assert.match(html, /Synthetic opponent bench/)
     assert.match(html, /pas joué/)
-    assert.match(html, /🟨 1/)
-    assert.match(html, /🟥 1/)
+    assert.match(html.replace(/<[^>]*>/g, ''), /🟨 1/)
+    assert.match(html.replace(/<[^>]*>/g, ''), /🟥 1/)
     assert.doesNotMatch(html, /Aucun match enregistré/)
   })
 
@@ -250,7 +253,8 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
     assert.equal(cards.find(c => c.title === 'Total Buts').value, 0)
     assert.equal(cards.find(c => c.title === 'Discipline').value, 0)
     assert.match(html, /Synthetic opponent legacy/)
-    assert.match(html, />0&#x27;<\/span>/)
+    if (page.includes('/profile/')) assert.match(html, />0&#x27;<\/span>/)
+    else assert.match(html, /—.*minutes/)
     assert.doesNotMatch(html, /NaN|Infinity/)
   })
 }

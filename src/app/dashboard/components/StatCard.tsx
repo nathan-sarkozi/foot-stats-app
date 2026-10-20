@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import s from '../stade.module.css'
 
 interface StatCardProps {
   title: string
@@ -8,9 +9,15 @@ interface StatCardProps {
   subtitle?: string
   delay?: number
   highlight?: boolean
+  variant?: 'default' | 'stade'
 }
 
-export default function StatCard({ title, value, subtitle, delay = 0, highlight = false }: StatCardProps) {
+export default function StatCard({ title, value, subtitle, delay = 0, highlight = false, variant = 'default' }: StatCardProps) {
+  if (variant === 'stade') return <article className={`${s.statCard} ${highlight ? s.statHighlight : ''}`}>
+    <h3>{title}</h3><p className={s.statValue}>{value}</p>
+    {subtitle && <p className={s.statSubtitle}>{subtitle}</p>}
+  </article>
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
