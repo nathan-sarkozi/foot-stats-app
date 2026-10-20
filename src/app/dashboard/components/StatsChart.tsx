@@ -40,7 +40,7 @@ export default function StatsChart({ data, variant = 'default' }: StatsChartProp
   }
 
   return (
-    <div className={stade ? s.chart : "w-full"} role={stade ? "group" : undefined} aria-label={stade ? "Buts et passes décisives cumulés par rencontre" : undefined}>
+    <div className={stade ? s.chart : "w-full"} role={stade ? "group" : undefined} aria-label={stade ? "Cumul des buts et des passes décisives par rencontre" : undefined}>
       <ResponsiveContainer width="100%" height={320} minWidth={0} initialDimension={stade ? { width: 600, height: 320 } : undefined}>
         <LineChart
           data={data}
@@ -80,7 +80,7 @@ export default function StatsChart({ data, variant = 'default' }: StatsChartProp
           <Line 
             isAnimationActive={stade ? false : undefined}
             type="monotone" 
-            name="Buts Cumulés"
+            name="Buts cumulés"
             dataKey="goals" 
             stroke={goalsColor}
             strokeWidth={3}
@@ -92,7 +92,7 @@ export default function StatsChart({ data, variant = 'default' }: StatsChartProp
             isAnimationActive={stade ? false : undefined}
             type="monotone" 
             strokeDasharray={stade ? "5 4" : undefined}
-            name="Passes Cumulées"
+            name="Passes décisives cumulées"
             dataKey="assists" 
             stroke={assistsColor}
             strokeWidth={3}
@@ -103,7 +103,7 @@ export default function StatsChart({ data, variant = 'default' }: StatsChartProp
       </ResponsiveContainer>
       {stade && <details className={s.chartTable}>
         <summary>Lire les données du graphique</summary>
-        <div className={s.tableScroll}><table><caption>Buts et passes cumulés, dans l’ordre des rencontres</caption><thead><tr><th scope="col">Date</th><th scope="col">Adversaire</th><th scope="col">Buts cumulés</th><th scope="col">Passes cumulées</th></tr></thead><tbody>{data.map((point, index) => <tr key={index}><td>{point.date}</td><th scope="row">{point.opponent}</th><td>{point.goals}</td><td>{point.assists}</td></tr>)}</tbody></table></div>
+        <div className={s.tableScroll}><table><caption>Cumul des buts et des passes décisives, dans l’ordre des rencontres</caption><thead><tr><th scope="col">Date</th><th scope="col">Adversaire</th><th scope="col">Buts cumulés</th><th scope="col">Passes décisives cumulées</th></tr></thead><tbody>{data.map((point, index) => <tr key={index}><td>{point.date}</td><th scope="row">{point.opponent}</th><td>{point.goals}</td><td>{point.assists}</td></tr>)}</tbody></table></div>
       </details>}
     </div>
   )

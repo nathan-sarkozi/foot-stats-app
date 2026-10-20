@@ -31,9 +31,9 @@ test('all eight existing metrics and subtitles match the unchanged season summar
   const { cards, charts, queries } = await renderServerPage('src/app/dashboard/page.tsx', { statistics: rows })
   const expected = [
     ['Matchs Joués', totals.matchesPlayed, `${totals.totalMinutes} min cumulées`],
-    ['G/A (Impliqué)', totals.totalGA, `${totals.totalGoals} B | ${totals.totalAssists} P`],
+    ['G/A (Impliqué)', totals.totalGA, `${totals.totalGoals} ${totals.totalGoals === 1 ? 'but' : 'buts'} | ${totals.totalAssists} ${totals.totalAssists === 1 ? 'passe décisive' : 'passes décisives'}`],
     ['Total Buts', totals.totalGoals, totals.goalSubtitle],
-    ['Total Passes', totals.totalAssists, `${totals.assistsPerMatch} par match`],
+    ['Passes décisives', totals.totalAssists, `${totals.assistsPerMatch} par match`],
     ['Ratio Victoires', `${totals.winRate}%`, `${totals.totalWins} V en ${totals.matchesPlayed} M`],
     ['Homme du Match', totals.totalMotm, 'Trophées 🏆'],
     ['Poste le plus joué', totals.favPosition, `${totals.maxPosCount} apparitions`],
@@ -64,14 +64,23 @@ test('unknown individual fields and score stay unknown while known zeroes stay v
   assert.match(html, /Score incomplet/)
   assert.match(html, /score inconnu|équipe : inconnu/)
   assert.match(html, /<b>0<\/b> buts/)
-  assert.match(html, /<b>—<\/b> passes/)
+  assert.match(html, /<b>—<\/b> passes décisives/)
   assert.match(html, /<b>—′<\/b> minutes/)
   assert.match(html, /MOTM : —/)
   assert.match(html, /🟨<\/span> 0/)
   assert.doesNotMatch(html, /data-outcome="win"/)
   const noAppearance = matchMarkup(row('bench', { has_played: false, minutes_played: 90, goals: 9, assists: 8, yellow_cards: 1 }))
   assert.match(noAppearance, /N’a pas joué/)
-  assert.doesNotMatch(noAppearance, /<b>90′|<b>9<\/b> buts|<b>8<\/b> passes/)
+  assert.doesNotMatch(noAppearance, /<b>90′|<b>9<\/b> buts|<b>8<\/b> passes décisives/)
+})
+
+test('match summaries name assists explicitly with singular, plural, known zero and unknown values', () => {
+  for (const featured of [false, true]) {
+    for (const [assists, text] of [[0, '0 passes décisives'], [1, '1 passe décisive'], [2, '2 passes décisives'], [null, '— passes décisives']]) {
+      const html = matchMarkup(row('wording', { assists }), featured)
+      assert.ok(html.replace(/<[^>]*>/g, '').includes(text), text)
+    }
+  }
 })
 
 test('empty, missing identity and read failures have useful states instead of invented fixtures', async () => {
@@ -112,7 +121,25 @@ test('Stade chart exposes the exact cumulative values in a keyboard-accessible t
   assert.match(html, /<summary>Lire les données du graphique<\/summary>/)
   assert.match(html, /Fixture opponent/)
   assert.match(html, /Buts cumulés/)
+  assert.match(html, /<caption>Cumul des buts et des passes décisives, dans l’ordre des rencontres<\/caption>/)
+  assert.match(html, /<th scope="col">Passes décisives cumulées<\/th>/)
   assert.match(html, /<td>0<\/td><td>1<\/td>/)
+})
+
+test('chart legends and tooltips name cumulative assists in both presentations without changing series', () => {
+  const data = [{ date: '19 oct.', opponent: 'Fixture opponent', goals: 0, assists: 1 }]
+  for (const variant of ['default', 'stade']) {
+    const lines = [], charts = []
+    const passthrough = ({ children }) => children
+    const recharts = Object.fromEntries(['XAxis', 'YAxis', 'CartesianGrid', 'Tooltip', 'Legend'].map(name => [name, () => null]))
+    recharts.ResponsiveContainer = passthrough
+    recharts.LineChart = function MockLineChart(props) { charts.push(props); return props.children }
+    recharts.Line = function MockLine(props) { lines.push(props); return null }
+    const Chart = loadUiModule('src/app/dashboard/components/StatsChart.tsx', { recharts }).default
+    renderToStaticMarkup(React.createElement(Chart, { data, variant }))
+    assert.equal(charts[0].data, data)
+    assert.deepEqual(lines.map(({ dataKey, name }) => [dataKey, name]), [['goals', 'Buts cumulés'], ['assists', 'Passes décisives cumulées']])
+  }
 })
 
 test('Stade recent form distinguishes an unknown score from a known goalless draw', () => {

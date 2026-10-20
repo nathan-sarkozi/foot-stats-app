@@ -57,7 +57,7 @@ export function parseCareerFormData(formData: FormData, existingSeasonStart?: nu
     if (data.has_stats && data.matches_played === 0) {
       for (const field of ['goals', 'assists'] as const) {
         if (data[field] > 0) {
-          context.addIssue({ code: 'custom', path: [field], message: 'Les buts et passes doivent être nuls lorsqu’aucun match n’a été joué.' })
+          context.addIssue({ code: 'custom', path: [field], message: 'Les buts et passes décisives doivent être nuls lorsqu’aucun match n’a été joué.' })
         }
       }
     }

@@ -39,7 +39,7 @@ export default function MatchSummary({ stat, featured = false }: { stat: MatchSt
       {stat.has_played === true ? <>
         <span><b>{value(stat.minutes_played)}′</b> minutes</span>
         <span><b>{value(stat.goals)}</b> buts</span>
-        <span><b>{value(stat.assists)}</b> passes</span>
+        <span><b>{value(stat.assists)}</b> {stat.assists === 1 ? 'passe décisive' : 'passes décisives'}</span>
         <span><b>{stat.position_played || '—'}</b> poste</span>
       </> : <span className={s.nonParticipant}>{stat.has_played === false ? 'N’a pas joué' : 'Participation non renseignée'}</span>}
     </div>

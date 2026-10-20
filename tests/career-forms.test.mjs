@@ -147,7 +147,7 @@ test('goals and assists require a played match while discipline remains independ
   for (const field of ['goals', 'assists']) {
     const parsed = helper.parseCareerFormData(careerForm({ matches_played: '0', goals: '0', assists: '0', [field]: '1' }))
     assert.equal(parsed.success, false)
-    assert.ok(parsed.error.flatten().fieldErrors[field])
+    assert.deepEqual(Array.from(parsed.error.flatten().fieldErrors[field]), ['Les buts et passes décisives doivent être nuls lorsqu’aucun match n’a été joué.'])
   }
 })
 
@@ -277,6 +277,13 @@ function formComponent({ initialData = null, result = idle } = {}) {
 test('the actual editing form renders its historical season as the selected option', () => {
   const { tree } = formComponent({ initialData: { id: entryId, season_start: 1985, has_stats: true } })
   assert.match(renderToStaticMarkup(tree), /value="1985" selected="">1985 - 1986/)
+})
+
+test('career form labels the unchanged assists field as passes décisives', () => {
+  const { tree } = formComponent({ initialData: { id: entryId, season_start: 1985, has_stats: true, assists: 4 } })
+  const html = renderToStaticMarkup(tree)
+  assert.match(html, /<label[^>]*for="assists"[^>]*>Passes décisives 👟<\/label>/)
+  assert.match(html, /<input[^>]*id="assists"[^>]*name="assists"[^>]*value="4"/)
 })
 
 test('an unknown legacy statistics flag stays unchecked while new seasons default to known statistics', () => {

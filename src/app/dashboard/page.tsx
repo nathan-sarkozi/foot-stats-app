@@ -101,10 +101,10 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
           <StatCard title="Minutes jouées" value={totalMinutes} subtitle="Du temps sur le terrain." variant="stade" highlight />
           <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} variant="stade" />
           <StatCard title="Total Buts" value={totalGoals} subtitle={goalSubtitle} variant="stade" />
-          <StatCard title="Total Passes" value={totalAssists} subtitle={`${assistsPerMatch} par match`} variant="stade" />
+          <StatCard title="Passes décisives" value={totalAssists} subtitle={`${assistsPerMatch} par match`} variant="stade" />
         </div>
         <div className={s.secondaryStats}>
-          <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} variant="stade" />
+          <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} ${totalGoals === 1 ? 'but' : 'buts'} | ${totalAssists} ${totalAssists === 1 ? 'passe décisive' : 'passes décisives'}`} variant="stade" />
           <StatCard title="Ratio Victoires" value={`${winRate}%`} subtitle={`${totalWins} V en ${matchesPlayed} M`} variant="stade" />
           <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" variant="stade" />
           <StatCard title="Poste le plus joué" value={favPosition} subtitle={`${maxPosCount} apparitions`} variant="stade" />
@@ -115,8 +115,8 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
       <div className={s.mainGrid}>
         {latest ? <MatchSummary stat={latest} featured /> : <section className={`${s.panel} ${s.emptyMatch}`}><span className={s.eyebrow}>LE PREMIER CHAPITRE</span><h2>Ta saison commence ici.</h2><p>Aucun match enregistré avec ces filtres.</p><Link href="/dashboard/add-match" className={s.textLink}>Renseigner un match <span aria-hidden="true">↗</span></Link></section>}
         <section className={`${s.panel} ${s.chartPanel}`} aria-labelledby="progression-title">
-          <div className={s.panelTitle}><div><span className={s.eyebrow}>MATCH APRÈS MATCH</span><h2 id="progression-title">Ta saison prend forme.</h2></div><span className={s.chartSeason}>{seasonLabel}</span></div>
-          <p className={s.sectionDescription}>Buts et passes décisives cumulés · Impact offensif de la saison</p>
+          <div className={s.panelTitle}><div><span className={s.eyebrow}>MATCH APRÈS MATCH</span><h2 id="progression-title">Cumul des buts et des passes décisives</h2></div><span className={s.chartSeason}>{seasonLabel}</span></div>
+          <p className={s.sectionDescription}>Impact offensif de la saison · Valeurs cumulées</p>
           <StatsChart data={chartData} variant="stade" />
           <p className={s.chartNote}>Chaque point représente une rencontre renseignée, avec ou sans participation.</p>
         </section>

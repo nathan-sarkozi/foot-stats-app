@@ -65,9 +65,9 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
         <StatCard title="Matchs Joués" value={matchesPlayed} subtitle={`${totalMinutes} min cumulées`} delay={0.1} highlight />
-        <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} B | ${totalAssists} P`} delay={0.2} highlight />
+        <StatCard title="G/A (Impliqué)" value={totalGA} subtitle={`${totalGoals} ${totalGoals === 1 ? 'but' : 'buts'} | ${totalAssists} ${totalAssists === 1 ? 'passe décisive' : 'passes décisives'}`} delay={0.2} highlight />
         <StatCard title="Total Buts" value={totalGoals} subtitle={goalSubtitle} delay={0.3} />
-        <StatCard title="Total Passes" value={totalAssists} subtitle={`${assistsPerMatch} par match`} delay={0.4} />
+        <StatCard title="Passes décisives" value={totalAssists} subtitle={`${assistsPerMatch} par match`} delay={0.4} />
         
         <StatCard title="Ratio Victoires" value={`${winRate}%`} subtitle={`${totalWins} V en ${matchesPlayed} M`} delay={0.5} />
         <StatCard title="Homme du Match" value={totalMotm} subtitle="Trophées 🏆" delay={0.6} />
@@ -76,7 +76,7 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
       </div>
 
       <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 mb-8">
-        <h3 className="text-lg font-bold text-slate-800 mb-6 tracking-tight">Impact Offensif de la Saison</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-6 tracking-tight">Cumul des buts et des passes décisives</h3>
         <StatsChart data={chartData} />
       </div>
 
@@ -159,7 +159,7 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
                         <div className="flex flex-wrap gap-1.5 sm:gap-2">
                           {stat.position_played && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-slate-600 rounded text-[9px] sm:text-[10px] font-black uppercase border border-slate-200">{stat.position_played}</span>}
                           {(stat.goals ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-50 text-emerald-700 rounded text-[9px] sm:text-[10px] font-bold border border-emerald-100">⚽ {stat.goals}</span>}
-                          {(stat.assists ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-indigo-50 text-indigo-700 rounded text-[9px] sm:text-[10px] font-bold border border-indigo-100">👟 {stat.assists}</span>}
+                          {(stat.assists ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-indigo-50 text-indigo-700 rounded text-[9px] sm:text-[10px] font-bold border border-indigo-100">👟 {stat.assists} {stat.assists === 1 ? 'passe décisive' : 'passes décisives'}</span>}
                           {(stat.yellow_cards ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-amber-50 text-amber-700 rounded text-[9px] sm:text-[10px] font-bold border border-amber-100">🟨 {stat.yellow_cards}</span>}
                           {(stat.red_cards ?? 0) > 0 && <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-red-50 text-red-700 rounded text-[9px] sm:text-[10px] font-bold border border-red-100">🟥 {stat.red_cards}</span>}
                         </div>

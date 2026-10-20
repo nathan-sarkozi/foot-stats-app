@@ -48,6 +48,16 @@ test('public career retains the current club without any participation', async (
   assert.doesNotMatch(html, /Pas de données historiques/)
 })
 
+test('public career names assists accessibly for known zero, singular and plural totals', async () => {
+  for (const assists of [0, 1, 2]) {
+    const { html } = await renderCareer({ statistics: [statistic({ assists })] })
+    assert.match(html, /title="Passes décisives"><span aria-hidden="true">👟<\/span><span class="sr-only">Passes décisives<\/span>/)
+    const label = assists === 1 ? 'passe décisive' : 'passes décisives'
+    assert.ok(html.includes(`title="Passes décisives">${assists}<span class="sr-only"> ${label}</span>`))
+    assert.doesNotMatch(html, /title="Passes"/)
+  }
+})
+
 test('public career counts discipline for a substitute who never played', async () => {
   const { html } = await renderCareer({
     statistics: [statistic({ has_played: false, minutes_played: 0, assists: 0, yellow_cards: 2, red_cards: 1 })],

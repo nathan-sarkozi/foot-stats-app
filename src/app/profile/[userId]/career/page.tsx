@@ -97,7 +97,7 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
             <div className="flex gap-4 min-w-50 justify-end pr-2">
               <span className="w-8 text-center" title="Matchs Joués">M</span>
               <span className="w-8 text-center" title="Buts">⚽</span>
-              <span className="w-8 text-center" title="Passes">👟</span>
+              <span className="w-8 text-center" title="Passes décisives"><span aria-hidden="true">👟</span><span className="sr-only">Passes décisives</span></span>
               <span className="w-8 text-center" title="Jaunes">🟨</span>
               <span className="w-8 text-center" title="Rouges">🟥</span>
             </div>
@@ -162,8 +162,8 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
                         <span className="text-sm font-bold text-slate-600">{entry.goals}</span>
                       </div>
                       <div className="flex flex-col md:flex-row items-center w-8 text-center gap-1">
-                        <span className="md:hidden text-[10px] text-slate-400 font-bold">👟</span>
-                        <span className="text-sm font-bold text-slate-600">{entry.assists}</span>
+                        <span className="md:hidden text-[10px] text-slate-400 font-bold" aria-hidden="true">👟</span>
+                        <span className="text-sm font-bold text-slate-600" title="Passes décisives">{entry.assists}<span className="sr-only"> {entry.assists === 1 ? 'passe décisive' : 'passes décisives'}</span></span>
                       </div>
                       <div className="flex flex-col md:flex-row items-center w-8 text-center gap-1">
                         <span className="md:hidden text-[10px] text-slate-400 font-bold">🟨</span>

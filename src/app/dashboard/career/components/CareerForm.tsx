@@ -90,7 +90,7 @@ export default function CareerForm({ initialData = null }: { initialData?: Caree
             <input type="number" id="goals" name="goals" min="0" max="200" step="1" required={hasStats} defaultValue={initialData?.goals || 0} disabled={!hasStats} className={inputBaseClasses} />
           </div>
           <div>
-            <label htmlFor="assists" className={labelClasses}>Passes 👟</label>
+            <label htmlFor="assists" className={labelClasses}>Passes décisives 👟</label>
             <input type="number" id="assists" name="assists" min="0" max="200" step="1" required={hasStats} defaultValue={initialData?.assists || 0} disabled={!hasStats} className={inputBaseClasses} />
           </div>
           <div>

@@ -194,6 +194,18 @@ test('positive goals never receive a zero-goals subtitle when the ratio rounds t
 })
 
 for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page.tsx']) {
+  test(`${page}: assists labels and graph title are explicit without changing displayed totals`, async () => {
+    for (const assists of [0, 1, 2]) {
+      const { html, cards } = await renderServerPage(page, { statistics: [statistic('wording', { goals: 1, assists })] })
+      const label = assists === 1 ? 'passe décisive' : 'passes décisives'
+      assert.equal(cards.find(card => card.title === 'Passes décisives').value, assists)
+      assert.equal(cards.find(card => card.title === 'G/A (Impliqué)').subtitle, `1 but | ${assists} ${label}`)
+      assert.match(html, /Cumul des buts et des passes décisives/)
+      if (page.includes('/profile/') && assists > 0) assert.ok(html.includes(`👟 ${assists} ${label}`))
+      assert.doesNotMatch(html, /Total Passes/)
+    }
+  })
+
   test(`${page}: actual cards and queries use current-season totals`, async () => {
     const rows = [
       statistic('old', { goals: 41 }, { match_date: '2026-06-30' }),
@@ -204,7 +216,7 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
     const { cards, queries, charts, html } = await renderServerPage(page, { statistics: rows })
     assert.equal(cards.find(c => c.title === 'Matchs Joués').value, 2)
     assert.equal(cards.find(c => c.title === 'Total Buts').value, 0)
-    assert.equal(cards.find(c => c.title === 'Total Passes').subtitle, '1.50 par match')
+    assert.equal(cards.find(c => c.title === 'Passes décisives').subtitle, '1.50 par match')
     assert.equal(charts[0].length, 2)
     assert.doesNotMatch(html, /Synthetic opponent old|Synthetic opponent next/)
     const query = queries.find(q => q.table === 'statistics')
@@ -238,7 +250,7 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
     const { html, cards, charts } = await renderServerPage(page)
     assert.match(html, /Aucun match enregistré/)
     assert.equal(cards.find(c => c.title === 'Matchs Joués').value, 0)
-    assert.equal(cards.find(c => c.title === 'Total Passes').subtitle, '0 par match')
+    assert.equal(cards.find(c => c.title === 'Passes décisives').subtitle, '0 par match')
     assert.deepEqual(charts, [[]])
     assert.doesNotMatch(html, /NaN|Infinity/)
   })
