@@ -1,0 +1,56 @@
+.page { composes: page from '../../../components/stadium.module.css'; padding: 15px 0 0; }
+.page * { box-sizing: border-box; }
+.page h1, .page h2, .page h3, .page p { margin: 0; }
+.hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 35px; padding: 20px 0 35px; border-bottom: 1px solid var(--stadium-line); margin-bottom: 29px; }
+.eyebrow { display: block; color: var(--stadium-muted); font-size: 10px; font-weight: 600; letter-spacing: 1.7px; }
+.hero h1 { font-size: clamp(42px, 4.5vw, 60px); font-weight: 650; letter-spacing: -2.8px; line-height: 1.06; margin-top: 20px; }
+.hero h1 > span { color: var(--stadium-accent); }
+.hero p { color: var(--stadium-muted); font-size: 13px; line-height: 1.8; margin-top: 17px; }
+.directoryLabel { border-left: 1px solid var(--stadium-line); padding-left: 28px; }
+.directoryLabel > span { color: var(--stadium-muted); font: 10px var(--font-geist-mono), monospace; letter-spacing: 1px; }
+.directoryLabel > strong { display: flex; align-items: baseline; gap: 10px; font-size: 42px; letter-spacing: -1px; font-weight: 550; line-height: 1.2; margin-top: 16px; color: var(--stadium-accent); }
+.directoryLabel strong > span { font-size: 12px; letter-spacing: 0; font-weight: 400; color: var(--stadium-text); }
+.directoryLabel small { display: block; color: var(--stadium-muted); font-size: 10px; margin-top: 7px; }
+.sectionHeading { display: flex; align-items: center; gap: 11px; margin-bottom: 21px; }
+.sectionHeading > span { color: var(--stadium-muted); font: 10px var(--font-geist-mono), monospace; border: 1px solid var(--stadium-line); border-radius: 4px; padding: 2px 4px; }
+.sectionHeading h2 { font-size: 17px; font-weight: 550; letter-spacing: -.3px; }
+.sectionHeading small { color: var(--stadium-muted); font-size: 11px; margin-left: auto; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 19px; }
+.playerCard { display: flex; flex-direction: column; position: relative; min-width: 0; padding: 25px; border: 1px solid var(--stadium-line); border-radius: 11px; background: var(--stadium-surface); color: var(--stadium-text); text-decoration: none; transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+.playerCard:hover { transform: translateY(-3px); border-color: #d5ea5866; background: #1d2b36; }
+.cardTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.avatar { position: relative; display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; overflow: hidden; flex-shrink: 0; background: var(--stadium-raised); color: var(--stadium-accent); border: 1px solid #526271; border-radius: 50%; font-size: 20px; font-weight: 600; letter-spacing: -.8px; }
+.avatarImage { object-fit: cover; }
+.position { color: var(--stadium-muted); font-size: 10px; font-weight: 500; padding: 5px 7px; border: 1px solid var(--stadium-line); border-radius: 5px; text-align: center; }
+.playerCard h3 { font-size: 23px; font-weight: 550; letter-spacing: -.7px; line-height: 1.25; overflow-wrap: anywhere; }
+.club { display: flex; align-items: center; gap: 10px; margin-top: 19px; margin-bottom: 25px; color: var(--stadium-muted); }
+.clubMark { color: #a4b4aa; font-size: 28px; line-height: 1; }
+.club strong { display: block; font-size: 12px; font-weight: 450; overflow-wrap: anywhere; }
+.club div > span { display: block; font-size: 11px; margin-top: 4px; }
+.cardFooter { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--stadium-line); margin-top: auto; padding-top: 15px; font-size: 12px; color: var(--stadium-muted); }
+.cardFooter > span:last-child { color: var(--stadium-accent); font-size: 23px; line-height: 1; }
+.playerCard:hover .cardFooter { color: var(--stadium-text); }
+.empty { padding: 42px 25px; border: 1px dashed var(--stadium-line); border-radius: 11px; text-align: center; background: var(--stadium-surface); }
+.empty h3 { font-size: 20px; font-weight: 500; letter-spacing: -.4px; }
+.empty p { color: var(--stadium-muted); font-size: 13px; margin-top: 12px; }
+.error { color: #ffc2bc; border: 1px solid #f4b3af55; background: #f4b3af0a; padding: 22px; border-radius: 10px; font-size: 14px; }
+.footer { display: flex; align-items: center; gap: 22px; padding: 26px 0 12px; border-top: 1px solid var(--stadium-line); margin-top: 35px; }
+.footer > strong { font-size: 20px; letter-spacing: -.8px; }
+.footer > strong > span { color: var(--stadium-accent); }
+.footer p { color: var(--stadium-muted); font-size: 11px; }
+.footer > span { margin-left: auto; font-size: 10px; color: var(--stadium-muted); letter-spacing: 1px; }
+@media (max-width: 1000px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hero h1 { font-size: 49px; } .playerCard { padding: 23px; } }
+@media (max-width: 600px) {
+  .hero { flex-direction: column; align-items: flex-start; gap: 26px; padding-top: 10px; padding-bottom: 26px; }
+  .hero h1 { font-size: 45px; letter-spacing: -2.2px; }
+  .hero p { font-size: 12px; }
+  .directoryLabel { border-left: 0; padding: 0; }
+  .directoryLabel > span { display: none; }
+  .directoryLabel > strong { font-size: 30px; margin-top: 0; }
+  .grid { grid-template-columns: minmax(0, 1fr); gap: 15px; }
+  .playerCard { padding: 23px; }
+  .cardTop { margin-bottom: 19px; }
+  .playerCard h3 { font-size: 25px; }
+  .footer { flex-wrap: wrap; gap: 10px 15px; }
+  .footer > span { display: none; }
+}

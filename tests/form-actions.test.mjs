@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { cssModuleMock } from './helpers/load-ui-module.mjs'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { test } from 'node:test'
@@ -37,6 +38,7 @@ function loadModule(path, mocks = {}, globals = {}) {
     ...globals,
     require(name) {
       if (name in mocks) return mocks[name]
+      if (name.endsWith('.module.css')) return cssModuleMock
       if (name === 'react' || name === 'react/jsx-runtime') return require(name)
       throw new Error(`Unexpected mocked action import: ${name}`)
     },

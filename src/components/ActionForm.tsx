@@ -2,8 +2,9 @@
 
 import { useActionState, type FormHTMLAttributes } from 'react'
 import { EMPTY_FORM_STATE, type FormState } from '@/utils/formState'
+import s from './stadium.module.css'
 
-export function FormFeedback({ state }: { state: FormState }) {
+export function FormFeedback({ state, variant = 'default' }: { state: FormState; variant?: 'default' | 'stade' }) {
   if (!state.message) return null
   const isError = state.status === 'error'
   const messages = Object.values(state.fieldErrors ?? {}).flat()
@@ -11,7 +12,7 @@ export function FormFeedback({ state }: { state: FormState }) {
   return (
     <div
       role={isError ? 'alert' : 'status'}
-      className={`rounded-xl border p-3 text-sm ${isError
+      className={variant === 'stade' ? `${s.feedback} ${isError ? s.feedbackError : s.feedbackSuccess}` : `rounded-xl border p-3 text-sm ${isError
         ? 'border-red-200 bg-red-50 text-red-700'
         : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}
     >

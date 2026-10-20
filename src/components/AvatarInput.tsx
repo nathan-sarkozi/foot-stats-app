@@ -2,14 +2,16 @@
 
 import { useId, useState } from 'react'
 import { AVATAR_ACCEPT, getAvatarFileError } from '@/utils/avatar'
+import s from './stadium.module.css'
 
 interface AvatarInputProps {
   id: string
   className?: string
   required?: boolean
+  variant?: 'default' | 'stade'
 }
 
-export default function AvatarInput({ id, className, required = false }: AvatarInputProps) {
+export default function AvatarInput({ id, className, required = false, variant = 'default' }: AvatarInputProps) {
   const [error, setError] = useState<string | null>(null)
   const errorId = useId()
 
@@ -34,7 +36,7 @@ export default function AvatarInput({ id, className, required = false }: AvatarI
           if (message) input.reportValidity()
         }}
       />
-      {error && <p id={errorId} role="alert" className="text-sm text-red-700">{error}</p>}
+      {error && <p id={errorId} role="alert" className={variant === 'stade' ? s.fieldError : 'text-sm text-red-700'}>{error}</p>}
     </>
   )
 }

@@ -1,12 +1,6 @@
 /* Opt-in presentation for /dashboard only. No global selectors or theme mutation. */
 .dashboard {
-  --stadium-bg: #111820;
-  --stadium-surface: #1a2530;
-  --stadium-raised: #22313e;
-  --stadium-text: #f2f4f1;
-  --stadium-muted: #a0adb7;
-  --stadium-line: #30404c;
-  --stadium-accent: #d5ea58;
+  composes: theme from '../../components/stadium.module.css';
   position: relative;
   isolation: isolate;
   background: var(--stadium-bg);

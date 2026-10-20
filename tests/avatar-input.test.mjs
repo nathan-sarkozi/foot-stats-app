@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { cssModuleMock } from './helpers/load-ui-module.mjs'
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { spawn } from 'node:child_process'
@@ -76,6 +77,7 @@ function avatarComponent(props = {}) {
   const context = vm.createContext({
     module: loadedModule, exports: loadedModule.exports,
     require(name) {
+      if (name.endsWith('.module.css')) return cssModuleMock
       if (name === 'react') return {
         useState: () => [state, value => { state = value }],
         useId: () => 'synthetic-avatar-error',

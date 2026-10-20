@@ -1,108 +1,100 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { cn } from '@/utils/cn'
-import { logout } from './logoutAction'
 import Image from 'next/image'
+import FootStatsBrand from '@/components/FootStatsBrand'
+import { logout } from './logoutAction'
+import s from './navigation.module.css'
 
-export default function Navbar({ initials = "FS", avatarUrl = null }: { initials?: string | null, avatarUrl?: string | null }) {
+const links = [
+  { href: '/dashboard', label: 'Dashboard', index: '01' },
+  { href: '/dashboard/community', label: 'Communauté', index: '02' },
+  { href: '/dashboard/career', label: 'Ma Carrière', index: '03' },
+]
+
+function isActive(path: string, href: string) {
+  if (href === '/dashboard') return path === href || path.startsWith('/dashboard/add-match') || path.startsWith('/dashboard/edit-match/')
+  if (href === '/dashboard/community') return path === href || path.startsWith('/profile/')
+  return path === href || path.startsWith(`${href}/`)
+}
+
+function LogoutIcon() {
+  return <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7-14 5 5-5 5M21 12H9" /></svg>
+}
+
+export default function Navbar({ initials = 'FS', avatarUrl = null }: { initials?: string | null; avatarUrl?: string | null }) {
   const pathname = usePathname()
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const menu = useRef<HTMLDetailsElement>(null)
+  const toggle = useRef<HTMLElement>(null)
+  const panelId = useId()
 
-  const links = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/dashboard/community', label: 'Communauté' },
-    { href: '/dashboard/career', label: 'Ma Carrière' }
-  ]
+  // Native disclosure handles expanded state, keyboard activation and tab order.
+  // These listeners only close it; no modal role or custom focus trap is needed.
+  useEffect(() => {
+    const details = menu.current
+    const close = (restoreFocus: boolean) => {
+      if (!details?.open) return
+      details.open = false
+      if (restoreFocus) toggle.current?.focus()
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && details?.open) { event.preventDefault(); close(true) }
+    }
+    const onOutside = (event: Event) => {
+      if (event.target instanceof Node && !details?.contains(event.target)) close(false)
+    }
+    const desktop = window.matchMedia('(min-width: 900px)')
+    const onDesktop = () => {
+      if (!desktop.matches) return
+      const focusInside = details?.contains(document.activeElement)
+      close(false)
+      if (focusInside) {
+        const nav = details?.closest('nav')
+        const destination = nav?.querySelector<HTMLAnchorElement>('a[aria-current]') ?? nav?.querySelector<HTMLAnchorElement>('a')
+        destination?.focus()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('pointerdown', onOutside)
+    document.addEventListener('focusin', onOutside)
+    desktop.addEventListener('change', onDesktop)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('pointerdown', onOutside)
+      document.removeEventListener('focusin', onOutside)
+      desktop.removeEventListener('change', onDesktop)
+    }
+  }, [])
 
-  return (
-    <nav className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          
-          <div className="flex items-center gap-8">
-            <Link href="/dashboard" className="flex items-center gap-2 group">
-              <div className="bg-indigo-600 text-white p-1.5 rounded-lg group-hover:scale-105 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-                  <path d="m4.93 4.93 4.24 4.24"/>
-                  <path d="m14.83 14.83 4.24 4.24"/>
-                  <path d="m14.83 9.17 4.24-4.24"/>
-                  <path d="m14.83 9.17-4.24 4.24"/>
-                  <path d="m4.93 19.07 4.24-4.24"/>
-                </svg>
-              </div>
-              <span className="text-xl font-bold tracking-tight text-slate-900">FootStats</span>
-            </Link>
-            
-            <div className="hidden md:flex space-x-1">
-              {links.map((link) => {
-                const isActive = pathname === link.href
-                return (
-                  <Link 
-                    key={link.href} href={link.href} 
-                    className={cn(
-                      "relative px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-indigo-600",
-                      isActive ? "text-indigo-600" : "text-slate-600"
-                    )}
-                  >
-                    {link.label}
-                    {isActive && (
-                      <motion.div layoutId="navbar-active-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full" transition={{ type: "spring", stiffness: 300, damping: 30 }} />
-                    )}
-                  </Link>
-                )
-              })}
-            </div>
+  useEffect(() => { if (menu.current) menu.current.open = false }, [pathname])
+
+  const closeMenu = () => { if (menu.current) menu.current.open = false }
+  const current = (href: string) => pathname === href ? 'page' as const : isActive(pathname, href) ? 'location' as const : undefined
+
+  return <nav className={s.navbar} aria-label="Navigation principale">
+    <div className={s.bar}>
+      <FootStatsBrand />
+      <div className={s.desktopLinks}>{links.map(link => <Link key={link.href} href={link.href} className={s.navLink} aria-current={current(link.href)}>{link.label}</Link>)}</div>
+      <div className={s.controls}>
+        <Link href="/dashboard/add-match" className={s.addMatch}><span aria-hidden="true">＋</span> Ajouter un match</Link>
+        <Link href="/dashboard/settings" className={s.avatar} aria-label="Paramètres du profil" aria-current={current('/dashboard/settings')}>
+          {avatarUrl ? <Image src={avatarUrl} alt="" fill className={s.avatarImage} sizes="36px" /> : initials || 'FS'}
+        </Link>
+        <form action={logout} className={s.desktopLogout}><button type="submit" className={s.logoutButton} aria-label="Déconnexion" title="Déconnexion"><LogoutIcon /></button></form>
+        <details ref={menu} className={s.mobileMenu}>
+          <summary ref={toggle} className={s.menuToggle} aria-controls={panelId} aria-label="Menu de navigation">
+            <span className={s.menuIcon} aria-hidden="true"><i /><i /></span><span>Menu</span>
+          </summary>
+          <div id={panelId} className={s.menuPanel}>
+            <div className={s.menuIntro}><span>TON ESPACE DE JEU</span><strong>À toi de jouer.</strong></div>
+            <ul>{links.map(link => <li key={link.href}><Link href={link.href} onClick={closeMenu} className={s.mobileLink} aria-current={current(link.href)}><span>{link.index}</span>{link.label}<span aria-hidden="true">↗</span></Link></li>)}</ul>
+            <div className={s.mobileActions}><Link href="/dashboard/add-match" className={s.mobileAdd} onClick={closeMenu}><span aria-hidden="true">＋</span> Ajouter un match</Link><Link href="/dashboard/settings" className={s.mobileSettings} onClick={closeMenu} aria-current={current('/dashboard/settings')}>Paramètres <span aria-hidden="true">↗</span></Link></div>
+            <form action={logout} className={s.mobileLogout}><button type="submit"><LogoutIcon /> Déconnexion</button></form>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <Link 
-              href="/dashboard/settings"
-              className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200 text-indigo-700 text-sm font-bold shadow-sm hover:scale-110 hover:shadow-md transition-all cursor-pointer overflow-hidden relative"
-              title="Paramètres"
-            >
-              {avatarUrl ? (
-                <Image src={avatarUrl} alt="Profil" fill className="object-cover" sizes="32px" />
-              ) : (
-                initials
-              )}
-            </Link>
-
-            <form action={logout}>
-              <button type="submit" className="text-slate-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 flex items-center justify-center" title="Déconnexion">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-              </button>
-            </form>
-
-            <button type="button" className="md:hidden p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors ml-1" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-              {isMobileMenuOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-              )}
-            </button>
-          </div>
-        </div>
+        </details>
       </div>
-
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white">
-          <div className="space-y-1 px-4 pb-3 pt-2">
-            {links.map((link) => {
-              const isActive = pathname === link.href
-              return (
-                <Link key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)} className={cn("block px-3 py-2 rounded-lg text-base font-bold transition-colors", isActive ? "bg-indigo-50 text-indigo-600" : "text-slate-600 hover:bg-slate-50 hover:text-indigo-600")}>
-                  {link.label}
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </nav>
-  )
+    </div>
+  </nav>
 }

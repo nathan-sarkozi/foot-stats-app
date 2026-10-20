@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { cssModuleMock } from './helpers/load-ui-module.mjs'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import vm from 'node:vm'
@@ -38,6 +39,7 @@ function load(relativePath, mocks, globals = {}) {
     ...globals,
     require(name) {
       if (name in mocks) return mocks[name]
+      if (name.endsWith('.module.css')) return cssModuleMock
       if (['zod', 'react', 'react/jsx-runtime'].includes(name)) return require(name)
       throw new Error(`Unexpected registration dependency: ${name}`)
     },
@@ -265,18 +267,22 @@ test('network failure during signup is shown without exposing credentials or raw
   assert.doesNotMatch(JSON.stringify([state, f.logs]), /private|synthetic-password|synthetic@example/)
 })
 
-function renderWizard(state = INITIAL, step = 4) {
+function renderWizard(state = INITIAL, step = 4, pending = false, reducedMotion = false) {
   const forms = []
+  const inputs = []
+  const motions = []
   const jsxRuntime = require('react/jsx-runtime')
   const wrapJsx = original => (type, props, ...args) => {
     if (type === 'form') forms.push(props)
+    if (type === 'input') inputs.push(props)
+    if (type === MotionDiv) motions.push(props)
     return original(type, props, ...args)
   }
   const moduleComponent = component => ({ __esModule: true, default: component })
   const MotionDiv = ({ children, className }) => React.createElement('div', { className }, children)
   const fakeReact = { ...React,
     useState(initial) { return [typeof initial === 'number' ? step : validProfile, () => {}] },
-    useActionState() { return [state, () => {}, false] },
+    useActionState() { return [state, () => {}, pending] },
   }
   const feedback = load('src/components/ActionForm.tsx', {
     react: fakeReact,
@@ -286,17 +292,18 @@ function renderWizard(state = INITIAL, step = 4) {
   const page = load('src/app/register/page.tsx', {
     react: fakeReact,
     'react/jsx-runtime': { ...jsxRuntime, jsx: wrapJsx(jsxRuntime.jsx), jsxs: wrapJsx(jsxRuntime.jsxs) },
-    'framer-motion': { motion: { div: MotionDiv }, AnimatePresence: ({ children }) => children },
+    'framer-motion': { useReducedMotion: () => reducedMotion, motion: { div: MotionDiv }, AnimatePresence: ({ children }) => children },
     './actions': { registerUser() {} },
     '@/utils/formState': { EMPTY_FORM_STATE: INITIAL },
     '@/components/ActionForm': { FormFeedback: feedback },
+    '@/components/AuthFrame': moduleComponent(({ children }) => React.createElement('main', null, children)),
     '@/components/AvatarInput': moduleComponent(avatarInput),
     '@/utils/avatar': avatar,
     '@/app/dashboard/components/SubmitButton': moduleComponent(() => React.createElement('button', { type: 'submit' }, 'Créer le profil')),
     'next/link': moduleComponent(({ children, ...props }) => React.createElement('a', props, children)),
     '@/data/belgian_clubs.json': [],
   })
-  return { html: renderToStaticMarkup(React.createElement(page.default)), forms }
+  return { html: renderToStaticMarkup(React.createElement(page.default)), forms, inputs, motions }
 }
 
 test('wizard displays validation/Auth feedback and prevents React from resetting submitted fields', () => {
@@ -322,4 +329,53 @@ test('wizard does not offer another signup after account creation and exposes re
   assert.match(confirmation, /role="status"/)
   assert.match(confirmation, /href="\/login"/)
   assert.doesNotMatch(confirmation, /<form|href="\/dashboard\/settings"/)
+})
+
+test('Stade retains all four registration steps and the existing input constraints', () => {
+  const first = renderWizard(INITIAL, 1).html
+  assert.match(first, /Nom affiché/)
+  assert.match(first, /minLength="2" maxLength="50"/)
+  const second = renderWizard(INITIAL, 2).html
+  assert.match(second, /register-club/)
+  assert.match(second, /maxLength="100"/)
+  assert.match(second, /maxLength="50"/)
+  assert.match(second, /register-preferred_position/)
+  for (const value of ['BU','AG','AD','MOC','MC','MDC','DC','GB']) assert.ok(second.includes(`value="${value}"`))
+  const third = renderWizard(INITIAL, 3).html
+  assert.match(third, /min="100" max="250" step="1"/)
+  assert.match(third, /min="30" max="150" step="1"/)
+  assert.match(third, /min="1" max="99" step="1"/)
+  assert.match(third, /register-foot_preference/)
+  const fourthRender = renderWizard(INITIAL, 4)
+  const fourth = fourthRender.html
+  const password = fourthRender.inputs.find(input => input.name === 'password')
+  const email = fourthRender.inputs.find(input => input.name === 'email')
+  assert.equal(password.type, 'password')
+  assert.equal(password.minLength, 6)
+  assert.equal(password.required, true)
+  assert.equal(email.type, 'email')
+  assert.equal(email.required, true)
+  assert.ok(fourth.includes(`accept="${avatar.AVATAR_ACCEPT}"`))
+  for (const key of Object.keys(validProfile)) assert.ok(fourthRender.inputs.some(input => input.type === 'hidden' && input.name === key))
+  for (let step=1;step<=4;step++) assert.match(renderWizard(INITIAL,step).html,new RegExp(`aria-valuenow="${step}"`))
+})
+
+test('pending registration still disables going back and error states preserve all recovery choices', () => {
+  assert.match(renderWizard(INITIAL,4,true).html, /type="button" disabled/)
+  const html=renderWizard({status:'error',message:'Erreur conservée.',fieldErrors:{email:['Adresse invalide.']}},4).html
+  assert.match(html,/Erreur conservée/)
+  assert.match(html,/Adresse invalide/)
+  assert.match(html,/feedbackError/)
+  assert.match(html,/href="\/login"/)
+})
+
+test('reduced motion never changes the server/client initial registration markup', () => {
+  for (let step=1;step<=4;step++) {
+    const normal=renderWizard(INITIAL,step,false,false)
+    const reduced=renderWizard(INITIAL,step,false,true)
+    const initial=render=>JSON.parse(JSON.stringify(render.motions.map(motion=>motion.initial)))
+    assert.deepEqual(initial(normal),initial(reduced))
+    assert.equal(normal.html,reduced.html)
+    assert.ok(reduced.motions.every(motion=>motion.transition?.duration===0))
+  }
 })

@@ -1,0 +1,25 @@
+.wizard { width: 100%; min-width: 0; }
+.progressHeader { margin-bottom: 29px; }
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; list-style: none; margin: 0 0 17px; padding: 0; }
+.steps li { display: flex; flex-direction: column; gap: 6px; font-size: 10px; color: var(--stadium-muted); }
+.steps li > span { font: 11px var(--font-geist-mono), monospace; color: #91a09a; }
+.steps li[aria-current] { color: var(--stadium-text); font-weight: 600; }
+.steps li[aria-current] > span, .steps li[data-complete='true'] > span { color: var(--stadium-accent); }
+.progressTrack { height: 3px; background: var(--stadium-line); border-radius: 4px; overflow: hidden; }
+.progressFill { height: 100%; background: var(--stadium-accent); border-radius: inherit; }
+.card { position: relative; min-height: 335px; }
+.step { display: flex; flex-direction: column; justify-content: space-between; min-height: 335px; }
+.stepTitle { font-size: 29px; line-height: 1.2; letter-spacing: -.9px; font-weight: 600; margin: 0; }
+.stepDescription { font-size: 12px; color: var(--stadium-muted); line-height: 1.8; margin-top: 12px; }
+.actions { display: flex; gap: 10px; margin-top: 28px; }
+.actions > button:first-child { flex: 1; }
+.actions > button:last-child, .submitWrap { flex: 2; }
+.actions button { width: 100%; }
+.firstContinue { margin-top: 30px; width: 100%; }
+.fullWidth { width: 100%; }
+.recoveryLink { display: block; text-align: center; margin-top: 17px; font-size: 13px; }
+.avatarInput { display: block; width: 100%; margin-top: 10px; padding: 8px; border: 1px solid #40515e; border-radius: 8px; background: #11182099; color: var(--stadium-muted); font-size: 11px; cursor: pointer; }
+.avatarInput::file-selector-button { color: var(--stadium-text); background: var(--stadium-raised); border: 1px solid #52616c; border-radius: 5px; padding: 9px; margin-right: 10px; font-size: 11px; cursor: pointer; }
+.loginLink { color: var(--stadium-muted); border-top: 1px solid var(--stadium-line); padding-top: 22px; margin: 29px 0 0; font-size: 12px; line-height: 1.9; }
+.loginLink a { margin-left: 4px; }
+@media (max-width: 700px) { .stepTitle { font-size: 26px; } .step, .card { min-height: 290px; } }

@@ -1,0 +1,9 @@
+.heading { margin-bottom: 31px; }
+.eyebrow { display: block; color: var(--stadium-muted); font-size: 10px; letter-spacing: 1.8px; font-weight: 600; }
+.heading h2 { font-size: 35px; font-weight: 600; letter-spacing: -1.3px; line-height: 1.2; margin: 15px 0 0; }
+.heading p { font-size: 13px; color: var(--stadium-muted); line-height: 1.8; margin: 12px 0 0; }
+.form { display: flex; flex-direction: column; gap: 23px; }
+.form p[role='alert'] { margin: 0; }
+.submit { width: 100%; margin-top: 5px; }
+.registerLink { padding-top: 25px; margin: 28px 0 0; border-top: 1px solid var(--stadium-line); color: var(--stadium-muted); font-size: 12px; line-height: 1.9; }
+.registerLink a { margin-left: 4px; }

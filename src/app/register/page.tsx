@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { registerUser } from './actions'
 import type { RegisterState } from './actions'
 import { EMPTY_FORM_STATE } from '@/utils/formState'
@@ -10,10 +10,14 @@ import AvatarInput from '@/components/AvatarInput'
 import { AVATAR_SIZE_LABEL } from '@/utils/avatar'
 import SubmitButton from '@/app/dashboard/components/SubmitButton'
 import Link from 'next/link'
+import AuthFrame from '@/components/AuthFrame'
+import ui from '@/components/stadium.module.css'
+import s from './register.module.css'
 import clubsData from '@/data/belgian_clubs.json' // Import du référentiel
 
 export default function RegisterWizard() {
   const [step, setStep] = useState(1)
+  const reducedMotion = useReducedMotion()
   const [state, formAction, pending] = useActionState<RegisterState, FormData>(registerUser, EMPTY_FORM_STATE)
   
   const [formData, setFormData] = useState({
@@ -34,67 +38,63 @@ export default function RegisterWizard() {
   const nextStep = () => setStep(prev => prev + 1)
   const prevStep = () => setStep(prev => prev - 1)
 
-  const inputBaseClasses = "mt-2 block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 text-lg transition-all"
+  const inputBaseClasses = ui.field
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <AuthFrame mode="register">
+      <div className={s.wizard}>
         
-        <div className="mb-8">
-          <div className="flex justify-between text-xs font-bold text-slate-400 mb-2 px-1">
-            <span>Profil</span>
-            <span>Terrain</span>
-            <span>Physique</span>
-            <span>Sécurité</span>
-          </div>
-          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+        <div className={s.progressHeader}>
+          <ol className={s.steps} aria-label="Étapes d’inscription">{['Profil', 'Terrain', 'Physique', 'Sécurité'].map((label, index) => <li key={label} aria-current={step === index + 1 ? 'step' : undefined} data-complete={step > index + 1}><span>{step > index + 1 ? '✓' : String(index + 1).padStart(2, '0')}</span>{label}</li>)}</ol>
+          <div className={s.progressTrack} role="progressbar" aria-label="Progression de l’inscription" aria-valuemin={0} aria-valuemax={4} aria-valuenow={step} aria-valuetext={`Étape ${step} sur 4`}>
             <motion.div 
-              className="h-full bg-indigo-600"
+              className={s.progressFill}
               initial={{ width: '25%' }}
               animate={{ width: `${(step / 4) * 100}%` }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: reducedMotion ? 0 : 0.3 }}
             />
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative min-h-100">
-          <FormFeedback state={state} />
+        <div className={s.card}>
+          <FormFeedback state={state} variant="stade" />
           {state.accountCreated ? (
             <div className="mt-6 space-y-4">
-              <Link href={state.needsConfirmation ? '/login' : '/dashboard/settings'} className="block text-center rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white hover:bg-indigo-700">
+              <Link href={state.needsConfirmation ? '/login' : '/dashboard/settings'} className={`${ui.primaryButton} ${s.fullWidth}`}>
                 {state.needsConfirmation ? 'Se connecter' : 'Compléter mon profil'}
               </Link>
               {!state.needsConfirmation && (
-                <Link href="/dashboard" className="block text-center font-bold text-indigo-600 hover:underline">Accéder au dashboard</Link>
+                <Link href="/dashboard" className={`${ui.textLink} ${s.recoveryLink}`}>Accéder au dashboard</Link>
               )}
             </div>
           ) : <AnimatePresence mode="wait">
             
             {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full justify-between">
+              <motion.div key="step1" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={reducedMotion ? { duration: 0 } : undefined} className={s.step}>
                 <div>
-                  <h2 className="text-2xl font-extrabold text-slate-900">Comment t&apos;appelles-tu ?</h2>
-                  <p className="text-slate-500 text-sm mt-2">C&apos;est le nom qui s&apos;affichera sur tes statistiques.</p>
+                  <h2 className={s.stepTitle}>Comment t&apos;appelles-tu ?</h2>
+                  <p className={s.stepDescription}>C&apos;est le nom qui s&apos;affichera sur tes statistiques.</p>
                   <div className="mt-6">
-                    <input type="text" placeholder="Pseudo ou Prénom" minLength={2} maxLength={50} value={formData.display_name} onChange={(e) => updateForm('display_name', e.target.value)} className={inputBaseClasses} />
+                    <label htmlFor="register-display_name" className={ui.label}>Nom affiché</label>
+                    <input id="register-display_name" type="text" placeholder="Pseudo ou Prénom" minLength={2} maxLength={50} value={formData.display_name} onChange={(e) => updateForm('display_name', e.target.value)} className={inputBaseClasses} />
                   </div>
                 </div>
-                <button onClick={nextStep} disabled={formData.display_name.trim().length < 2} className="mt-8 w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all">
+                <button onClick={nextStep} disabled={formData.display_name.trim().length < 2} className={`${ui.primaryButton} ${s.firstContinue}`}>
                   Continuer
                 </button>
               </motion.div>
             )}
 
             {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full justify-between">
+              <motion.div key="step2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={reducedMotion ? { duration: 0 } : undefined} className={s.step}>
                 <div>
-                  <h2 className="text-2xl font-extrabold text-slate-900">Où joues-tu ?</h2>
+                  <h2 className={s.stepTitle}>Où joues-tu ?</h2>
                   <div className="space-y-4 mt-6">
                     
                     {/* CHAMP CLUB AVEC DATALIST RBFA */}
                     <div>
-                      <label className="text-sm font-bold text-slate-700">Club</label>
-                      <input 
+                      <label htmlFor="register-club" className={ui.label}>Club</label>
+                      <input id="register-club"
                         type="text" 
                         maxLength={100}
                         list="belgian-clubs"
@@ -113,12 +113,12 @@ export default function RegisterWizard() {
                     </div>
 
                     <div>
-                      <label className="text-sm font-bold text-slate-700">Catégorie</label>
-                      <input type="text" placeholder="Ex: Réserve C" maxLength={50} value={formData.category} onChange={(e) => updateForm('category', e.target.value)} className={inputBaseClasses} />
+                      <label htmlFor="register-category" className={ui.label}>Catégorie</label>
+                      <input id="register-category" type="text" placeholder="Ex: Réserve C" maxLength={50} value={formData.category} onChange={(e) => updateForm('category', e.target.value)} className={inputBaseClasses} />
                     </div>
                     <div>
-                      <label className="text-sm font-bold text-slate-700">Poste favori</label>
-                      <select value={formData.preferred_position} onChange={(e) => updateForm('preferred_position', e.target.value)} className={inputBaseClasses}>
+                      <label htmlFor="register-preferred_position" className={ui.label}>Poste favori</label>
+                      <select id="register-preferred_position" value={formData.preferred_position} onChange={(e) => updateForm('preferred_position', e.target.value)} className={inputBaseClasses}>
                         <option value="">Sélectionner...</option>
                         <option value="BU">Buteur (BU)</option>
                         <option value="AG">Ailier Gauche (AG)</option>
@@ -132,21 +132,21 @@ export default function RegisterWizard() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-3 mt-8">
-                  <button onClick={prevStep} className="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all">Retour</button>
-                  <button onClick={nextStep} className="w-2/3 bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-all">Continuer</button>
+                <div className={s.actions}>
+                  <button onClick={prevStep} className={ui.secondaryButton}>Retour</button>
+                  <button onClick={nextStep} className={ui.primaryButton}>Continuer</button>
                 </div>
               </motion.div>
             )}
 
             {step === 3 && (
-              <motion.div key="step3" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full justify-between">
+              <motion.div key="step3" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={reducedMotion ? { duration: 0 } : undefined} className={s.step}>
                 <div>
-                  <h2 className="text-2xl font-extrabold text-slate-900">Profil athlétique</h2>
+                  <h2 className={s.stepTitle}>Profil athlétique</h2>
                   <div className="space-y-4 mt-6">
                     <div>
-                      <label className="text-sm font-bold text-slate-700">Pied fort</label>
-                      <select value={formData.foot_preference} onChange={(e) => updateForm('foot_preference', e.target.value)} className={inputBaseClasses}>
+                      <label htmlFor="register-foot_preference" className={ui.label}>Pied fort</label>
+                      <select id="register-foot_preference" value={formData.foot_preference} onChange={(e) => updateForm('foot_preference', e.target.value)} className={inputBaseClasses}>
                         <option value="">Sélectionner...</option>
                         <option value="Droitier">Droitier</option>
                         <option value="Gaucher">Gaucher</option>
@@ -155,63 +155,64 @@ export default function RegisterWizard() {
                     </div>
                     <div className="flex gap-4">
                       <div className="w-1/2">
-                        <label className="text-sm font-bold text-slate-700">Taille (cm)</label>
-                        <input type="number" min={100} max={250} step={1} value={formData.height} onChange={(e) => updateForm('height', e.target.value)} className={inputBaseClasses} />
+                        <label htmlFor="register-height" className={ui.label}>Taille (cm)</label>
+                        <input id="register-height" type="number" min={100} max={250} step={1} value={formData.height} onChange={(e) => updateForm('height', e.target.value)} className={inputBaseClasses} />
                       </div>
                       <div className="w-1/2">
-                        <label className="text-sm font-bold text-slate-700">Poids (kg)</label>
-                        <input type="number" min={30} max={150} step={1} value={formData.weight} onChange={(e) => updateForm('weight', e.target.value)} className={inputBaseClasses} />
+                        <label htmlFor="register-weight" className={ui.label}>Poids (kg)</label>
+                        <input id="register-weight" type="number" min={30} max={150} step={1} value={formData.weight} onChange={(e) => updateForm('weight', e.target.value)} className={inputBaseClasses} />
                       </div>
                     </div>
                     <div>
-                      <label className="text-sm font-bold text-slate-700">Numéro de maillot</label>
-                      <input type="number" min={1} max={99} step={1} value={formData.jersey_number} onChange={(e) => updateForm('jersey_number', e.target.value)} className={inputBaseClasses} />
+                      <label htmlFor="register-jersey_number" className={ui.label}>Numéro de maillot</label>
+                      <input id="register-jersey_number" type="number" min={1} max={99} step={1} value={formData.jersey_number} onChange={(e) => updateForm('jersey_number', e.target.value)} className={inputBaseClasses} />
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-3 mt-8">
-                  <button onClick={prevStep} className="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all">Retour</button>
-                  <button onClick={nextStep} className="w-2/3 bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-all">Continuer</button>
+                <div className={s.actions}>
+                  <button onClick={prevStep} className={ui.secondaryButton}>Retour</button>
+                  <button onClick={nextStep} className={ui.primaryButton}>Continuer</button>
                 </div>
               </motion.div>
             )}
 
             {step === 4 && (
-              <motion.div key="step4" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full justify-between">
-                <form action={formAction} onReset={(event) => event.preventDefault()} className="flex flex-col h-full justify-between">
+              <motion.div key="step4" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={reducedMotion ? { duration: 0 } : undefined} className={s.step}>
+                <form action={formAction} onReset={(event) => event.preventDefault()} className={s.step}>
                   
                   {Object.entries(formData).map(([key, value]) => (
                     <input key={key} type="hidden" name={key} value={value} />
                   ))}
 
                   <div>
-                    <h2 className="text-2xl font-extrabold text-slate-900">Dernière étape</h2>
-                    <p className="text-slate-500 text-sm mt-2">Sécurise ton compte et finalise ton profil.</p>
+                    <h2 className={s.stepTitle}>Dernière étape</h2>
+                    <p className={s.stepDescription}>Sécurise ton compte et finalise ton profil.</p>
                     
                     <div className="space-y-4 mt-6">
                       <div>
-                        <label htmlFor="register-avatar" className="text-sm font-bold text-slate-700">Photo de profil (Optionnelle, Max {AVATAR_SIZE_LABEL})</label>
+                        <label htmlFor="register-avatar" className={ui.label}>Photo de profil (Optionnelle, Max {AVATAR_SIZE_LABEL})</label>
                         <AvatarInput
                           id="register-avatar"
-                          className="mt-2 block w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all cursor-pointer border border-slate-200 p-2 rounded-xl bg-white"
+                          variant="stade"
+                          className={s.avatarInput}
                         />
                       </div>
 
                       <div>
-                        <label className="text-sm font-bold text-slate-700">Adresse e-mail *</label>
-                        <input type="email" name="email" required className={inputBaseClasses} />
+                        <label htmlFor="register-email" className={ui.label}>Adresse e-mail *</label>
+                        <input id="register-email" type="email" name="email" required className={inputBaseClasses} />
                       </div>
                       <div>
-                        <label className="text-sm font-bold text-slate-700">Mot de passe *</label>
-                        <input type="password" name="password" minLength={6} required className={inputBaseClasses} />
+                        <label htmlFor="register-password" className={ui.label}>Mot de passe *</label>
+                        <input id="register-password" type="password" name="password" minLength={6} required className={inputBaseClasses} />
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex gap-3 mt-8">
-                    <button type="button" onClick={prevStep} disabled={pending} className="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all disabled:opacity-50">Retour</button>
-                    <div className="w-2/3">
-                      <SubmitButton defaultLabel="Créer le profil" loadingLabel="Création..." className="w-full py-3 rounded-xl text-lg" />
+                  <div className={s.actions}>
+                    <button type="button" onClick={prevStep} disabled={pending} className={ui.secondaryButton}>Retour</button>
+                    <div className={s.submitWrap}>
+                      <SubmitButton defaultLabel="Créer le profil" loadingLabel="Création..." appearance="stade" className={s.fullWidth} />
                     </div>
                   </div>
                 </form>
@@ -221,11 +222,11 @@ export default function RegisterWizard() {
           </AnimatePresence>}
         </div>
 
-        <p className="text-center mt-6 text-sm text-slate-500 font-medium">
-          Déjà un compte ? <Link href="/login" className="text-indigo-600 hover:underline">Se connecter</Link>
+        <p className={s.loginLink}>
+          Déjà un compte ? <Link href="/login" className={ui.textLink}>Se connecter</Link>
         </p>
 
       </div>
-    </div>
+    </AuthFrame>
   )
 }
