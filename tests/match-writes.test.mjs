@@ -7,6 +7,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { matchIdSchema, parseMatchFormData, toMatchRpcArgs } from '../src/app/dashboard/match-form.ts'
 import { PostgrestClient } from '@supabase/postgrest-js'
+import { RECORDS_SELECT } from '../src/utils/loadPersonalRecords.ts'
 
 // Linux, Node 24+, Docker, and the two pinned images below are required.
 // Run: node --test --test-isolation=none tests/match-writes.test.mjs
@@ -342,6 +343,25 @@ test('isolated PostgreSQL and PostgREST match writes', { timeout: 240_000 }, asy
         assert.equal((await request(`matches?select=id,profiles(id)&limit=1`)).status, 200)
         assert.equal((await request(`matches?id=eq.${match(1)}&player_id=eq.${player(1)}&select=*`)).data.length, 1)
         assert.equal((await request(`statistics?match_id=eq.${match(1)}&player_id=eq.${player(1)}&select=*`)).data.length, 1)
+      })
+
+      if (phase === 'after composite FK') await t.test('E2 records: exact owner-scoped left embedding preserves missing statistics and RLS', async () => {
+        const before = snapshot()
+        sql(`INSERT INTO public.matches(id,player_id,match_date,opponent,competition_type)
+          VALUES(${quote(match(98))},${quote(player(1))},'2026-10-19','Synthetic unreported record','LEAGUE');`)
+        try {
+          const path = `matches?player_id=eq.${player(1)}&select=${encodeURIComponent(RECORDS_SELECT)}`
+          const result = await request(path)
+          assert.equal(result.status, 200, JSON.stringify(result))
+          assert.equal(result.data.length, 9)
+          assert.ok(result.data.every(row => row.player_id === player(1)))
+          assert.ok(result.data.filter(row => row.id !== match(98)).every(row => row.statistics && !Array.isArray(row.statistics) && row.statistics.player_id === player(1)))
+          assert.equal(result.data.find(row => row.id === match(98)).statistics, null)
+          assert.deepEqual((await request(path, { role: 'anon' })).data, [])
+        } finally {
+          sql(`DELETE FROM public.matches WHERE id=${quote(match(98))};`)
+        }
+        assert.deepEqual(snapshot(), before)
       })
 
       await t.test(`${phase}: authenticated RPC, non-playing discipline, edit and cascade delete`, async () => {

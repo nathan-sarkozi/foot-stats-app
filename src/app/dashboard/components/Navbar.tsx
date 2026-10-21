@@ -12,6 +12,7 @@ const links = [
   { href: '/dashboard', label: 'Dashboard', index: '01' },
   { href: '/dashboard/community', label: 'Communauté', index: '02' },
   { href: '/dashboard/career', label: 'Ma Carrière', index: '03' },
+  { href: '/dashboard/records', label: 'Mes records', index: '04' },
 ]
 
 function isActive(path: string, href: string) {
@@ -45,7 +46,7 @@ export default function Navbar({ initials = 'FS', avatarUrl = null }: { initials
     const onOutside = (event: Event) => {
       if (event.target instanceof Node && !details?.contains(event.target)) close(false)
     }
-    const desktop = window.matchMedia('(min-width: 900px)')
+    const desktop = window.matchMedia('(min-width: 1024px)')
     const onDesktop = () => {
       if (!desktop.matches) return
       const focusInside = details?.contains(document.activeElement)

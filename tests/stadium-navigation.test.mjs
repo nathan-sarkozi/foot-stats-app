@@ -30,7 +30,7 @@ function elements(node, type) {
 
 test('navigation keeps every destination and both logout forms use the unchanged action',()=>{
   const {tree,html,logout}=nav()
-  for(const href of ['/dashboard','/dashboard/community','/dashboard/career','/dashboard/settings','/dashboard/add-match'])assert.ok(html.includes(`href="${href}"`))
+  for(const href of ['/dashboard','/dashboard/community','/dashboard/career','/dashboard/records','/dashboard/settings','/dashboard/add-match'])assert.ok(html.includes(`href="${href}"`))
   assert.equal(elements(tree,'form').length,2)
   for(const form of elements(tree,'form'))assert.equal(form.props.action,logout)
   assert.match(html,/aria-label="Navigation principale"/)
@@ -45,6 +45,7 @@ test('active navigation identifies pages, nested edits and public profiles witho
     ['/dashboard','/dashboard'],['/dashboard/add-match','/dashboard'],['/dashboard/edit-match/id','/dashboard'],
     ['/dashboard/community','/dashboard/community'],['/profile/id','/dashboard/community'],['/profile/id/career','/dashboard/community'],
     ['/dashboard/career','/dashboard/career'],['/dashboard/career/edit/id','/dashboard/career'],['/dashboard/settings','/dashboard/settings'],
+    ['/dashboard/records','/dashboard/records'],
   ]) {
     const {tree}=nav(path)
     const html=renderToStaticMarkup(tree)

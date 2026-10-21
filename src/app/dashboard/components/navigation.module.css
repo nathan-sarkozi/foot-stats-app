@@ -60,7 +60,7 @@
   .navLink[aria-current]::after { left: 11px; right: 11px; }
   .addMatch { font-size: 11px; padding-inline: 9px; }
 }
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .bar { min-height: 66px; padding: 0 24px; }
   .desktopLinks, .addMatch, .desktopLogout { display: none; }
   .mobileMenu { display: block; }

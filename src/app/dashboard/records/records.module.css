@@ -1,0 +1,91 @@
+.page { composes: page from '../../../components/stadium.module.css'; padding-top: 14px; }
+.page * { box-sizing: border-box; }
+.page :is(h1, h2, h3, p) { margin: 0; }
+.page a { text-decoration: none; }
+.page :is(section, details) { scroll-margin-top: 100px; }
+.eyebrow { display: block; color: #b5c1b5; font: 10px var(--font-geist-mono), monospace; letter-spacing: 1.7px; line-height: 1.6; }
+.hero { composes: hero from '../../../components/stadium-motion.module.css'; display: grid; grid-template-columns: 1.6fr 1fr; gap: 40px; align-items: center; border-bottom: 1px solid #30404c; padding: 20px 0 38px; }
+.heroCopy h1 { margin: 18px 0; font-size: clamp(42px, 5.5vw, 76px); letter-spacing: -3.5px; line-height: 1.05; font-weight: 730; }
+.heroCopy h1 > span { color: #d5ea58; }
+.heroCopy h1 em { font-style: normal; font-weight: 400; color: #a9b6ad; }
+.heroCopy > p { font-size: 15px; color: #b1bdc3; line-height: 1.8; }
+.scope { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-top: 24px; font-size: 11px; color: #a0adb7; }
+.scope span + span::before { content: '·'; color: #d5ea58; margin-right: 16px; }
+.heroArt { color: #d5ea58; display: flex; align-items: center; flex-direction: column; position: relative; }
+.heroArt svg { width: min(100%, 285px); height: auto; }
+.heroArt > span { font: 8px var(--font-geist-mono), monospace; color: #a7b3a7; letter-spacing: 2px; }
+.context { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 24px 0; }
+.context p { max-width: 770px; font-size: 12px; color: #a0adb7; line-height: 1.9; }
+.context strong { color: #e1e7df; font-weight: 500; }
+.context a { color: #d5ea58; font-size: 12px; flex-shrink: 0; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; margin: 4px 0 25px; }
+.toolbar > span { color: #a0adb7; font-size: 11px; }
+.notice { padding: 15px; margin-bottom: 20px !important; border: 1px solid #657146; border-radius: 8px; color: #cbd4b6; font-size: 12px; line-height: 1.7; }
+.chapters { display: flex; gap: 38px; padding: 18px 0; border-block: 1px solid #30404c; }
+.chapters a { display: flex; gap: 12px; align-items: center; font: 10px var(--font-geist-mono), monospace; color: #d5ea58; }
+.chapters a > span { font: 12px var(--font-geist-sans), sans-serif; color: #c2ccd0; }
+.chapters a:hover > span { color: #f2f4f1; }
+.chapter { margin-top: 42px; }
+.sectionHeading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 22px; }
+.sectionHeading h2 { font-size: clamp(23px, 2.8vw, 32px); line-height: 1.2; font-weight: 550; letter-spacing: -.9px; margin-top: 9px; }
+.sectionHeading > p { max-width: 270px; font-size: 12px; line-height: 1.7; text-align: right; color: #a0adb7; }
+.matchGrid { composes: stagger from '../../../components/stadium-motion.module.css'; display: grid; grid-template-columns: 1.12fr 1fr 1fr; gap: 16px; align-items: start; }
+.matchCard { composes: surface from '../../../components/stadium-motion.module.css'; background: #1a2530; border: 1px solid #30404c; border-radius: 12px; padding: 24px; min-width: 0; }
+.featured { background: linear-gradient(135deg, #263931, #18272b); border-color: #61714b; }
+.cardHeading { display: flex; justify-content: space-between; color: #a5b5ab; font: 9px var(--font-geist-mono), monospace; letter-spacing: 1.3px; gap: 10px; }
+.cardHeading > span:last-child { color: #d5ea58; font-size: 18px; }
+.matchCard h3 { margin-top: 16px; font-size: 16px; font-weight: 550; min-height: 46px; line-height: 1.5; }
+.result { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 8px 0 22px !important; }
+.result strong { font-size: clamp(60px, 7vw, 90px); letter-spacing: -5px; line-height: 1.1; font-weight: 600; color: #d5ea58; font-variant-numeric: tabular-nums; }
+.result > span { font-size: 11px; color: #bdc7c9; max-width: 110px; }
+.matchLink { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 12px 0; border-top: 1px solid #415346; min-width: 0; }
+.matchLink > span:first-child { min-width: 0; }
+.matchLink strong { display: block; color: #e5eae3; font-size: 12px; font-weight: 500; overflow-wrap: anywhere; line-height: 1.6; }
+.matchLink time { display: block; color: #a0adb7; font-size: 10px; margin-top: 4px; }
+.matchLink > span:last-child { color: #d5ea58; flex-shrink: 0; }
+.matchLink:hover strong { text-decoration: underline; text-underline-offset: 4px; }
+.coverage { font-size: 10px; color: #a0adb7; line-height: 1.8; margin-top: 12px !important; }
+.ties { composes: disclosure from '../../../components/stadium-motion.module.css'; margin-top: 10px; }
+.ties summary { cursor: pointer; color: #d5ea58; font-size: 11px; line-height: 1.8; padding: 5px 0; }
+.ties :is(ul, ol) { list-style: none; padding: 0; margin: 10px 0 0; }
+.ties li { padding: 0; margin: 0; }
+.sectionNote { margin-top: 18px !important; color: #a0adb7; font-size: 11px; line-height: 1.9; max-width: 920px; }
+.unavailable { min-height: 48px; font-size: 12px; line-height: 1.8; color: #a0adb7; }
+.streakGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+.streakCard { composes: surface from '../../../components/stadium-motion.module.css'; border: 1px solid #30404c; border-radius: 12px; padding: 26px; background: #141f28; min-width: 0; }
+.streakTop { display: flex; justify-content: space-between; gap: 20px; align-items: start; }
+.streakTop h3 { font-size: 18px; margin-top: 10px; font-weight: 500; line-height: 1.5; }
+.streakValue { text-align: right; flex-shrink: 0; }
+.streakValue strong { font-size: 56px; letter-spacing: -2px; color: #d5ea58; font-variant-numeric: tabular-nums; line-height: 1; font-weight: 550; }
+.streakValue > span { display: block; color: #a0adb7; font-size: 10px; margin-top: 6px; }
+.streakTrack { display: flex; align-items: center; gap: 8px; margin: 26px 0 20px; }
+.streakTrack span { flex: 1; height: 2px; background: linear-gradient(90deg, #526b4c, #d5ea5860); }
+.runDates { color: #d4ddd7; font-size: 12px; line-height: 1.8; margin-bottom: 12px !important; }
+.runDates > span { display: block; color: #a0adb7; font-size: 10px; }
+.run { margin-top: 15px; padding-top: 12px; border-top: 1px solid #30404c; }
+.run > p { font-size: 11px; color: #a0adb7; }
+.rules { composes: disclosure from '../../../components/stadium-motion.module.css'; border-bottom: 1px solid #30404c; padding: 18px 0; }
+.rules summary { color: #bac7bb; cursor: pointer; font-size: 12px; padding: 5px 0; }
+.rules p { color: #a0adb7; font-size: 12px; line-height: 1.9; max-width: 950px; margin-top: 12px; }
+.seasonBook { border-block: 1px solid #536047; }
+.seasonRow { display: grid; grid-template-columns: 1.4fr .65fr 1fr; align-items: start; gap: 30px; padding: 25px 12px; border-bottom: 1px solid #30404c; }
+.seasonRow:last-child { border-bottom: 0; }
+.seasonMetric h3 { font-size: 16px; font-weight: 500; line-height: 1.6; }
+.seasonMetric p { font-size: 10px; line-height: 1.8; color: #a0adb7; margin-top: 7px; }
+.seasonValue { display: flex; flex-direction: column; }
+.seasonValue strong { font-size: 38px; line-height: 1; font-weight: 550; color: #d5ea58; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+.seasonValue span { color: #a0adb7; font-size: 10px; margin-top: 8px; }
+.seasonContext { text-align: right; font-size: 12px; color: #a0adb7; padding-top: 5px; }
+.seasonContext a { color: #e0e7da; line-height: 1.8; }
+.seasonContext a:hover { color: #d5ea58; }
+.seasonContext .ties li { margin-top: 8px; }
+.empty { padding: 55px 35px; border: 1px solid #405345; border-radius: 16px; background: linear-gradient(120deg, #1c2b2b, #1a2530); margin: 25px 0; max-width: 780px; }
+.empty h2 { font-size: 30px; margin: 16px 0; letter-spacing: -.8px; }
+.empty p { color: #b0bcc3; line-height: 1.9; font-size: 14px; margin-bottom: 24px; }
+.primaryButton { composes: primaryButton from '../../../components/stadium.module.css'; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; border-top: 1px solid #30404c; padding: 25px 0 10px; margin-top: 48px; font-size: 10px; color: #a0adb7; }
+.footer strong { color: #dfe6dc; font-size: 18px; letter-spacing: -.7px; }
+.footer strong > span, .footer a { color: #d5ea58; }
+@media (max-width: 950px) { .hero { gap: 22px; grid-template-columns: 1.6fr 1fr; } .matchGrid { gap: 12px; } .matchCard { padding: 19px; } .context { align-items: start; flex-direction: column; gap: 10px; } .sectionHeading { align-items: start; } }
+@media (max-width: 700px) { .hero { grid-template-columns: 1fr; padding-top: 4px; } .heroArt { display: none; } .heroCopy h1 { font-size: 54px; letter-spacing: -2.4px; } .scope { gap: 10px 15px; } .scope span + span::before { display: none; } .chapters { justify-content: space-between; gap: 8px; } .chapters a { gap: 6px; } .chapters a > span { font-size: 11px; } .matchGrid, .streakGrid { grid-template-columns: 1fr; } .matchCard h3 { min-height: auto; } .matchCard { padding: 24px; } .result strong { font-size: 78px; } .sectionHeading { display: block; } .sectionHeading > p { text-align: left; max-width: none; margin-top: 12px; } .seasonRow { grid-template-columns: 1fr auto; gap: 17px; padding-inline: 0; } .seasonContext { grid-column: 1 / -1; text-align: left; padding-top: 0; } .seasonValue { text-align: right; } }
+@media (max-width: 390px) { .heroCopy h1 { font-size: 46px; letter-spacing: -1.9px; } .heroCopy > p { font-size: 13px; } .streakCard, .matchCard { padding: 20px; } .streakTop { gap: 12px; } .streakTop h3 { font-size: 16px; } .streakTop .eyebrow { font-size: 8px; letter-spacing: 1px; } .streakValue strong { font-size: 44px; } .streakValue > span { font-size: 9px; } .chapters a { font-size: 9px; } .chapters a > span { font-size: 10px; } .empty { padding: 30px 20px; } }
