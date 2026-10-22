@@ -6,7 +6,7 @@ import { seasonKey } from '@/utils/seasonNavigation'
 import type { Season } from '@/utils/playerStats'
 import s from './season-navigation.module.css'
 
-export default function SeasonSelector({ seasons, selected, currentYear }: { seasons: Season[], selected: Season, currentYear: number }) {
+export default function SeasonSelector({ seasons, selected, currentYear, hint = 'Changer de saison réaffiche toutes ses compétitions.' }: { seasons: Season[], selected: Season, currentYear: number, hint?: string }) {
   const id = useId()
   const router = useRouter()
   const params = useSearchParams()
@@ -17,6 +17,6 @@ export default function SeasonSelector({ seasons, selected, currentYear }: { sea
       next.delete('comps')
       router.push(`?${next.toString()}`, { scroll: false })
     }}>{seasons.map(season => <option key={season.startYear} value={seasonKey(season)}>{seasonKey(season)}{season.startYear === currentYear ? ' · En cours' : ''}</option>)}</select></div>
-    <p>Changer de saison réaffiche toutes ses compétitions.</p>
+    <p>{hint}</p>
   </div>
 }

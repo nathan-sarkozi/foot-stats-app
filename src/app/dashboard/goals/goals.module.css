@@ -1,0 +1,93 @@
+.page { composes: page from '../../../components/stadium.module.css'; padding: 10px 0 30px; }
+.page * { box-sizing: border-box; }
+.page :is(h1, h2, h3, p) { margin: 0; }
+.page a { text-decoration: none; }
+.breadcrumb { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 10px 0 28px; font-size: 11px; }
+.breadcrumb > a { color: #c3cfca; }
+.private { display: inline-flex; align-items: center; gap: 8px; font: 9px var(--font-geist-mono), monospace; letter-spacing: 1.4px; color: #b7c9af; }
+.hero { composes: hero from '../../../components/stadium-motion.module.css'; display: grid; grid-template-columns: 1.3fr 1fr; gap: 80px; align-items: center; padding: 28px 0 45px; border-bottom: 1px solid #30404c; margin-bottom: 28px; }
+.eyebrow { display: block; font: 9px/1.7 var(--font-geist-mono), monospace; letter-spacing: 1.7px; color: #aebda8; }
+.hero h1 { font-size: clamp(54px, 7.2vw, 90px); line-height: 1.03; letter-spacing: -4.5px; font-weight: 650; margin: 22px 0; }
+.hero h1 em { color: #d5ea58; font-style: normal; font-weight: 500; }
+.heroCopy > p { font-size: 14px; line-height: 1.9; color: #b5c1c6; }
+.seasonBadge { display: inline-block; border: 1px solid #566947; border-radius: 5px; padding: 9px 12px; margin-top: 23px; font: 9px var(--font-geist-mono), monospace; letter-spacing: .8px; color: #c5d5af; }
+.seasonMark { position: relative; padding: 30px 35px; background: linear-gradient(135deg, #24352e, #18272a); border: 1px solid #50614b; border-radius: 14px; overflow: hidden; }
+.seasonMark::before { content: ''; position: absolute; width: 230px; height: 230px; border: 1px solid #c0d88020; border-radius: 50%; right: -96px; top: 54px; pointer-events: none; }
+.seasonMark::after { content: ''; position: absolute; width: 174px; height: 174px; border: 1px solid #c0d88020; border-radius: 50%; right: -68px; top: 82px; pointer-events: none; }
+.markHeading { display: flex; align-items: center; justify-content: space-between; gap: 20px; font: 9px var(--font-geist-mono), monospace; letter-spacing: 1.4px; color: #bfccb7; }
+.markHeading > span:last-child { color: #d5ea58; font-size: 25px; }
+.markNumber { display: flex; align-items: baseline; gap: 15px; font-size: 112px; line-height: 1.1; font-weight: 500; letter-spacing: -7px; color: #e7ecdd; margin: 16px 0 24px; font-variant-numeric: tabular-nums; }
+.markNumber > span { font-size: 23px; letter-spacing: -1px; color: #9bad9e; }
+.markSteps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; position: relative; z-index: 1; }
+.markSteps > span { height: 3px; background: #3a4a42; }
+.markSteps > span[data-defined='true'] { background: #8a9c69; }
+.markSteps > span[data-complete='true'] { background: #d5ea58; }
+.seasonMark > p { position: relative; margin: 17px 0 22px; color: #c8d7c2; font-size: 12px; }
+.markNote { color: #a2b39f; font: 8px var(--font-geist-mono), monospace; letter-spacing: 1.5px; }
+.scope { display: flex; align-items: center; justify-content: space-between; gap: 25px; padding: 18px 0 30px; }
+.scope > div { max-width: 820px; }
+.scopeTag { display: block; color: #d5ea58; font: 9px var(--font-geist-mono), monospace; letter-spacing: 1px; margin-bottom: 9px; }
+.scope p { color: #a0adb7; font-size: 12px; line-height: 1.9; }
+.scope > span { font-size: 11px; color: #a0adb7; white-space: nowrap; }
+.notice { padding: 15px; margin-bottom: 20px !important; border: 1px solid #657146; border-radius: 8px; color: #cbd4b6; font-size: 12px; line-height: 1.8; }
+.cards { composes: stagger from '../../../components/stadium-motion.module.css'; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+.card { composes: surface from '../../../components/stadium-motion.module.css'; min-width: 0; padding: 30px; background: #1a2530; border: 1px solid #344650; border-radius: 12px; }
+.completed { background: linear-gradient(135deg, #25362e, #1b292b); border-color: #69794d; }
+.unknown { background: #17222b; border-style: dashed; }
+.cardTop { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.cardTop .eyebrow { font-size: 8px; }
+.cardState { color: #b0c2b3; font: 8px/1.7 var(--font-geist-mono), monospace; letter-spacing: 1px; text-align: right; }
+.completed .cardState { color: #d5ea58; }
+.card h2 { margin-top: 22px; font-size: 24px; letter-spacing: -.65px; font-weight: 500; line-height: 1.4; }
+.value { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 18px 0 24px; min-width: 0; }
+.value > strong { color: #e8eddf; font-size: clamp(42px, 5vw, 66px); font-weight: 550; letter-spacing: -2.7px; line-height: 1.15; font-variant-numeric: tabular-nums; max-width: 100%; overflow-wrap: anywhere; }
+.completed .value > strong { color: #d5ea58; }
+.target { color: #afbdba; font-size: 26px; line-height: 1.2; letter-spacing: -1px; max-width: 100%; overflow-wrap: anywhere; }
+.atLeast { width: 100%; color: #c3cfb8; font-size: 11px; line-height: 1; }
+.progressHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; font-size: 10px; color: #a8b8b6; margin-bottom: 12px; }
+.progressHeading > strong { color: #d5ea58; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; text-align: right; }
+.track { background: #36453d; height: 5px; border-radius: 5px; overflow: hidden; }
+.track > span { display: block; background: #baca65; height: 100%; border-radius: 5px; }
+.completed .track > span { background: #d5ea58; }
+.trackUnknown { border: 1px dashed #61756b; background: transparent; }
+.cardExplanation { min-height: 44px; color: #acb9bd; font-size: 11px; line-height: 1.9; margin-top: 18px !important; }
+.cardActions { display: flex; gap: 15px 25px; flex-wrap: wrap; align-items: start; border-top: 1px solid #40514a; padding-top: 16px; margin-top: 22px; }
+.edit { composes: disclosure from '../../../components/stadium-motion.module.css'; flex: 1; min-width: 0; }
+.edit > summary { color: #d5ea58; cursor: pointer; padding: 6px 0; font-size: 12px; line-height: 1.8; }
+.edit > summary > span { padding-left: 5px; }
+.delete { composes: disclosure from '../../../components/stadium-motion.module.css'; max-width: 100%; }
+.delete > summary { cursor: pointer; color: #c1b9b2; padding: 6px 0; font-size: 11px; line-height: 1.9; }
+.delete[open] { width: 100%; }
+.deleteConfirm { padding: 16px; border: 1px solid #856057; border-radius: 7px; margin-top: 10px; }
+.deleteConfirm > p { color: #dbc2b9; font-size: 12px; line-height: 1.8; margin-bottom: 15px; }
+.deleteConfirm button { font-size: 12px; width: 100%; }
+.form { display: flex; flex-direction: column; gap: 16px; margin-top: 20px; min-width: 0; }
+.label { composes: label from '../../../components/stadium.module.css'; }
+.field { composes: field from '../../../components/stadium.module.css'; }
+.small { font-size: 11px; color: #a0adb7; line-height: 1.9; }
+.submit { font-size: 12px; width: fit-content; max-width: 100%; }
+.empty { display: flex; align-items: start; gap: 28px; padding: 38px; border: 1px solid #52664a; border-radius: 12px; background: linear-gradient(110deg, #22332c, #192831); margin-top: 8px; }
+.emptyMark { font-size: 55px; font-weight: 300; line-height: 1; color: #d5ea58; }
+.empty h2 { font-size: 29px; line-height: 1.4; letter-spacing: -.8px; font-weight: 500; margin: 14px 0; }
+.empty p { max-width: 670px; font-size: 13px; color: #b4c1bd; line-height: 1.9; margin-bottom: 22px; }
+.textLink { composes: textLink from '../../../components/stadium.module.css'; font-size: 12px; }
+.createSection { display: grid; grid-template-columns: 1fr 1fr; gap: 70px; border-top: 1px solid #30404c; margin-top: 45px; padding-top: 38px; scroll-margin-top: 100px; }
+.createCopy h2 { font-size: 36px; line-height: 1.2; font-weight: 500; letter-spacing: -1.4px; margin: 16px 0 22px; }
+.createCopy > p { max-width: 420px; font-size: 12px; color: #a0adb7; line-height: 1.9; margin-top: 12px; }
+.createPanel { min-width: 0; border: 1px solid #30404c; border-radius: 10px; background: #18242d; padding: 25px; }
+.createPanel h3 { font-size: 18px; font-weight: 500; letter-spacing: -.3px; margin-bottom: 10px; }
+.allDefined { padding: 5px 0; }
+.allDefined > span { display: block; font-size: 32px; color: #d5ea58; margin-bottom: 18px; }
+.allDefined p { font-size: 12px; line-height: 1.9; color: #afbeb8; max-width: 350px; }
+.rules { composes: disclosure from '../../../components/stadium-motion.module.css'; border-bottom: 1px solid #30404c; padding: 20px 0; margin-top: 22px; }
+.rules > summary { cursor: pointer; color: #bacaab; padding-block: 8px; font-size: 12px; }
+.rules > p { font-size: 12px; line-height: 1.9; color: #a0adb7; max-width: 950px; margin-top: 14px; }
+.footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding-top: 26px; }
+.footer > strong { font-size: 22px; letter-spacing: -1px; }
+.footer strong > span { color: #d5ea58; }
+.footer > p { font-size: 11px; color: #a0adb7; line-height: 1.9; }
+.footer > a { color: #d5ea58; font-size: 11px; }
+.srOnly { composes: srOnly from '../../../components/stadium.module.css'; }
+@media (max-width: 1000px) { .hero { gap: 40px; } .seasonMark { padding: 28px; } .markNumber { font-size: 90px; } .card { padding: 24px; } .cards { gap: 17px; } .createSection { gap: 35px; } }
+@media (max-width: 700px) { .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 10px; } .hero h1 { font-size: 62px; letter-spacing: -3px; } .seasonMark { padding: 24px 28px; } .markNumber { font-size: 72px; margin: 10px 0 18px; } .seasonMark > p { margin-bottom: 15px; } .scope { align-items: start; flex-direction: column; gap: 12px; } .cards { grid-template-columns: 1fr; gap: 18px; } .card { padding: 25px; } .value > strong { font-size: 58px; } .createSection { grid-template-columns: 1fr; gap: 25px; } .createCopy h2 { font-size: 32px; } .createCopy h2 br { display: none; } .createCopy p { max-width: none; } .empty { padding: 28px 23px; gap: 15px; } .emptyMark { font-size: 38px; } .empty h2 { font-size: 24px; } }
+@media (max-width: 360px) { .hero h1 { font-size: 53px; letter-spacing: -2.5px; } .private { font-size: 8px; letter-spacing: .6px; } .card { padding: 20px; } .card h2 { font-size: 22px; } .value > strong { font-size: 44px; } .target { font-size: 23px; } .cardTop { gap: 10px; } .cardState { font-size: 7px; } .cardActions { gap: 10px 20px; } .createPanel { padding: 20px; } .empty { display: block; } .emptyMark { margin-bottom: 20px; } }

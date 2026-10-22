@@ -41,8 +41,11 @@ export function seasonYearForDate(value: string): number | null {
   return startYear >= 1 && startYear < 9999 ? startYear : null
 }
 
-export function selectSeason(matches: readonly SeasonMatch[], career: readonly SeasonCareer[], current: Season, value: unknown, competitions: unknown) {
+export function selectSeason(matches: readonly SeasonMatch[], career: readonly SeasonCareer[], current: Season, value: unknown, competitions: unknown, additionalYears: readonly number[] = []) {
   const years = new Set([current.startYear])
+  // Only private callers supply additional years, e.g. seasons with personal goals.
+  // Public catalogues retain exactly their match/career sources by default.
+  for (const year of additionalYears) if (Number.isInteger(year) && year >= 1 && year < 9999) years.add(year)
   for (const match of matches) {
     const year = seasonYearForDate(match.match_date)
     if (year !== null) years.add(year)
