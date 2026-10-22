@@ -7,6 +7,9 @@ import ProfileTabs from './components/ProfileTabs'
 import { getClubLogo } from '@/utils/getClubLogo'
 import { checkReadError, resourceIdSchema } from '@/utils/readErrors'
 import s from './profile.module.css'
+import NavigationProvider from '@/app/dashboard/components/NavigationProvider'
+import { getCurrentSeason } from '@/utils/playerStats'
+import navigation from '@/app/dashboard/components/navigation.module.css'
 
 export default async function ProfileLayout(props: { children: React.ReactNode, params: Promise<{ userId: string }> }) {
   const targetUserId = (await props.params).userId
@@ -17,6 +20,7 @@ export default async function ProfileLayout(props: { children: React.ReactNode, 
   
   let visitorInitials: string | null = null
   let visitorAvatarUrl: string | null = null
+  let visitorName: string | null = null
 
   if (authUser) {
     const { data: visitorProfile, error: visitorProfileError } = await supabase.from('profiles').select('display_name, avatar_url').eq('id', authUser.id).maybeSingle()
@@ -24,6 +28,7 @@ export default async function ProfileLayout(props: { children: React.ReactNode, 
     if (visitorProfile?.display_name) {
       visitorInitials = visitorProfile.display_name.substring(0, 2).toUpperCase()
       visitorAvatarUrl = visitorProfile.avatar_url
+      visitorName = visitorProfile.display_name
     }
   }
 
@@ -38,8 +43,8 @@ export default async function ProfileLayout(props: { children: React.ReactNode, 
 
   const playerClubLogo = getClubLogo(profile.club)
 
-  return <div className={s.shell}>
-    <Navbar initials={visitorInitials} avatarUrl={visitorAvatarUrl} />
+  return <NavigationProvider currentYear={getCurrentSeason().startYear}><div className={`${s.shell} ${authUser ? navigation.withMobileNavigation : ''}`}>
+    <Navbar userId={authUser?.id ?? null} initials={visitorInitials} avatarUrl={visitorAvatarUrl} displayName={visitorName} />
     <main className={s.main}>
       <Link href="/dashboard/community" className={s.back}><span aria-hidden="true">←</span> Retour à la communauté</Link>
       <header className={s.hero}>
@@ -58,5 +63,5 @@ export default async function ProfileLayout(props: { children: React.ReactNode, 
       {props.children}
       <footer className={s.footer}><strong>footstats<span>.</span></strong><p>Le football se joue. Le parcours se raconte.</p><span>PROFIL DU JOUEUR</span></footer>
     </main>
-  </div>
+  </div></NavigationProvider>
 }

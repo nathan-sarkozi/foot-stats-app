@@ -62,6 +62,8 @@ async function page(options = {}) {
   const Page = loadUiModule('src/app/dashboard/goals/page.tsx', {
     'next/link': link,
     'next/navigation': { redirect(path) { throw new Error(`REDIRECT:${path}`) }, notFound() { throw new Error('UNEXPECTED_404') } },
+    '@/utils/navigation': loadUiModule('src/utils/navigation.ts', { './competitionFilters': competitions }, { URLSearchParams }),
+    '../components/PerformanceNavigation': component(() => null),
     '@/utils/supabase/server': { createClient: async () => client },
     '@/utils/playerStats': { getCurrentSeason: () => current },
     '@/utils/seasonNavigation': navigation, '@/utils/seasonReview': review,
@@ -280,6 +282,8 @@ test('dashboard entry carries only the selected season even if its own statistic
     statistics: [row('cup', {}, { match_date: '2025-09-01', competition_type: 'CUP' })],
     searchParams: { season: '2025-2026', comps: 'CUP' },
   })
-  assert.match(result.html, /href="\/dashboard\/goals\?season=2025-2026"/)
-  assert.doesNotMatch(result.html, /href="\/dashboard\/goals\?[^\"]*comps=/)
+  const scope = result.widgets.find(widget => widget.name === 'PerformanceNavigation').props.scope
+  const links = loadUiModule('src/utils/navigation.ts', { './competitionFilters': competitions }, { URLSearchParams }).buildNavigationLinks(scope, owner)
+  assert.equal(links.goals, '/dashboard/goals?season=2025-2026')
+  assert.ok(!links.goals.includes('comps='))
 })

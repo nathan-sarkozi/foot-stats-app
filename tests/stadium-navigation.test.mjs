@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import * as competitions from '../src/utils/competitionFilters.ts'
 import { loadUiModule } from './helpers/load-ui-module.mjs'
 
 // Offline UI contracts. No .env, Supabase, Auth, Storage or external request.
@@ -10,6 +11,9 @@ const next = {
   'next/link': component(({children,...props})=>React.createElement('a',props,children)),
   'next/image': component(({src,alt})=>React.createElement('img',{src,alt})),
 }
+const navigation = loadUiModule('src/utils/navigation.ts', { './competitionFilters': competitions }, { URLSearchParams })
+const icon = loadUiModule('src/app/dashboard/components/NavigationIcon.tsx').default
+const navMocks = { '@/utils/navigation': navigation, './NavigationProvider': { useNavigationScope: () => ({ currentYear: 2026 }) }, './MobileNavigation': component(() => null), './NavigationIcon': component(icon) }
 const mark = loadUiModule('src/components/FootStatsMark.tsx').default
 const brand = loadUiModule('src/components/FootStatsBrand.tsx',{...next,'./FootStatsMark':component(mark)}).default
 const frame = loadUiModule('src/components/AuthFrame.tsx',{'@/components/FootStatsBrand':component(brand),'./FootStatsBrand':component(brand)}).default
@@ -17,10 +21,10 @@ function nav(path='/dashboard', props={}) {
   const logout=async()=>{}
   const effects=[]
   const Nav=loadUiModule('src/app/dashboard/components/Navbar.tsx',{
-    ...next, react:{...React,useId:()=> 'synthetic-menu',useRef:()=>({current:null}),useEffect:fn=>effects.push(fn)},
+    ...next, ...navMocks, react:{...React,useId:()=> 'synthetic-menu',useRef:()=>({current:null}),useEffect:fn=>effects.push(fn)},
     'next/navigation':{usePathname:()=>path}, './logoutAction':{logout}, '@/components/FootStatsBrand':component(brand),
   }).default
-  const tree=Nav(props)
+  const tree=Nav({ userId: 'synthetic-player', ...props })
   return {tree,html:renderToStaticMarkup(tree),effects,logout}
 }
 function elements(node, type) {
@@ -28,31 +32,36 @@ function elements(node, type) {
   return [...(node.type===type?[node]:[]),...React.Children.toArray(node.props?.children).flatMap(child=>elements(child,type))]
 }
 
-test('navigation keeps every destination and both logout forms use the unchanged action',()=>{
+test('header keeps primary destinations, own profile and unchanged logout action',()=>{
   const {tree,html,logout}=nav()
-  for(const href of ['/dashboard','/dashboard/community','/dashboard/career','/dashboard/records','/dashboard/settings','/dashboard/add-match'])assert.ok(html.includes(`href="${href}"`))
-  assert.equal(elements(tree,'form').length,2)
-  for(const form of elements(tree,'form'))assert.equal(form.props.action,logout)
+  for(const href of ['/dashboard','/dashboard/community','/dashboard/career','/profile/synthetic-player','/dashboard/settings','/dashboard/add-match'])assert.ok(html.includes(`href="${href}"`))
+  assert.equal(elements(tree,'form').length,1)
+  assert.equal(elements(tree,'form')[0].props.action,logout)
   assert.match(html,/aria-label="Navigation principale"/)
   assert.match(html,/aria-controls="synthetic-menu"/)
   assert.match(html,/<details[^>]*>/)
   assert.doesNotMatch(html,/<details[^>]* open/)
-  assert.match(html,/Menu de navigation/)
 })
 
-test('active navigation identifies pages, nested edits and public profiles without marking other sections',()=>{
+test('header identifies parent sections for direct and nested destinations',()=>{
   for(const [path,active] of [
     ['/dashboard','/dashboard'],['/dashboard/add-match','/dashboard'],['/dashboard/edit-match/id','/dashboard'],
+    ['/dashboard/records','/dashboard'],['/dashboard/goals','/dashboard'],['/dashboard/season-review','/dashboard'],
     ['/dashboard/community','/dashboard/community'],['/profile/id','/dashboard/community'],['/profile/id/career','/dashboard/community'],
     ['/dashboard/career','/dashboard/career'],['/dashboard/career/edit/id','/dashboard/career'],['/dashboard/settings','/dashboard/settings'],
-    ['/dashboard/records','/dashboard/records'],
   ]) {
-    const {tree}=nav(path)
-    const html=renderToStaticMarkup(tree)
+    const {html}=nav(path)
     const activeLinks=[...html.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*aria-current="(?:page|location)"/g)].map(m=>m[1])
-    assert.ok(activeLinks.length>0,path)
+    assert.ok(activeLinks.includes(active),`${path}: ${activeLinks}`)
     assert.ok(activeLinks.every(href=>href===active),`${path}: ${activeLinks}`)
   }
+})
+
+test('anonymous public header exposes no private navigation or logout',()=>{
+  const {html}=nav('/profile/public',{userId:null})
+  assert.match(html,/href="\/login"/)
+  assert.match(html,/href="\/register"/)
+  assert.doesNotMatch(html,/Navigation principale|Déconnexion|Ajouter un match|Mon compte/)
 })
 
 test('navigation uses supplied avatars and gives a nonempty fallback without inventing player information',()=>{
@@ -130,20 +139,20 @@ test('shared submit appearance keeps form pending behavior and default form styl
   }
 })
 
-test('mobile disclosure closes on Escape, outside events, route changes and desktop resize, with cleanup',()=>{
+test('desktop account disclosure closes on Escape, outside events, route changes and desktop resize, with cleanup',()=>{
   const listeners=new Map(), mediaListeners=new Map(), effects=[]
   class FakeNode {}
   const child=new FakeNode(), outside=new FakeNode()
-  const document={activeElement:child,addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name)}
+  const document={activeElement:child,querySelector:()=>desktopLink,addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name)}
   const summary=new FakeNode();summary.focus=()=>{document.activeElement=summary}
   const desktopLink=new FakeNode();desktopLink.focus=()=>{document.activeElement=desktopLink}
   const details={open:false,contains:node=>node===child||node===summary,closest:()=>({querySelector:()=>desktopLink})}
   const media={matches:false,addEventListener:(name,fn)=>mediaListeners.set(name,fn),removeEventListener:name=>mediaListeners.delete(name)}
   const Nav=loadUiModule('src/app/dashboard/components/Navbar.tsx',{
-    ...next,react:{...React,useId:()=> 'synthetic-menu',useRef:()=>({current:null}),useEffect:fn=>effects.push(fn)},
+    ...next, ...navMocks,react:{...React,useId:()=> 'synthetic-menu',useRef:()=>({current:null}),useEffect:fn=>effects.push(fn)},
     'next/navigation':{usePathname:()=>'/dashboard'},'./logoutAction':{logout:async()=>{}},'@/components/FootStatsBrand':component(brand),
-  },{document,window:{matchMedia:()=>media},Node:FakeNode}).default
-  const tree=Nav({})
+  },{document,window:{matchMedia:()=>media,addEventListener(){},removeEventListener(){}},Node:FakeNode}).default
+  const tree=Nav({userId:'synthetic-player'})
   elements(tree,'details')[0].props.ref.current=details
   elements(tree,'summary')[0].props.ref.current=summary
   const cleanup=effects[0]()

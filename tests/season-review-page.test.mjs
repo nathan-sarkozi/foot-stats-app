@@ -44,6 +44,8 @@ async function page(options = {}) {
       redirect(path) { throw new Error(`REDIRECT:${path}`) },
       notFound() { throw new Error('UNEXPECTED_404') },
     },
+    '@/utils/navigation': loadUiModule('src/utils/navigation.ts', { './competitionFilters': competitions }, { URLSearchParams }),
+    '../components/PerformanceNavigation': { __esModule: true, default: () => null },
     '@/utils/supabase/server': { createClient: async () => client },
     '@/utils/playerStats': { getCurrentSeason: () => current },
     '@/utils/seasonNavigation': navigation,

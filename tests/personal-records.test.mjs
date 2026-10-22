@@ -190,6 +190,10 @@ async function page(rows = [], options = {}) {
   const filters = []
   const component = value => ({ __esModule: true, default: value })
   const Page = loadUiModule('src/app/dashboard/records/page.tsx', {
+    '@/utils/navigation': loadUiModule('src/utils/navigation.ts', { './competitionFilters': competitions }, { URLSearchParams }),
+    '../components/PerformanceNavigation': component(() => null),
+    '@/utils/playerStats': { getCurrentSeason: () => ({ startYear: 2026 }) },
+    '@/utils/seasonNavigation': seasonNavigation,
     '@/utils/supabase/server': { createClient: async () => fixture.client },
     '@/utils/loadPersonalRecords': { loadPersonalRecords }, '@/utils/personalRecords': recordsModule,
     '@/utils/competitionFilters': competitions,

@@ -45,3 +45,6 @@ scraper.mjs
 
 repomix*
 supabase-schema.sql
+
+
+/src/app/design-preview/

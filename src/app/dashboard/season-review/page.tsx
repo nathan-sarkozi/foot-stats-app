@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import PerformanceNavigation from '../components/PerformanceNavigation'
+import { navigationSourceKey } from '@/utils/navigation'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getCurrentSeason } from '@/utils/playerStats'
@@ -93,6 +95,7 @@ export default async function SeasonReviewPage({ searchParams }: { searchParams:
   ] as const
 
   return <div className={s.page}>
+    <PerformanceNavigation userId={user.id} sourceKey={navigationSourceKey('/dashboard/season-review', params)} scope={{ currentYear: current.startYear, seasonYear: season.startYear, seasonYears: selection.seasons.map(option => option.startYear), filteredCompetitions: activeComps.length < selection.availableComps.length ? activeComps : undefined, availableCompetitions: selection.availableComps, comparisonYear: typeof params.compare === 'string' ? comparisonSeason?.startYear : undefined }} />
     <div className={s.breadcrumb}><Link href={dashboardHref}>← Mon dashboard</Link><span>LE RÉCIT D’UNE SAISON</span></div>
     <header className={s.hero}>
       <div className={s.heroCopy}><span className={s.eyebrow}>FOOTSTATS / MON BILAN DE SAISON</span><h1>Du jeu.<br />Et une <em>trace.</em></h1><p>Ce que racontent les rencontres que tu as enregistrées.</p><span className={s.status}>{review.status === 'current' ? 'EN COURS · BILAN PROVISOIRE' : review.status === 'future' ? 'SAISON À VENIR · DONNÉES SAISIES' : 'SAISON TERMINÉE · MATCHS SAISIS'}</span></div>

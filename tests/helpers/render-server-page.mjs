@@ -67,6 +67,7 @@ export async function renderServerPage(relativePath, options = {}) {
       ...playerStats,
       getCurrentSeason: () => playerStats.getCurrentSeason(new Date(2026, 9, 19)),
     },
+    '@/utils/navigation': loadUiModule('src/utils/navigation.ts', { './competitionFilters': competitionFilters }, { URLSearchParams }),
     '@/utils/readErrors': readErrors,
     '@/utils/competitionFilters': competitionFilters,
     '@/utils/seasonNavigation': loadUiModule('src/utils/seasonNavigation.ts', { './competitionFilters': competitionFilters }),
@@ -116,6 +117,8 @@ export async function renderServerPage(relativePath, options = {}) {
       if (name.endsWith('/TeamWidget') || name.endsWith('/CompetitionFilter') || name.endsWith('/FormGuide')) {
         return component(props => { widgets.push({ name: name.split('/').at(-1), props }); return null })
       }
+      if (name.endsWith('/NavigationProvider')) return component(({ children }) => children)
+      if (name.endsWith('/PerformanceNavigation')) return component(props => { widgets.push({ name: 'PerformanceNavigation', props }); return null })
       if (name.endsWith('/Navbar') || name.endsWith('/ProfileTabs')) return component(() => null)
       if (name === 'react' || name === 'react/jsx-runtime') return require(name)
       throw new Error(`Unexpected page import: ${name}`)

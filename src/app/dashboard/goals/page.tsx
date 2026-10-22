@@ -13,6 +13,8 @@ import SeasonSelector from '@/components/SeasonSelector'
 import GoalCard from './GoalCard'
 import GoalForm from './GoalForm'
 import s from './goals.module.css'
+import PerformanceNavigation from '../components/PerformanceNavigation'
+import { navigationSourceKey } from '@/utils/navigation'
 
 export default async function GoalsPage({ searchParams }: { searchParams: Promise<{ season?: string | string[] }> }) {
   const params = await searchParams
@@ -38,6 +40,7 @@ export default async function GoalsPage({ searchParams }: { searchParams: Promis
   const dashboardHref = hasDashboardSeason ? `/dashboard?season=${seasonKey(season)}` : '/dashboard'
 
   return <div className={s.page}>
+    <PerformanceNavigation userId={user.id} sourceKey={navigationSourceKey('/dashboard/goals', params)} scope={{ currentYear: current.startYear, seasonYear: season.startYear, seasonYears: selection.seasons.map(option => option.startYear), regularSeasonYears: selectSeason(context.matches, context.career, current, undefined, undefined).seasons.map(option => option.startYear) }} />
     <div className={s.breadcrumb}><Link href={dashboardHref}>← Mon dashboard</Link><span className={s.private}><svg viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="2" stroke="currentColor" /><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" /></svg>OBJECTIFS PRIVÉS</span></div>
     <header className={s.hero}><div className={s.heroCopy}><span className={s.eyebrow}>FOOTSTATS / MES OBJECTIFS</span><h1>Ta saison.<br />Tes <em>repères.</em></h1><p>Des cibles qui t’appartiennent.<br />Une progression qui se lit sur le terrain.</p><span className={s.seasonBadge}>{season.startYear}–{season.endYear} · {selection.isCurrent ? 'SAISON EN COURS' : season.startYear < current.startYear ? 'SAISON TERMINÉE' : 'SAISON À VENIR'}</span></div>
       <div className={s.seasonMark}><div className={s.markHeading}><span>UN CAP PERSONNEL</span><span aria-hidden="true">↗</span></div><div className={s.markNumber}>{String(selected.length).padStart(2, '0')}<span>/ 04</span></div><div className={s.markSteps} aria-hidden="true">{[0, 1, 2, 3].map(index => <span key={index} data-complete={index < completed} data-defined={index < selected.length} />)}</div><p>{selected.length ? `${completed} ${completed === 1 ? 'cible atteinte' : 'cibles atteintes'} sur ${selected.length} ${selected.length === 1 ? 'objectif défini' : 'objectifs définis'}` : 'Le premier repère reste à définir.'}</p><span className={s.markNote}>À TON RYTHME. À TA MESURE.</span></div>

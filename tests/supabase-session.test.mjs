@@ -344,6 +344,9 @@ test('dashboard layout still redirects anonymous users to login before accessing
       from() { assert.fail('Anonymous dashboard must not fetch profiles') },
     }) },
     'next/navigation': { redirect(path) { throw new Error(`REDIRECT:${path}`) } },
+    './components/NavigationProvider': { __esModule: true, default: ({ children }) => children },
+    '@/utils/playerStats': { getCurrentSeason: () => ({ startYear: 2026 }) },
+    './components/navigation.module.css': { __esModule: true, default: {} },
     './components/Navbar': { __esModule: true, default: () => null },
   })
   await assert.rejects(layout.default({ children: null }), { message: 'REDIRECT:/login' })

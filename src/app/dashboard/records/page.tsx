@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import PerformanceNavigation from '../components/PerformanceNavigation'
+import { navigationSourceKey } from '@/utils/navigation'
+import { getCurrentSeason } from '@/utils/playerStats'
+import { seasonYearForDate } from '@/utils/seasonNavigation'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { loadPersonalRecords } from '@/utils/loadPersonalRecords'
@@ -62,8 +66,10 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   const active = selected.length ? selected : available
   const records = params.comps === undefined ? all : buildPersonalRecords(rows, user.id, active)
   const competitionQuery = active.length < available.length ? `&comps=${active.join(',')}` : ''
+  const currentYear = getCurrentSeason().startYear
 
   return <div className={s.page}>
+    <PerformanceNavigation userId={user.id} sourceKey={navigationSourceKey('/dashboard/records', params)} scope={{ currentYear, seasonYears: [currentYear], filteredCompetitions: active.length < available.length ? active : undefined, availableCompetitions: COMPETITIONS.filter(comp => all.matches.some(match => seasonYearForDate(match.match_date) === currentYear && match.competition_type === comp)) }} />
     <header className={s.hero}>
       <div className={s.heroCopy}><span className={s.eyebrow}>FOOTSTATS / LE LIVRE PERSONNEL</span><h1>Mes records<span>.</span><br /><em>Mon empreinte.</em></h1><p>Les matchs passent. Certaines performances restent.</p><div className={s.scope}><span>{records.matches.length} {records.matches.length === 1 ? 'rencontre saisie' : 'rencontres saisies'}</span><span>{records.appearances} {records.appearances === 1 ? 'participation confirmée' : 'participations confirmées'}</span><span>{records.seasonCount} {records.seasonCount === 1 ? 'saison documentée' : 'saisons documentées'}</span></div></div>
       <div className={s.heroArt} aria-hidden="true"><span>CHAQUE MATCH LAISSE UNE TRACE</span><svg viewBox="0 0 240 230" fill="none"><circle cx="120" cy="105" r="85" stroke="currentColor" opacity=".16" /><circle cx="120" cy="105" r="65" stroke="currentColor" opacity=".12" strokeDasharray="2 7" /><path d="M80 53h80v34c0 34-18 50-40 50S80 121 80 87V53ZM80 65H57v18c0 24 14 34 32 34m71-52h23v18c0 24-14 34-32 34m-31 20v32m-23 0h46v20H97v-20Z" stroke="currentColor" strokeWidth="2" /><path d="m120 73 5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2 5-10Z" fill="currentColor" opacity=".9" /><path d="M65 207h110" stroke="currentColor" opacity=".45" /></svg><span>LE FOOTBALL QUE TU VIS.</span></div>

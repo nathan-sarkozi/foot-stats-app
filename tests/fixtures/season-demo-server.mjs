@@ -10,11 +10,13 @@ const denied = async () => { throw new Error('Démonstration locale : écriture 
 const error = (code, message) => ({ data: null, error: { code, message } })
 
 export async function createClient() {
-  const scenario = (await headers()).get('x-footstats-demo-scenario')
+  const requestHeaders = await headers()
+  const scenario = requestHeaders.get('x-footstats-demo-scenario')
+  const anonymous = requestHeaders.get('x-footstats-demo-visitor') === 'anonymous'
   const initial = state()
   const playerId = (initial.scenarios?.[scenario] ?? initial).profiles[0].id
   return {
-    auth: { getUser: async () => ({ data: { user: { id: playerId } }, error: null }), signOut: denied, signInWithPassword: denied, signUp: denied },
+    auth: { getUser: async () => ({ data: { user: anonymous ? null : { id: playerId } }, error: null }), signOut: denied, signInWithPassword: denied, signUp: denied },
     rpc: denied,
     storage: { from: () => ({ upload: denied, remove: denied }) },
     from(table) {

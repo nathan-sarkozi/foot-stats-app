@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import * as competitions from '../src/utils/competitionFilters.ts'
 import { test } from 'node:test'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -35,9 +36,11 @@ test('unknown-only, empty and bench-only journeys explain the missing curve inst
   }
 })
 
-test('dashboard access preserves selected season and competition without adding a primary navigation item', async () => {
+test('dashboard publishes its validated season and competition for the shared performance navigation', async () => {
   const statistics = [{ has_played: true, minutes_played: 60, goals: 0, assists: 1, yellow_cards: 0, red_cards: 0, is_motm: false, position_played: 'MC', matches: { id: 'fixture', match_date: '2025-10-01', opponent: 'Fixture', competition_type: 'CUP', team_score: 2, opponent_score: 1 } }]
-  const { html } = await renderServerPage('src/app/dashboard/page.tsx', { statistics, searchParams: { season: '2025-2026', comps: 'CUP' } })
-  assert.match(html, /href="\/dashboard\/season-review\?season=2025-2026"/)
-  assert.match(html, /Mon bilan de saison/)
+  const { widgets } = await renderServerPage('src/app/dashboard/page.tsx', { statistics, searchParams: { season: '2025-2026', comps: 'CUP' } })
+  const scope = widgets.find(widget => widget.name === 'PerformanceNavigation').props.scope
+  const links = loadUiModule('src/utils/navigation.ts', { './competitionFilters': competitions }, { URLSearchParams }).buildNavigationLinks(scope, 'synthetic')
+  assert.equal(links.review, '/dashboard/season-review?season=2025-2026')
+  assert.equal(links.records, '/dashboard/records', 'all competitions available in this season are not an explicit records filter')
 })

@@ -17,6 +17,8 @@ import { seasonPresentation } from '@/utils/seasonPresentation'
 import SeasonSelector from '@/components/SeasonSelector'
 import SeasonCareerContext from '@/components/SeasonCareerContext'
 import SeasonStatCards from '@/components/SeasonStatCards'
+import PerformanceNavigation from './components/PerformanceNavigation'
+import { navigationSourceKey } from '@/utils/navigation'
 
 export default async function DashboardPage(props: { searchParams: Promise<{ comps?: string | string[], season?: string | string[] }> }) {
   const searchParams = await props.searchParams
@@ -67,6 +69,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
 
   return (
     <div className={s.dashboard}>
+      <PerformanceNavigation userId={user.id} sourceKey={navigationSourceKey('/dashboard', searchParams)} scope={{ currentYear: currentSeason.startYear, seasonYear: season.startYear, seasonYears: selection.seasons.map(option => option.startYear), filteredCompetitions: activeComps.length < selection.availableComps.length ? activeComps : undefined, availableCompetitions: selection.availableComps }} />
       <header className={s.hero}>
         <div className={s.heroCopy}>
           <div className={s.heroEyebrow}><span className={s.seasonPill}>SAISON {seasonLabel}</span><span>TON FOOTBALL. TA PROGRESSION.</span></div>
@@ -121,7 +124,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
 
       <section className={s.seasonStory} aria-labelledby="season-story-title">
         <div className={s.storyMark} aria-hidden="true">↗</div><div><span className={s.eyebrow}>À RETENIR · SÉLECTION ACTUELLE</span><h2 id="season-story-title">Le fil de ta saison.</h2><p><strong>{presentation.known.participation ? matchesPlayed : '—'} participations enregistrées</strong> et <strong>{presentation.known.minutes ? totalMinutes : '—'} minutes renseignées</strong> sur le terrain. Retrouve chaque rencontre dans ton historique.</p></div>
-        <div className={s.recentForm}><FormGuide recentMatches={displayStats.filter(stat => stat.has_played).map(stat => stat.matches)} variant="stade" /><Link href={`/dashboard/season-review?season=${season.startYear}-${season.endYear}${activeComps.length < selection.availableComps.length ? `&comps=${activeComps.join(',')}` : ''}`} className={s.textLink}>Mon bilan de saison <span aria-hidden="true">↗</span></Link><Link href={`/dashboard/goals?season=${season.startYear}-${season.endYear}`} className={s.textLink}>Mes objectifs <span aria-hidden="true">↗</span></Link><a href="#match-history" className={s.textLink}>Parcourir mes matchs <span aria-hidden="true">↓</span></a></div>
+        <div className={s.recentForm}><FormGuide recentMatches={displayStats.filter(stat => stat.has_played).map(stat => stat.matches)} variant="stade" /><a href="#match-history" className={s.textLink}>Parcourir mes matchs <span aria-hidden="true">↓</span></a></div>
       </section>
 
       {selection.isCurrent && <section className={s.teamSection} aria-label="Mon équipe et les informations RBFA">
