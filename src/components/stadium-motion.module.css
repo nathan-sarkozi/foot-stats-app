@@ -34,9 +34,10 @@
   }
 }
 
-/* A document-level visual signature, not a fake data-loading delay. No JS,
-   storage, focus trap, pointer interception or waiting for network completion. */
+/* A document-level visual signature, not a fake data-loading delay. CSS also
+   completes it without hydration. No focus trap or pointer interception. */
 .launch { display: none; }
+.launch[hidden] { display: none; animation: none; }
 .launchLights { position: absolute; inset: 0; background: radial-gradient(ellipse at 25% -5%, #a8c68227, transparent 55%), radial-gradient(ellipse at 88% 15%, #d5ea5815, transparent 45%); }
 .launchContent { position: relative; display: flex; align-items: center; flex-direction: column; width: min(360px, calc(100% - 48px)); }
 .launchEyebrow, .launchCaption { font: 9px var(--font-geist-mono), monospace; color: #a0adb7; letter-spacing: 2.6px; }
@@ -56,8 +57,6 @@
   .launch { display: grid; place-items: center; position: fixed; inset: 0; z-index: 100; overflow: hidden; background: #111820; pointer-events: none; visibility: hidden; animation: launchAway 1s ease-in-out backwards; }
   .launchContent { animation: launchMark 500ms ease-out; }
   .launchLine { animation: launchTrace 650ms ease-out; }
-  /* Immediate reveal as soon as the user starts interacting, including by keyboard. */
-  .launch:has(~ :focus-within) { animation: none; }
 }
 
 .loading { padding: 26px 0 40px; }

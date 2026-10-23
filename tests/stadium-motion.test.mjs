@@ -5,7 +5,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { loadUiModule } from './helpers/load-ui-module.mjs'
 
 const mark = loadUiModule('src/components/FootStatsMark.tsx').default
-const motion = loadUiModule('src/components/StadiumMotion.tsx', { './FootStatsMark': { __esModule: true, default: mark } })
+const launch = loadUiModule('src/components/StadiumLaunch.tsx', { './FootStatsMark': { __esModule: true, default: mark } })
+const motion = loadUiModule('src/components/StadiumMotion.tsx', { './StadiumLaunch': launch })
 const render = Component => renderToStaticMarkup(React.createElement(Component))
 
 test('document signature is decorative and cannot capture focus or announce false loading', () => {

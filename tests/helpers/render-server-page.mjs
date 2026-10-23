@@ -62,7 +62,7 @@ export async function renderServerPage(relativePath, options = {}) {
 
   const component = value => ({ __esModule: true, default: value })
   const mocks = {
-    '@/utils/supabase/server': { createClient: async () => client },
+    '@/utils/supabase/server': { createClient: async () => options.client ?? client },
     '@/utils/playerStats': {
       ...playerStats,
       getCurrentSeason: () => playerStats.getCurrentSeason(new Date(2026, 9, 19)),

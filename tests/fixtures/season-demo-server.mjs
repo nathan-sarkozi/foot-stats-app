@@ -31,6 +31,7 @@ export async function createClient() {
         const fixture = state()
         const data = fixture.scenarios?.[scenario] ?? fixture
         let rows = data[table] ?? []
+        if (data.enforceProfileReadPolicies && anonymous && ['profiles', 'matches', 'statistics'].includes(table)) rows = []
         if (operation) {
           if (!allowGoalWrites || table !== 'season_goals') throw new Error('Démonstration locale : écriture désactivée.')
           if (operation !== 'insert' && !filters.some(([key, method, expected]) => key === 'player_id' && method === 'eq' && expected === playerId)) return error('42501', 'Propriétaire requis pour cette écriture fictive.')
