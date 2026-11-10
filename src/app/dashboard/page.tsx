@@ -72,9 +72,9 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
       <PerformanceNavigation userId={user.id} sourceKey={navigationSourceKey('/dashboard', searchParams)} scope={{ currentYear: currentSeason.startYear, seasonYear: season.startYear, seasonYears: selection.seasons.map(option => option.startYear), filteredCompetitions: activeComps.length < selection.availableComps.length ? activeComps : undefined, availableCompetitions: selection.availableComps }} />
       <header className={s.hero}>
         <div className={s.heroCopy}>
-          <div className={s.heroEyebrow}><span className={s.seasonPill}>SAISON {seasonLabel}</span><span>TON FOOTBALL. TA PROGRESSION.</span></div>
-          <h1>Ta saison,<br />sur le terrain<span>.</span></h1>
-          <p className={s.heroIntro}>Les performances de <strong>{profile.display_name}</strong>, match après match.</p>
+          <div className={s.heroEyebrow}><span className={s.seasonPill}>SAISON {seasonLabel}</span></div>
+          <h1>Performances<span>.</span></h1>
+          <p className={s.heroIntro}><strong>{profile.display_name}</strong></p>
           <div className={s.playerIdentity}>
             <span className={s.playerAvatar}>{profile.avatar_url
               ? <Image src={profile.avatar_url} alt="" fill sizes="38px" className={s.avatarImage} />
@@ -94,7 +94,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
             <text x="105" y="132" textAnchor="middle" fill="#eaf1d4" fontSize="54" fontWeight="800" letterSpacing="-3">{profile.jersey_number ?? 'FS'}</text>
           </svg>
           {clubLogo && <span className={s.heroCrest}><Image src={clubLogo} alt="" fill sizes="38px" className={s.clubImage} /></span>}
-          <span className={s.visualCaption}>CHAQUE MINUTE COMPTE.</span>
+
         </div>
       </header>
 
@@ -104,7 +104,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
       <SeasonCareerContext entries={selection.careerEntries} href="/dashboard/career" />
       <section aria-labelledby="season-stats-title">
         <div className={s.sectionToolbar}>
-          <div className={s.sectionHeading}><span className={s.sectionIndex}>01</span><h2 id="season-stats-title">La saison en chiffres</h2></div>
+          <div className={s.sectionHeading}><span className={s.sectionIndex}>01</span><h2 id="season-stats-title">Statistiques</h2></div>
           <Link href="/dashboard/add-match" className={s.primaryButton}><span aria-hidden="true">＋</span> Ajouter un match</Link>
         </div>
         <div className={s.filtersRow}><CompetitionFilter variant="stade" available={selection.availableComps} selected={activeComps} /><span className={s.filterHint}>Compétitions combinables · Saison {seasonLabel}</span></div>
@@ -113,22 +113,22 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
       </section>
 
       <div className={s.mainGrid}>
-        {latest ? <MatchSummary stat={latest} featured /> : <section className={`${s.panel} ${s.emptyMatch}`}><span className={s.eyebrow}>LE PREMIER CHAPITRE</span><h2>{selection.isCurrent ? 'Ta saison commence ici.' : 'Cette saison a une histoire.'}</h2><p>{selection.seasonMatches.length ? 'Aucun match enregistré avec ces filtres.' : 'Aucun match enregistré dans FootStats pour cette saison. Cela ne signifie pas qu’aucun match n’a été joué.'}</p><Link href={selection.isCurrent ? '/dashboard/add-match' : '/dashboard/career'} className={s.textLink}>{selection.isCurrent ? 'Renseigner un match' : 'Consulter la carrière'} <span aria-hidden="true">↗</span></Link></section>}
+        {latest ? <MatchSummary stat={latest} featured /> : <section className={`${s.panel} ${s.emptyMatch}`}><h2>{selection.isCurrent ? 'Ta saison commence ici.' : 'Cette saison a une histoire.'}</h2><p>{selection.seasonMatches.length ? 'Aucun match enregistré avec ces filtres.' : 'Aucun match enregistré dans FootStats pour cette saison. Cela ne signifie pas qu’aucun match n’a été joué.'}</p><Link href={selection.isCurrent ? '/dashboard/add-match' : '/dashboard/career'} className={s.textLink}>{selection.isCurrent ? 'Renseigner un match' : 'Consulter la carrière'} <span aria-hidden="true">↗</span></Link></section>}
         <section className={`${s.panel} ${s.chartPanel}`} aria-labelledby="progression-title">
-          <div className={s.panelTitle}><div><span className={s.eyebrow}>MATCH APRÈS MATCH</span><h2 id="progression-title">Cumul des buts et des passes décisives</h2></div><span className={s.chartSeason}>{seasonLabel}</span></div>
-          <p className={s.sectionDescription}>Impact offensif de la saison · Valeurs cumulées</p>
+          <div className={s.panelTitle}><div><h2 id="progression-title">Cumul des buts et des passes décisives</h2></div><span className={s.chartSeason}>{seasonLabel}</span></div>
+          <p className={s.sectionDescription}>Valeurs cumulées</p>
           <StatsChart data={presentation.chartData} variant="stade" />
           <p className={s.chartNote}>Chaque point représente une rencontre renseignée, avec ou sans participation.</p>
         </section>
       </div>
 
       <section className={s.seasonStory} aria-labelledby="season-story-title">
-        <div className={s.storyMark} aria-hidden="true">↗</div><div><span className={s.eyebrow}>À RETENIR · SÉLECTION ACTUELLE</span><h2 id="season-story-title">Le fil de ta saison.</h2><p><strong>{presentation.known.participation ? matchesPlayed : '—'} participations enregistrées</strong> et <strong>{presentation.known.minutes ? totalMinutes : '—'} minutes renseignées</strong> sur le terrain. Retrouve chaque rencontre dans ton historique.</p></div>
+        <div className={s.storyMark} aria-hidden="true">↗</div><div><h2 id="season-story-title">À retenir</h2><p><strong>{presentation.known.participation ? matchesPlayed : '—'} participations enregistrées</strong> et <strong>{presentation.known.minutes ? totalMinutes : '—'} minutes renseignées</strong>.</p></div>
         <div className={s.recentForm}><FormGuide recentMatches={displayStats.filter(stat => stat.has_played).map(stat => stat.matches)} variant="stade" /><a href="#match-history" className={s.textLink}>Parcourir mes matchs <span aria-hidden="true">↓</span></a></div>
       </section>
 
       {selection.isCurrent && <section className={s.teamSection} aria-label="Mon équipe et les informations RBFA">
-        <div className={s.sectionHeading}><span className={s.sectionIndex}>02</span><h2>Le collectif</h2><span className={s.sectionAside}>SAISON ACTUELLE · DONNÉES RBFA EN CACHE</span></div>
+        <div className={s.sectionHeading}><span className={s.sectionIndex}>02</span><h2>Mon équipe</h2><span className={s.sectionAside}>SAISON ACTUELLE · SOURCE RBFA</span></div>
         <Suspense fallback={<div className={`${s.panel} ${s.loading}`} role="status">Chargement des informations de ton équipe…</div>}>
           <TeamWidget teamId={profile.rbfa_team_id} isDashboard variant="stade" />
         </Suspense>
@@ -136,11 +136,11 @@ export default async function DashboardPage(props: { searchParams: Promise<{ com
 
       <section id="match-history" className={s.history} aria-labelledby="match-history-title">
         <div className={s.sectionToolbar}><div className={s.sectionHeading}><span className={s.sectionIndex}>03</span><h2 id="match-history-title">Historique des matchs ({displayStats.length})</h2></div><a href="#season-stats-title" className={s.textLink}>Revenir aux statistiques ↑</a></div>
-        <p className={s.sectionDescription}>Toutes les rencontres de la sélection. Ouvre une feuille pour consulter ou modifier le match.</p>
+
         {displayStats.length === 0 ? <div className={s.emptyState}>Aucun match enregistré dans FootStats avec cette sélection.</div> : <div className={s.matchList}>{displayStats.map(stat => <MatchSummary key={stat.matches.id} stat={stat} />)}</div>}
         <p className={s.unknownNote}>0 est une valeur connue. « — » signale une information non renseignée. Les cartons restent affichés même sans participation.</p>
       </section>
-      <footer className={s.footer}><strong>footstats<span>.</span></strong><span>Le football que tu vis. La progression que tu suis.</span><span>SAISON {seasonLabel}</span></footer>
+      <footer className={s.footer}><strong>footstats<span>.</span></strong><span>SAISON {seasonLabel}</span></footer>
     </div>
   )
 }

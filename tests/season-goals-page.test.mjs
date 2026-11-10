@@ -156,8 +156,8 @@ test('private goal seasons and targets never enter E1 dashboards or public profi
 
 test('goals selector supplies its scoped hint while every default selector keeps its existing E1 wording', async () => {
   const result = await page()
-  assert.equal(result.selectors[0].hint, 'Chaque saison conserve ses objectifs. Toutes compétitions confondues.')
-  assert.match(result.html, /Chaque saison conserve ses objectifs\. Toutes compétitions confondues\./)
+  assert.equal(result.selectors[0].hint, 'Objectifs propres à chaque saison.')
+  assert.match(result.html, /Objectifs propres à chaque saison\./)
   const { Selector } = selectorModule()
   const html = renderToStaticMarkup(React.createElement(Selector, { seasons: [current], selected: current, currentYear: 2026 }))
   assert.match(html, /Changer de saison réaffiche toutes ses compétitions\./)

@@ -73,7 +73,7 @@ export default function RegisterWizard() {
               <motion.div key="step1" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={reducedMotion ? { duration: 0 } : undefined} className={s.step}>
                 <div>
                   <h2 className={s.stepTitle}>Comment t&apos;appelles-tu ?</h2>
-                  <p className={s.stepDescription}>C&apos;est le nom qui s&apos;affichera sur tes statistiques.</p>
+                  <p className={s.stepDescription}>Visible sur ton profil public.</p>
                   <div className="mt-6">
                     <label htmlFor="register-display_name" className={ui.label}>Nom affiché</label>
                     <input id="register-display_name" type="text" placeholder="Pseudo ou Prénom" minLength={2} maxLength={50} value={formData.display_name} onChange={(e) => updateForm('display_name', e.target.value)} className={inputBaseClasses} />
@@ -186,7 +186,7 @@ export default function RegisterWizard() {
 
                   <div>
                     <h2 className={s.stepTitle}>Dernière étape</h2>
-                    <p className={s.stepDescription}>Sécurise ton compte et finalise ton profil.</p>
+
                     
                     <div className="space-y-4 mt-6">
                       <div>

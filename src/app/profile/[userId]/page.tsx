@@ -53,7 +53,7 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
   const presentation = seasonPresentation(summary, selectedMatches.length)
 
   return <div className={s.season}>
-    <div className={s.sectionHeading}><span className={s.sectionIndex}>01</span><div><span className={s.eyebrow}>LA SAISON EN CHIFFRES</span><h2>Saison {season.startYear}–{String(season.endYear).slice(-2)}</h2></div><span className={s.contextBadge}>STATISTIQUES DU JOUEUR</span></div>
+    <div className={s.sectionHeading}><span className={s.sectionIndex}>01</span><div><span className={s.eyebrow}>LA SAISON EN CHIFFRES</span><h2>Saison {season.startYear}–{String(season.endYear).slice(-2)}</h2></div></div>
     <SeasonSelector seasons={selection.seasons} selected={season} currentYear={currentSeason.startYear} />
     {selection.invalidSeason && <p className={s.note} role="status">Saison indisponible : la saison actuelle est affichée.</p>}
     {selection.resetCompetitions && <p className={s.note} role="status">Les compétitions demandées ne sont pas disponibles : toutes celles de cette saison sont affichées.</p>}
@@ -61,9 +61,9 @@ export default async function CurrentSeasonPage(props: { params: Promise<{ userI
     <CompetitionFilter variant="stade" available={selection.availableComps} selected={activeComps} />
     <SeasonStatCards summary={summary} known={presentation.known} secondaryClass={s.secondaryMetrics} />
     <p className={s.note}>Statistiques calculées uniquement à partir des matchs enregistrés dans FootStats.{presentation.incomplete && ' Certaines données sont non communiquées : les totaux concernés restent inconnus.'}</p>
-    <section className={s.progression} aria-labelledby="public-progression-title"><div className={s.chartIntro}><span className={s.eyebrow}>MATCH APRÈS MATCH</span><h2 id="public-progression-title">Cumul des buts et des passes décisives</h2><p>Le fil offensif de la saison, rencontre après rencontre.</p></div><StatsChart data={presentation.chartData} variant="stade" /></section>
+    <section className={s.progression} aria-labelledby="public-progression-title"><div className={s.chartIntro}><h2 id="public-progression-title">Cumul des buts et des passes décisives</h2></div><StatsChart data={presentation.chartData} variant="stade" /></section>
     <section className={s.matchHistory} aria-labelledby="public-history-title">
-      <div className={s.sectionHeading}><span className={s.sectionIndex}>02</span><div><span className={s.eyebrow}>LES RENCONTRES DE LA SAISON</span><h2 id="public-history-title">Historique des matchs</h2></div><span className={s.contextBadge}>{displayStats.length} rencontres renseignées</span></div>
+      <div className={s.sectionHeading}><span className={s.sectionIndex}>02</span><div><h2 id="public-history-title">Historique des matchs</h2></div><span className={s.contextBadge}>{displayStats.length} rencontres renseignées</span></div>
       {displayStats.length === 0 ? <div className={s.empty}>Aucun match enregistré dans FootStats pour cette sélection. Cela ne signifie pas qu’aucun match n’a été joué.</div> : <div className={s.matchGrid}>{displayStats.map(stat => <PublicMatchCard key={stat.matches.id} stat={stat} />)}</div>}
       <p className={s.note}>0 est une valeur connue. « — » indique une information non renseignée. Les cartons restent visibles sans participation.</p>
     </section>

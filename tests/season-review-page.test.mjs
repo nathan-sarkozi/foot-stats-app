@@ -118,7 +118,7 @@ test('selected season and comparison use exact July bounds and the same competit
   assert.match(result.html, /name="comps" value="LEAGUE"/)
 
   const onlyOtherCup = await page({ rows: [rows[0], rows[3]], params: { comps: 'LEAGUE', compare: '2025-2026' } })
-  assert.match(onlyOtherCup.html, /autre saison ne contient pas de matchs saisis dans les compétitions sélectionnées/)
+  assert.match(onlyOtherCup.html, /Aucun match saisi dans cette autre saison avec ces compétitions/)
   assert.equal(Object.keys(comparisonRows(onlyOtherCup.html)).length, 0)
   assert.doesNotMatch(onlyOtherCup.html, /Rencontre fictive previous-cup/)
 })
@@ -137,9 +137,9 @@ test('manual-only historical seasons preserve known totals separately and never 
   ]) {
     const result = await page({ career: [entry], params: { season: '1985-1986' } })
     assert.equal(result.selectors[0].selected.startYear, 1985)
-    assert.match(result.html, /Cette saison vit dans ta carrière/)
+    assert.match(result.html, /Saison renseignée dans ta carrière/)
     assert.match(result.html, /ne sont jamais ajoutées aux statistiques/)
-    assert.match(result.html, /ne sont ni transformées en matchs ni utilisées pour fabriquer une courbe ou des records/)
+    assert.match(result.html, /Les données manuelles de carrière ne créent ni courbe ni record/)
     assert.equal(result.charts.length, 0)
     assert.deepEqual(mainMetrics(result.html), {})
     assert.equal(Object.keys(comparisonRows(result.html)).length, 0)
@@ -188,7 +188,7 @@ test('fully recorded review renders metrics, exact ratios, all ties, milestones 
   assert.match(result.html, /Contributions décisives par rencontre/)
   assert.match(result.html, /VALEURS PAR MATCH · NON CUMULÉES/)
   assert.match(result.html, /BILAN PROVISOIRE/)
-  assert.match(result.html, /ne prouvent ni amélioration ni régression/)
+  assert.match(result.html, /sans conclusion automatique sur la progression/)
   assert.doesNotMatch(result.html, /NaN|Infinity|undefined/)
 })
 

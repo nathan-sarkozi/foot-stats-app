@@ -105,7 +105,7 @@ export default async function CareerPage(props: { params: Promise<{ userId: stri
   }
 
   return <div className={s.career}>
-    <header className={s.intro}><div><span>AU FIL DES SAISONS</span><h2>Le parcours se raconte.</h2><p>Les clubs, les premières années, les saisons qui suivent. Chaque étape a sa place.</p></div><span className={s.introMark} aria-hidden="true">↗</span></header>
+    <header className={s.intro}><div><h2>Carrière</h2></div><span className={s.introMark} aria-hidden="true">↗</span></header>
     {statsError && <p role="alert" className={s.error}>Impossible de charger les statistiques de la saison actuelle. Réessayez plus tard.</p>}
     {seniorCareer.length === 0 && youthCareer.length === 0 ? <div className={s.empty}>Pas de données historiques disponibles pour ce joueur.</div> : <>{renderTimeline(seniorCareer, 'Carrière Senior')}{renderTimeline(youthCareer, 'Parcours Jeune')}</>}
     <p className={s.note}>Les saisons renseignées sont conservées en priorité. « — » signifie non renseigné ; 0 indique une valeur connue.</p>

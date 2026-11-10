@@ -141,7 +141,7 @@ test('dashboard repeated and historical filters produce identical cards, charts 
   assert.deepEqual(repeated.cards, historical.cards)
   assert.deepEqual(repeated.charts, historical.charts)
   assert.equal(repeated.html, historical.html)
-  assert.equal(repeated.cards.find(card => card.title === 'Matchs Joués').value, 1)
+  assert.equal(repeated.cards.find(card => card.title === 'Matchs joués').value, 1)
   assert.equal(repeated.cards.find(card => card.title === 'Discipline').value, 1)
   assert.match(repeated.html, /Synthetic opponent cup/)
   assert.doesNotMatch(repeated.html, /Synthetic opponent friendly/)
@@ -152,12 +152,12 @@ test('dashboard reconciles unavailable competition URLs explicitly for the selec
     const { cards } = await renderServerPage('src/app/dashboard/page.tsx', {
       searchParams: { comps }, statistics: [statistic('cup', 'CUP')],
     })
-    assert.equal(cards.find(card => card.title === 'Matchs Joués').value, 1)
+    assert.equal(cards.find(card => card.title === 'Matchs joués').value, 1)
   }
   const { html, cards } = await renderServerPage('src/app/dashboard/page.tsx', {
     searchParams: { comps: ['UNKNOWN', 'INVALID'] }, statistics: [statistic('cup', 'CUP')],
   })
-  assert.equal(cards.find(card => card.title === 'Matchs Joués').value, 1)
+  assert.equal(cards.find(card => card.title === 'Matchs joués').value, 1)
   assert.match(html, /compétitions demandées ne sont pas disponibles/)
 })
 

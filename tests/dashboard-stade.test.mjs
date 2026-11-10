@@ -30,12 +30,12 @@ test('all eight existing metrics and subtitles match the unchanged season summar
   const totals = summarizeSeasonStats(rows, season)
   const { cards, charts, queries } = await renderServerPage('src/app/dashboard/page.tsx', { statistics: rows })
   const expected = [
-    ['Matchs Joués', totals.matchesPlayed, `${totals.totalMinutes} min cumulées`],
-    ['G/A (Impliqué)', totals.totalGA, `${totals.totalGoals} ${totals.totalGoals === 1 ? 'but' : 'buts'} | ${totals.totalAssists} ${totals.totalAssists === 1 ? 'passe décisive' : 'passes décisives'}`],
-    ['Total Buts', totals.totalGoals, totals.goalSubtitle],
+    ['Matchs joués', totals.matchesPlayed, `${totals.totalMinutes} min cumulées`],
+    ['Buts + passes décisives', totals.totalGA, `${totals.totalGoals} ${totals.totalGoals === 1 ? 'but' : 'buts'} | ${totals.totalAssists} ${totals.totalAssists === 1 ? 'passe décisive' : 'passes décisives'}`],
+    ['Buts', totals.totalGoals, totals.goalSubtitle],
     ['Passes décisives', totals.totalAssists, `${totals.assistsPerMatch} par match`],
-    ['Ratio Victoires', `${totals.winRate}%`, `${totals.totalWins} V en ${totals.matchesPlayed} M`],
-    ['Homme du Match', totals.totalMotm, 'Trophées 🏆'],
+    ['Victoires', `${totals.winRate}%`, `${totals.totalWins} V en ${totals.matchesPlayed} M`],
+    ['Homme du Match', totals.totalMotm, ''],
     ['Poste le plus joué', totals.favPosition, `${totals.maxPosCount} apparitions`],
     ['Discipline', totals.totalYellows + totals.totalReds, `${totals.totalYellows} 🟨 | ${totals.totalReds} 🟥`],
   ]
@@ -99,7 +99,7 @@ test('empty, missing identity and read failures have useful states instead of in
 
 test('shared components keep their default public presentation when Stade is not requested', () => {
   for (const [path, props] of [
-    ['StatCard', { title: 'Total Buts', value: 2, subtitle: '1 but / 60 min' }],
+    ['StatCard', { title: 'Buts', value: 2, subtitle: '1 but / 60 min' }],
     ['FormGuide', { recentMatches: [{ team_score: 1, opponent_score: 0 }] }],
     ['StatsChart', { data: [] }],
   ]) {

@@ -49,7 +49,7 @@ export default async function ProfileLayout(props: { children: React.ReactNode, 
       <Link href="/dashboard/community" className={s.back}><span aria-hidden="true">←</span> Retour à la communauté</Link>
       <header className={s.hero}>
         <div className={s.playerIdentity}>
-          <span className={s.eyebrow}>FOOTSTATS / LA FICHE JOUEUR</span>
+
           <div className={s.identityRow}>
             <div className={s.avatar}>{profile.avatar_url ? <Image src={profile.avatar_url} alt={profile.display_name} fill className={s.avatarImage} sizes="(max-width: 600px) 80px, 112px" /> : profile.display_name.substring(0, 2).toUpperCase()}</div>
             <div className={s.nameBlock}><h1>{profile.display_name}</h1><span className={s.position}>{profile.preferred_position || 'Poste non renseigné'}</span></div>
@@ -57,11 +57,11 @@ export default async function ProfileLayout(props: { children: React.ReactNode, 
           <div className={s.clubLine}><span className={s.crest}>{playerClubLogo ? <Image src={playerClubLogo} alt={profile.club!} fill className={s.crestImage} sizes="48px" /> : <span aria-hidden="true">{profile.club?.substring(0, 1).toUpperCase() || '—'}</span>}</span><div><strong>{profile.club || 'Club non renseigné'}</strong><span>{profile.category || 'Catégorie non renseignée'}</span></div></div>
           <dl className={s.attributes}><div><dt>Pied fort</dt><dd>{profile.foot_preference || '—'}</dd></div><div><dt>Taille</dt><dd>{profile.height !== null && profile.height !== undefined ? `${profile.height} cm` : '—'}</dd></div><div><dt>Poids</dt><dd>{profile.weight !== null && profile.weight !== undefined ? `${profile.weight} kg` : '—'}</dd></div></dl>
         </div>
-        <div className={s.playerNumber}><div className={s.numberHeading}><span>LE JOUEUR</span><span aria-hidden="true">↗</span></div><span className={s.number}>{profile.jersey_number ?? '—'}</span><span className={s.numberLabel}>NUMÉRO DE MAILLOT</span><div className={s.numberFooter}><span>UN PARCOURS.<br />UNE HISTOIRE.</span><span>FOOTSTATS</span></div></div>
+        <div className={s.playerNumber}><div className={s.numberHeading}><span>LE JOUEUR</span><span aria-hidden="true">↗</span></div><span className={s.number}>{profile.jersey_number ?? '—'}</span><span className={s.numberLabel}>NUMÉRO DE MAILLOT</span></div>
       </header>
       <ProfileTabs userId={targetUserId} />
       {props.children}
-      <footer className={s.footer}><strong>footstats<span>.</span></strong><p>Le football se joue. Le parcours se raconte.</p><span>PROFIL DU JOUEUR</span></footer>
+      <footer className={s.footer}><strong>footstats<span>.</span></strong><span>PROFIL DU JOUEUR</span></footer>
     </main>
   </div></NavigationProvider>
 }

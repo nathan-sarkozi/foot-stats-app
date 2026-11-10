@@ -28,7 +28,7 @@ export default async function EditCareerPage(props: { params: Promise<{ id: stri
 
   return <div className={`${s.page} ${s.editCareer}`}>
     <Link href="/dashboard/career" className={s.back}><span aria-hidden="true">←</span> Annuler et retourner à ma carrière</Link>
-    <header className={s.hero}><div><span className={s.eyebrow}>UN CHAPITRE DE TON PARCOURS</span><h1>Modifier la saison<span>.</span></h1><p>Saison {entry.season_start}–{entry.season_end} · Met à jour les informations de cette période.</p></div></header>
+    <header className={s.hero}><div><h1>Modifier la saison<span>.</span></h1><p>Saison {entry.season_start}–{entry.season_end}</p></div></header>
     <CareerForm initialData={entry} />
   </div>
 }

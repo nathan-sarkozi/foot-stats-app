@@ -26,7 +26,7 @@ export default function MatchFields({ match, stat }: { match?: MatchValues; stat
   return <div className={s.fields}>
     {hasUnknownValues && <p className={s.historicalNotice}>Certaines valeurs historiques ne sont pas renseignées. Complète-les explicitement pour enregistrer cette rencontre. Zéro signifie une absence connue, pas une information inconnue.</p>}
     <section className={`${s.panel} ${s.encounter}`} aria-labelledby="encounter-title">
-      <div className={s.sectionHeading}><span className={s.sectionNumber}>01</span><div><h2 id="encounter-title">La rencontre</h2><p>Le contexte, l’adversaire, le résultat.</p></div><span className={s.sectionMark} aria-hidden="true">↗</span></div>
+      <div className={s.sectionHeading}><span className={s.sectionNumber}>01</span><div><h2 id="encounter-title">La rencontre</h2></div><span className={s.sectionMark} aria-hidden="true">↗</span></div>
       <div className={s.encounterFields}>
         <div><label htmlFor="match_date" className={ui.label}>Date du match <span className={s.required}>*</span></label><input type="date" id="match_date" name="match_date" required defaultValue={match?.match_date} className={ui.field} /></div>
         <div><label htmlFor="competition_type" className={ui.label}>Compétition <span className={s.required}>*</span></label><select id="competition_type" name="competition_type" required defaultValue={match?.competition_type ?? 'LEAGUE'} className={ui.field}><option value="LEAGUE">Championnat</option><option value="CUP">Coupe</option><option value="FRIENDLY">Amical</option></select></div>
@@ -39,12 +39,12 @@ export default function MatchFields({ match, stat }: { match?: MatchValues; stat
           <span className={s.scoreSeparator} aria-hidden="true">:</span>
           <div><label htmlFor="opponent_score">Adversaire</label><input type="number" id="opponent_score" name="opponent_score" min="0" required defaultValue={match ? match.opponent_score ?? '' : '0'} placeholder="—" className={s.scoreInput} aria-describedby={match?.opponent_score === null ? 'opponent-score-hint' : undefined} />{match?.opponent_score === null && <p id="opponent-score-hint" className={s.hint}>Score non renseigné</p>}</div>
         </div>
-        <span className={s.scoreCaption}>DEUX ÉQUIPES. UNE RENCONTRE.</span>
+
       </fieldset>
     </section>
 
     <section className={`${s.panel} ${s.performance}`} aria-labelledby="performance-title">
-      <div className={s.sectionHeading}><span className={s.sectionNumber}>02</span><div><h2 id="performance-title">Ton match</h2><p>Chaque contribution compte.</p></div><span className={s.sectionMark} aria-hidden="true">◎</span></div>
+      <div className={s.sectionHeading}><span className={s.sectionNumber}>02</span><div><h2 id="performance-title">Ton match</h2></div><span className={s.sectionMark} aria-hidden="true">◎</span></div>
       {stat?.has_played === null ? <div className={`${s.participation} ${s.unknownBoolean}`}><label htmlFor="has_played" className={ui.label}>Participation au match</label><select id="has_played" name="has_played" required defaultValue="" className={ui.field} aria-describedby="participation-help"><option value="">Non renseignée — sélectionner</option><option value="true">J’ai participé</option><option value="false">Je n’ai pas participé</option></select><p className={s.hint}>Participation non renseignée à l’origine.</p></div> : <div className={s.participation}><input type="checkbox" id="has_played" name="has_played" value="true" defaultChecked={stat ? stat.has_played ?? false : true} aria-describedby="participation-help" /><label htmlFor="has_played"><strong>J’ai participé à ce match</strong><span>Décoche si tu n’es pas entré en jeu.</span></label></div>}
       <p id="participation-help" className={s.participationHelp}>Sans participation, les minutes, buts, passes décisives et MOTM ne sont pas comptés. Les cartons restent enregistrés.</p>
       <div className={s.playingFields}>
@@ -57,7 +57,7 @@ export default function MatchFields({ match, stat }: { match?: MatchValues; stat
     </section>
 
     <section className={`${s.panel} ${s.discipline}`} aria-labelledby="discipline-title">
-      <div className={s.sectionHeading}><span className={s.sectionNumber}>03</span><div><h2 id="discipline-title">Discipline</h2><p>Avec ou sans entrée en jeu.</p></div><span className={s.cardsMark} aria-hidden="true"><i /><i /></span></div>
+      <div className={s.sectionHeading}><span className={s.sectionNumber}>03</span><div><h2 id="discipline-title">Discipline</h2></div><span className={s.cardsMark} aria-hidden="true"><i /><i /></span></div>
       <DisciplineFields initialYellowCards={stat?.yellow_cards} initialRedCards={stat?.red_cards} />
     </section>
   </div>

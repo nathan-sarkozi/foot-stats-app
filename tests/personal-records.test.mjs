@@ -212,7 +212,7 @@ test('page preserves authentication and never reads records for anonymous visito
 test('page shows an empty book and career link without fabricated records or a fictitious player', async () => {
   const { html, queries } = await page()
   assert.match(html, /Aucun match enregistré dans FootStats/)
-  assert.match(html, /Cela ne signifie pas que tu n’as jamais joué/)
+  assert.match(html, /Tes saisons historiques restent dans ta carrière/)
   assert.match(html, /href="\/dashboard\/career"/)
   assert.match(html, /href="\/dashboard\/add-match"/)
   assert.doesNotMatch(html, /data-record-value|Alex Terrain|createSeasonDemoData/)
@@ -225,9 +225,9 @@ test('page renders all nine calculated indicators, ties, rule explanations and m
   assert.match(html, /2 performances ex æquo/)
   assert.match(html, /href="\/dashboard\/edit-match\/a"/)
   assert.match(html, /href="\/dashboard\?season=2026-2027"/)
-  assert.match(html, /records absolus de toute ta carrière/)
+  assert.match(html, /Records des matchs saisis/)
   assert.match(html, /faute d’ordre de coup d’envoi/)
-  assert.match(html, /Les statistiques manuelles de carrière ne sont jamais additionnées/)
+  assert.match(html, /hors saisons manuelles de carrière/)
   assert.doesNotMatch(html, /NaN|Infinity|undefined/)
 })
 

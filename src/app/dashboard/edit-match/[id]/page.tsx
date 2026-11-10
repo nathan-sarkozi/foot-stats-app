@@ -55,12 +55,12 @@ export default async function EditMatchPage(props: EditMatchProps) {
   const heading = <>
     <Link href="/dashboard" className={s.back}><span aria-hidden="true">←</span> Retour au dashboard</Link>
     <header className={s.hero}>
-      <div><span className={s.eyebrow}>FEUILLE DE MATCH / MODIFICATION</span><h1>Modifier le match<span>.</span></h1><p>Face à {match.opponent}. Retrouve les détails de la rencontre et ajuste ta performance.</p></div>
+      <div><h1>Modifier le match<span>.</span></h1><p>Face à {match.opponent}</p></div>
       <div className={s.heroMark} aria-hidden="true"><span>↗</span></div>
     </header>
   </>
   const deletion = <section className={s.deleteZone} aria-labelledby="delete-match-title">
-    <div><h2 id="delete-match-title">Supprimer cette rencontre</h2><p>Le match et ses statistiques seront supprimés définitivement.<br />Une confirmation te sera demandée.</p></div>
+    <div><h2 id="delete-match-title">Supprimer cette rencontre</h2><p>Le match et ses statistiques seront supprimés définitivement.</p></div>
     <DeleteButton matchId={matchId} />
   </section>
 
@@ -84,7 +84,7 @@ export default async function EditMatchPage(props: EditMatchProps) {
       <input type="hidden" name="match_id" value={matchId} />
       <MatchFields match={match} stat={stat} />
       <div className={s.actions}>
-        <div><strong>Le même match. Le bon détail.</strong><p>Vérifie tes informations avant d’enregistrer.</p></div>
+        <div><p>Les champs marqués d’un * sont obligatoires.</p></div>
         <div className={s.actionButtons}><Link href="/dashboard" className={s.cancel}>Annuler</Link><SubmitButton defaultLabel="Mettre à jour le match" loadingLabel="Mise à jour..." appearance="stade" /></div>
       </div>
     </ActionForm>

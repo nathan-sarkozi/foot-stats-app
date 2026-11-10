@@ -114,7 +114,7 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
     const rows = [row('June', '2026-06-30', 'CUP', { goals: 3 }), row('July', '2026-07-01', 'LEAGUE', { goals: 1 }), row('current', '2026-10-01', 'CUP', { goals: 2 })]
     for (const [key, expected, ids] of [['2025-2026', 3, ['June']], ['2026-2027', 3, ['July', 'current']]]) {
       const result = await renderServerPage(page, { statistics: rows, searchParams: { season: key }, profile: { display_name: 'Fixture', club: null, rbfa_team_id: '123' } })
-      assert.equal(result.cards.find(card => card.title === 'Total Buts').value, expected)
+      assert.equal(result.cards.find(card => card.title === 'Buts').value, expected)
       assert.equal(result.charts[0].length, ids.length)
       for (const id of ids) assert.ok(result.html.includes(`Fixture ${id}`))
       for (const id of ['June', 'July', 'current'].filter(id => !ids.includes(id))) assert.ok(!result.html.includes(`Fixture ${id}`))
@@ -140,7 +140,7 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
 
   test(`${page}: manual same-season entry cannot add or replace calculated match totals`, async () => {
     const result = await renderServerPage(page, { statistics: [row('a')], careerEntries: [career(2026, { has_stats: true, goals: 50, matches_played: 20 })] })
-    assert.equal(result.cards.find(card => card.title === 'Total Buts').value, 1)
+    assert.equal(result.cards.find(card => card.title === 'Buts').value, 1)
     assert.match(result.html, /<dd>50<\/dd>/)
   })
 

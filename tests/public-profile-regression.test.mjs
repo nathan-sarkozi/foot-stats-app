@@ -29,9 +29,9 @@ test('profile with matches but without players renders the same season metrics a
   assert.ok(!f.data.players.some(row => row.id === noPlayer))
   const a = await f.render(complete), b = await f.render(noPlayer)
   assert.deepEqual(a.cards, b.cards)
-  assert.equal(b.cards.find(card => card.title === 'Total Buts').value, 2)
+  assert.equal(b.cards.find(card => card.title === 'Buts').value, 2)
   assert.equal(b.cards.find(card => card.title === 'Passes décisives').value, 1)
-  assert.equal(b.cards.find(card => card.title === 'Matchs Joués').value, 1)
+  assert.equal(b.cards.find(card => card.title === 'Matchs joués').value, 1)
   assert.ok(!f.queries.includes('players'))
   assert.ok(!f.queries.includes('season_goals'))
 })
@@ -49,7 +49,7 @@ test('another authenticated viewer sees only the requested player statistics, ne
 test('historical season and manual career survive without a players identity and never inflate match totals', async t => {
   const f = await fixture(t)
   const previous = await f.render(noPlayer, '', { season: '2025-2026' })
-  assert.equal(previous.cards.find(card => card.title === 'Total Buts').value, 2)
+  assert.equal(previous.cards.find(card => card.title === 'Buts').value, 2)
   assert.match(previous.html, /Adversaire fictif 3/)
   const manual = await f.render(noPlayer, '', { season: '1985-1986' })
   assert.ok(manual.cards.every(card => card.value === '—'))
@@ -68,8 +68,8 @@ test('a valid profile with no match displays an honest empty state rather than i
 
 test('unknown match statistics stay unknown, with their real match retained', async t => {
   const f = await fixture(t), result = await f.render(unknown)
-  assert.equal(result.cards.find(card => card.title === 'Matchs Joués').value, 1)
-  for (const title of ['Total Buts', 'Passes décisives', 'Minutes jouées']) assert.equal(result.cards.find(card => card.title === title).value, '—')
+  assert.equal(result.cards.find(card => card.title === 'Matchs joués').value, 1)
+  for (const title of ['Buts', 'Passes décisives', 'Minutes jouées']) assert.equal(result.cards.find(card => card.title === title).value, '—')
   assert.equal(result.charts[0][0].goals, null)
   assert.equal(result.charts[0][0].assists, null)
   assert.match(result.html, /Adversaire fictif 4/)

@@ -75,8 +75,8 @@ export default function MobileNavigation({ userId }: { userId: string }) {
       const box = event.currentTarget.getBoundingClientRect()
       if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) close()
     }}>
-      <div className={s.drawerHeading}><div><span>TON ESPACE DE JEU</span><h2 id={`${id}-title`}>Tout ton FootStats.</h2></div><button type="button" onClick={() => close()} className={s.closeDrawer} aria-label="Fermer la navigation"><NavigationIcon name="close" /></button></div>
-      <p id={`${id}-description`} className={s.drawerDescription}>Le jeu. Le parcours. Tes repères.</p>
+      <div className={s.drawerHeading}><div><h2 id={`${id}-title`}>Mon espace</h2></div><button type="button" onClick={() => close()} className={s.closeDrawer} aria-label="Fermer la navigation"><NavigationIcon name="close" /></button></div>
+      <p id={`${id}-description`} className={s.drawerDescription}>Matchs, carrière et compte.</p>
       <Link href={links.add} className={s.drawerAdd} onClick={() => close(false)}><NavigationIcon name="plus" />Ajouter un match</Link>
       <nav aria-label="Destinations complémentaires">
         {[
@@ -85,7 +85,7 @@ export default function MobileNavigation({ userId }: { userId: string }) {
         ].map(group => <section key={group.id} className={s.drawerGroup}><h3>{group.title}</h3>{SECONDARY_DESTINATIONS.filter(destination => destination.group === group.id).map(destination => <Link key={destination.id} href={links[destination.id]} onClick={() => close(false)} className={s.drawerLink} aria-current={isDestinationActive(destination.id, pathname, userId) ? 'location' : undefined} data-navigation={destination.id}><NavigationIcon name={destination.icon} /><span>{destination.label}</span><span aria-hidden="true">↗</span></Link>)}</section>)}
       </nav>
       <form action={logout} className={s.drawerLogout}><button type="submit" onClick={() => close(false)}><NavigationIcon name="logout" size={18} />Déconnexion</button></form>
-      <p className={s.drawerSignature}>TON FOOTBALL. TA PROGRESSION.</p>
+
     </dialog>
   </>
 }

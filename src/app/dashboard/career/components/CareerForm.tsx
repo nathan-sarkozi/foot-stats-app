@@ -46,7 +46,7 @@ export default function CareerForm({ initialData = null }: { initialData?: Caree
     }} className={s.careerForm}>
       {initialData && <input type="hidden" name="entry_id" value={initialData.id} />}
       <FormFeedback state={state} variant="stade" />
-      <div className={s.sectionHeading}><span>01</span><div><h2>{initialData ? "La saison renseignée" : "Ajouter une saison"}</h2><p>Un club, une catégorie, une étape du parcours.</p></div></div>
+      <div className={s.sectionHeading}><span>01</span><div><h2>{initialData ? "La saison renseignée" : "Ajouter une saison"}</h2></div></div>
       
       <div className={s.twoColumns}>
         <div className={s.fullWidth}>
@@ -111,7 +111,7 @@ export default function CareerForm({ initialData = null }: { initialData?: Caree
         </div>
       </div>
 
-      <p className={s.hint}>Les statistiques non communiquées restent distinctes de zéro. Les saisons anciennes conservent leur année enregistrée.</p>
+      <p className={s.hint}>Statistiques inconnues ? Décoche « Je connais mes statistiques ».</p>
       <div className={s.formActions}>
         <SubmitButton defaultLabel={initialData ? "Modifier la saison" : "Ajouter à ma carrière"} loadingLabel="Traitement..." appearance="stade" />
       </div>

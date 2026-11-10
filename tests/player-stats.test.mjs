@@ -157,7 +157,7 @@ test('nullable scores preserve statistical totals while both presentations ident
       assert.equal(result.totalWins, isWin ? 1 : 0, label)
       for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page.tsx']) {
         const { html, cards } = await renderServerPage(page, { statistics: rows })
-        assert.equal(cards.find(card => card.title === 'Ratio Victoires').value, teamScore === null || opponentScore === null ? '—' : `${isWin ? 100 : 0}%`, `${page}: ${label}`)
+        assert.equal(cards.find(card => card.title === 'Victoires').value, teamScore === null || opponentScore === null ? '—' : `${isWin ? 100 : 0}%`, `${page}: ${label}`)
         assert.ok(html.includes(`data-outcome="${teamScore === null || opponentScore === null ? 'unknown' : isWin ? 'win' : isLoss ? 'loss' : 'draw'}"`), `${page}: ${label}`)
       }
     }
@@ -206,7 +206,7 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
       const { html, cards } = await renderServerPage(page, { statistics: [statistic('wording', { goals: 1, assists })] })
       const label = assists === 1 ? 'passe décisive' : 'passes décisives'
       assert.equal(cards.find(card => card.title === 'Passes décisives').value, assists)
-      assert.equal(cards.find(card => card.title === 'G/A (Impliqué)').subtitle, `1 but | ${assists} ${label}`)
+      assert.equal(cards.find(card => card.title === 'Buts + passes décisives').subtitle, `1 but | ${assists} ${label}`)
       assert.match(html, /Cumul des buts et des passes décisives/)
       if (page.includes('/profile/') && assists > 0) assert.ok(html.replace(/<[^>]*>/g, '').includes(`${assists} ${label}`))
       assert.doesNotMatch(html, /Total Passes/)
@@ -221,8 +221,8 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
       statistic('next', { goals: 43 }, { match_date: '2027-07-01' }),
     ]
     const { cards, queries, charts, html } = await renderServerPage(page, { statistics: rows })
-    assert.equal(cards.find(c => c.title === 'Matchs Joués').value, 2)
-    assert.equal(cards.find(c => c.title === 'Total Buts').value, 0)
+    assert.equal(cards.find(c => c.title === 'Matchs joués').value, 2)
+    assert.equal(cards.find(c => c.title === 'Buts').value, 0)
     assert.equal(cards.find(c => c.title === 'Passes décisives').subtitle, '1.50 par match')
     assert.equal(charts[0].length, 2)
     assert.doesNotMatch(html, /Synthetic opponent old|Synthetic opponent next/)
@@ -238,7 +238,7 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
     const { html, cards } = await renderServerPage(page, {
       statistics: [statistic('bench', { has_played: false, yellow_cards: 1, red_cards: 1 })],
     })
-    assert.equal(cards.find(c => c.title === 'Matchs Joués').value, 0)
+    assert.equal(cards.find(c => c.title === 'Matchs joués').value, 0)
     assert.equal(cards.find(c => c.title === 'Discipline').value, 2)
     assert.match(html, /Synthetic opponent bench/)
     assert.match(html, /pas joué/)
@@ -249,14 +249,14 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
 
   test(`${page}: positive goals with zero minutes have the correct subtitle`, async () => {
     const { cards } = await renderServerPage(page, { statistics: [statistic('goal', { minutes_played: 0 })] })
-    assert.equal(cards.find(c => c.title === 'Total Buts').value, 1)
-    assert.equal(cards.find(c => c.title === 'Total Buts').subtitle, '1 but / 0 min')
+    assert.equal(cards.find(c => c.title === 'Buts').value, 1)
+    assert.equal(cards.find(c => c.title === 'Buts').subtitle, '1 but / 0 min')
   })
 
   test(`${page}: a genuinely empty history still has its empty state`, async () => {
     const { html, cards, charts } = await renderServerPage(page)
     assert.match(html, /Aucun match enregistré/)
-    assert.equal(cards.find(c => c.title === 'Matchs Joués').value, '—')
+    assert.equal(cards.find(c => c.title === 'Matchs joués').value, '—')
     assert.equal(cards.find(c => c.title === 'Passes décisives').subtitle, 'Non communiqué')
     assert.deepEqual(charts, [[]])
     assert.doesNotMatch(html, /NaN|Infinity/)
@@ -269,7 +269,7 @@ for (const page of ['src/app/dashboard/page.tsx', 'src/app/profile/[userId]/page
         yellow_cards: null, red_cards: null, is_motm: null,
       })],
     })
-    assert.equal(cards.find(c => c.title === 'Total Buts').value, '—')
+    assert.equal(cards.find(c => c.title === 'Buts').value, '—')
     assert.equal(cards.find(c => c.title === 'Discipline').value, '—')
     assert.match(html, /Synthetic opponent legacy/)
     if (page.includes('/profile/')) assert.match(html, /—′<\/b> minutes/)
@@ -287,7 +287,7 @@ test('dashboard competition selection filters discipline as well as performances
     ],
   })
   assert.equal(cards.find(c => c.title === 'Discipline').value, 1)
-  assert.equal(cards.find(c => c.title === 'Matchs Joués').value, 0)
+  assert.equal(cards.find(c => c.title === 'Matchs joués').value, 0)
   assert.equal(charts[0].length, 1)
   assert.match(html, /Synthetic opponent cup/)
   assert.doesNotMatch(html, /Synthetic opponent league/)

@@ -17,7 +17,7 @@ export default async function LoginPage(props: {
   }
 
   return <AuthFrame mode="login">
-    <div className={s.heading}><span className={s.eyebrow}>TON ESPACE PERSONNEL</span><h2>Connexion</h2><p>Reprends le fil de ta saison.</p></div>
+    <div className={s.heading}><h2>Connexion</h2></div>
     <form action={login} className={s.form}>
       <div><label htmlFor="email" className={ui.label}>Adresse e-mail</label><input id="email" name="email" type="email" required className={ui.field} placeholder="tonadresse@exemple.be" autoComplete="email" /></div>
       <div><label htmlFor="password" className={ui.label}>Mot de passe</label><input id="password" name="password" type="password" required className={ui.field} placeholder="Ton mot de passe" autoComplete="current-password" /></div>
